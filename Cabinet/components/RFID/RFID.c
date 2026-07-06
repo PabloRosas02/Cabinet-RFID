@@ -1,6 +1,10 @@
 #include "RFID.h"
 
-static void gpio_init() {
+static const char *TAG = "RFID_COMP"; //Tiene que estar en el C, ya que solo debe de acceder en este archivo no afuera
+QueueHandle_t rfid_queue = NULL;
+wiegand_reader_t reader;
+
+void gpio_init() {
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << GPIO_RELAY),
         .mode = GPIO_MODE_OUTPUT,
@@ -12,14 +16,14 @@ static void gpio_init() {
     gpio_set_level(GPIO_RELAY, 0);
 }
 
-static void reader_callback(wiegand_reader_t* r) {
+void reader_callback(wiegand_reader_t* r) {
     data_packet_t p;
     p.bits = r->bits;
     memcpy(p.data, r->buf, WIEGAND_BUF_SIZE);
     xQueueSendToBackFromISR(rfid_queue, &p, NULL);
 }
 
-static void wiegand_test_task(void* arg) {
+void wiegand_test_task(void* arg) {
     rfid_queue = xQueueCreate(5, sizeof(data_packet_t));
     if (!rfid_queue) {
         ESP_LOGE(TAG, "No se pudo crear la cola FreeRTOS");

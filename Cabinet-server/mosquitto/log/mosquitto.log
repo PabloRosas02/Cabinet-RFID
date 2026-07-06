@@ -1,0 +1,54 @@
+1781762738: mosquitto version 2.1.2 starting
+1781762738: Config loaded from /mosquitto/config/mosquitto.conf.
+1781762738: Bridge support available.
+1781762738: Persistence support available.
+1781762738: TLS support available.
+1781762738: TLS-PSK support available.
+1781762738: Websockets support available.
+1781762738: Opening ipv4 listen socket on port 1883.
+1781762738: mosquitto version 2.1.2 running
+1781762738: mosquitto version 2.1.2 terminating
+1781762738: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1781762739: mosquitto version 2.1.2 starting
+1781762739: Config loaded from /mosquitto/config/mosquitto.conf.
+1781762739: Bridge support available.
+1781762739: Persistence support available.
+1781762739: TLS support available.
+1781762739: TLS-PSK support available.
+1781762739: Websockets support available.
+1781762739: Opening ipv4 listen socket on port 1883.
+1781762739: mosquitto version 2.1.2 running
+1781762739: New connection from 172.18.0.1:35132 on port 1883.
+1781762739: New client connected from 172.18.0.1:35132 as mqtt-explorer-1a2d93f6 (p4, c1, k60).
+1781764539: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1781764977: Client mqtt-explorer-1a2d93f6 [172.18.0.1:35132] disconnected: connection closed by client.
+1781764978: New connection from 172.18.0.1:47960 on port 1883.
+1781764978: New client connected from 172.18.0.1:47960 as mqtt-explorer-1a2d93f6 (p4, c1, k60).
+1783291399: mosquitto version 2.1.2 starting
+1783291399: Config loaded from /mosquitto/config/mosquitto.conf.
+1783291399: Bridge support available.
+1783291399: Persistence support available.
+1783291399: TLS support available.
+1783291399: TLS-PSK support available.
+1783291399: Websockets support available.
+1783291399: Opening ipv4 listen socket on port 1883.
+1783291399: mosquitto version 2.1.2 running
+1783292096: mosquitto version 2.1.2 terminating
+1783292096: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1783302966: mosquitto version 2.1.2 starting
+1783302966: Config loaded from /mosquitto/config/mosquitto.conf.
+1783302966: Bridge support available.
+1783302966: Persistence support available.
+1783302966: TLS support available.
+1783302966: TLS-PSK support available.
+1783302966: Websockets support available.
+1783302966: Opening ipv4 listen socket on port 1883.
+1783302966: mosquitto version 2.1.2 running
+1783302966: New connection from 172.18.0.4:40740 on port 1883.
+1783302966: New client connected from 172.18.0.4:40740 as mqttjs_4d17a513 (p4, c1, k60).
+1783304766: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1783306567: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1783308368: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1783310169: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1783311970: Saving in-memory database to /mosquitto/data//mosquitto.db.
+1783313771: Saving in-memory database to /mosquitto/data//mosquitto.db.

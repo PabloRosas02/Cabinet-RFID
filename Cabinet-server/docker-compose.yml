@@ -1,0 +1,43 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: rfid_mqtt_broker
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    networks:
+      - rfid_network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: rfid_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: admin_cabinet
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: cabinet_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    networks:
+      - rfid_network
+
+  backend:
+    build: ./backend
+    container_name: rfid_backend_api
+    restart: always
+    depends_on:
+      - mosquitto
+      - postgres
+    networks:
+      - rfid_network
+
+networks:
+  rfid_network:
+    driver: bridge

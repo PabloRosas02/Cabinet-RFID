@@ -1,0 +1,26 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// Indicamos que usaremos el cliente de Node.js
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Indicamos que el motor es PostgreSQL y la URL viene del archivo .env
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Nuestro modelo de datos
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nombre       String
+  departamento String?  
+  tarjetaRfid  String   @unique 
+  activo       Boolean  @default(true)
+  creadoEn     DateTime @default(now())
+}

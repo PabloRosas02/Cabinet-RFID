@@ -10,7 +10,6 @@
 #include "esp_log.h"
 #include "wiegand.h" // Driver de UncleRus
 
-static const char *TAG = "RFID_COMP";
 
 #define GPIO_WIEGAND_D0   18   // Ajusta según tus conexiones físicas
 #define GPIO_WIEGAND_D1   19   
@@ -22,10 +21,10 @@ typedef struct {
     uint8_t data[WIEGAND_BUF_SIZE];
 } data_packet_t;
 
-static QueueHandle_t rfid_queue = NULL;
-static wiegand_reader_t reader;
+extern QueueHandle_t rfid_queue;
+extern wiegand_reader_t reader;
 
-static void gpio_init();
-static void reader_callback(wiegand_reader_t* r);
-static void wiegand_test_task(void* arg);
+void gpio_init();
+void reader_callback(wiegand_reader_t* r);
+void wiegand_test_task(void* arg);
 void rfid_test_init(void);
