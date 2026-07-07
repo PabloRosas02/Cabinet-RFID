@@ -15,12 +15,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Nuestro modelo de datos
+// Creamos la lista estricta de los 3 departamentos
+enum DepartamentoOpciones {
+  INGENIERIA
+  MANTENIMIENTO
+  ADMINISTRACION
+}
+
+// Actualizamos el modelo de Usuario
 model Usuario {
-  id           Int      @id @default(autoincrement())
+  id           Int                  @id @default(autoincrement())
   nombre       String
-  departamento String?  
-  tarjetaRfid  String   @unique 
-  activo       Boolean  @default(true)
-  creadoEn     DateTime @default(now())
+  departamento DepartamentoOpciones @default(INGENIERIA)
+  correo       String               @unique
+  contrasena   String               // Aquí guardaremos el hash encriptado
+  tarjetaRfid  Int                  @unique // El enlace con el hardware RFID
+  creadoEn     DateTime             @default(now())
 }
