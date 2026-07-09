@@ -1,0 +1,96 @@
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+
+const router = express.Router();
+const prisma = new PrismaClient();
+
+// 1. OBTENER TODOS LOS USUARIOS (GET)
+router.get('/', async (req, res) => {
+    try {
+        const usuarios = await prisma.usuario.findMany({
+            // No enviamos la contraseña al frontend por seguridad
+            select: {
+                id: true,
+                nombre: true,
+                numTrabajador: true,
+                depart: true,
+                rol: true,
+                tarjetaRfid: true,
+                creadoEn: true
+            },
+            orderBy: { id: 'asc' }
+        });
+        res.json(usuarios);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al obtener los usuarios' });
+    }
+});
+
+// 2. CREAR UN NUEVO USUARIO (POST)
+router.post('/', async (req, res) => {
+    try {
+        const { nombre, numTrabajador, depart, rol, tarjetaRfid } = req.body;
+        
+        const nuevoUsuario = await prisma.usuario.create({
+            data: {
+                nombre,
+                numTrabajador,
+                depart: depart,
+                rol,
+                tarjetaRfid: tarjetaRfid || null,
+                // TODO: En producción, usar bcrypt para hashear la contraseña. 
+                // Por ahora asignamos una por defecto basada en el número de trabajador.
+                contrasena: `Crissair${numTrabajador}` 
+            }
+        });
+        
+        // Removemos la contraseña de la respuesta
+        delete nuevoUsuario.contrasena;
+        res.status(201).json(nuevoUsuario);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al crear el usuario. Verifica que el No. Trabajador o RFID no estén duplicados.' });
+    }
+});
+
+// 3. ACTUALIZAR UN USUARIO (PUT)
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nombre, numTrabajador, depart, rol, tarjetaRfid } = req.body;
+
+        const usuarioActualizado = await prisma.usuario.update({
+            where: { id: parseInt(id) },
+            data: {
+                nombre,
+                numTrabajador,
+                depart,
+                rol,
+                tarjetaRfid: tarjetaRfid || null
+            }
+        });
+
+        delete usuarioActualizado.contrasena;
+        res.json(usuarioActualizado);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al actualizar el usuario' });
+    }
+});
+
+// 4. ELIMINAR UN USUARIO (DELETE)
+router.delete('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.usuario.delete({
+            where: { id: parseInt(id) }
+        });
+        res.json({ message: 'Usuario eliminado correctamente' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al eliminar el usuario' });
+    }
+});
+
+export default router;
