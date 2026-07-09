@@ -1,0 +1,23 @@
+/* Paleta de colores globales de la aplicación */
+:root {
+  /* Colores Corporativos Crissair */
+  --crissair-blue: #1a4c6d;
+  --crissair-blue-overlay: rgba(26, 76, 109, 0.85); /* Para el filtro de la foto */
+  --crissair-blue-overlay-light: rgba(26, 76, 109, 0.4);
+  
+  --crissair-gold: #cca32c;
+  --crissair-gold-hover: #b89227;
+
+  /* Colores de texto y fondo */
+  --text-main: #333333;
+  --text-muted: #666666;
+  --bg-white: #ffffff;
+  --bg-app: #f8fafc;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-app);
+  font-family: var(--font-family, sans-serif); /* Toma la fuente de PrimeVue */
+}

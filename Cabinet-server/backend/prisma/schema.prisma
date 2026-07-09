@@ -15,20 +15,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Creamos la lista estricta de los 3 departamentos
-enum DepartamentoOpciones {
+enum Departamento {
   INGENIERIA
   MANTENIMIENTO
   ADMINISTRACION
 }
 
-// Actualizamos el modelo de Usuario
+enum RolUsuario {
+  ADMINISTRADOR       // Acceso total al sistema
+  SUPERVISOR_ALMACEN  // Puede agregar/modificar herramientas y stock
+  ALMACENISTA         // Solo procesa salidas y regresos
+  OPERADOR            // Solo interactúa con el sistema físico
+}
+
+enum EstadoHerramienta {
+  ACTIVA
+  EN_MANTENIMIENTO
+  DADA_DE_BAJA
+}
+
 model Usuario {
-  id           Int                  @id @default(autoincrement())
-  nombre       String
-  departamento DepartamentoOpciones @default(INGENIERIA)
-  correo       String               @unique
-  contrasena   String               // Aquí guardaremos el hash encriptado
-  tarjetaRfid  Int                  @unique // El enlace con el hardware RFID
-  creadoEn     DateTime             @default(now())
+  id             Int                  @id @default(autoincrement())
+  nombre         String
+  numTrabajador  Int                  @unique // Reemplaza al correo, se usará para el login
+  contrasena     String               // Aquí guardaremos el hash encriptado
+  depart         Departamento         @default(INGENIERIA)
+  rol            RolUsuario           @default(OPERADOR)
+  tarjetaRfid    Int?                 @unique // Int opcional (se asigna cuando se entrega el gafete)
+  creadoEn       DateTime             @default(now())
+}
+
+model Herramienta {
+  id                 Int               @id @default(autoincrement())
+  codigo             String            @unique // Se usará para el código de barras
+  nombre             String
+  descripcion        String?
+  marca              String?           // Marca comercial o nombre del proveedor
+  
+  // Control de Stock
+  cantidad           Int               @default(0) // Cantidad total en propiedad
+  cantidadDisponible Int               @default(0) // Stock físico real en el gabinete
+  cantidadMinima     Int               @default(0) // Umbral para disparar alertas/correos
+  
+  // Multimedia
+  imagen             String?           // Ruta o URL de la fotografía representativa
+  
+  estado             EstadoHerramienta @default(ACTIVA)
+  
+  creadoEn           DateTime          @default(now())
+  actualizadoEn      DateTime          @updatedAt
 }
