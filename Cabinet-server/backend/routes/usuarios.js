@@ -93,4 +93,38 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+// 5. INICIAR SESIÓN (POST /login)
+router.post('/login', async (req, res) => {
+    try {
+        const { numTrabajador, contrasena } = req.body;
+        
+        // 1. Buscar si el trabajador existe
+        const usuario = await prisma.usuario.findUnique({
+            where: { numTrabajador: parseInt(numTrabajador, 10) }
+        });
+
+        // 2. Si no existe, rechazamos
+        if (!usuario) {
+            return res.status(401).json({ error: 'El número de trabajador no existe en el sistema.' });
+        }
+
+        // 3. Verificar contraseña (ajusta esto si en el futuro usas bcrypt)
+        if (usuario.contrasena !== contrasena) {
+            return res.status(401).json({ error: 'La contraseña es incorrecta.' });
+        }
+
+        // 4. Si todo es correcto, quitamos la contraseña por seguridad y enviamos éxito
+        const { contrasena: _, ...usuarioSinPassword } = usuario;
+        
+        res.status(200).json({ 
+            message: 'Login exitoso', 
+            usuario: usuarioSinPassword 
+        });
+
+    } catch (error) {
+        console.error("Error en login:", error);
+        res.status(500).json({ error: 'Error interno del servidor al intentar iniciar sesión.' });
+    }
+});
+
 export default router;

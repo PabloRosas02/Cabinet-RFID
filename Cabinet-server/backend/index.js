@@ -1,17 +1,20 @@
 import express from 'express';
-import cors from 'cors'; // MUY IMPORTANTE: Instalar con 'npm install cors' en tu backend
-import rutasUsuarios from './routes/usuarios.js'; // Importamos las rutas que acabas de crear
+import cors from 'cors'; 
+import rutasUsuarios from './routes/usuarios.js'; 
+import rutasHerramientas from './routes/herramientas.js'; 
+import rutasPedidos from './routes/pedidos.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 1. Middlewares globales
-app.use(cors()); // Permite que tu frontend en Vue se comunique con este backend
-app.use(express.json()); // Permite recibir datos en formato JSON desde el frontend
+app.use(cors()); 
+app.use(express.json()); 
 
 // 2. Definición de Rutas API
-// Esto significa que todas las rutas dentro de usuarios.js tendrán el prefijo /api/usuarios
 app.use('/api/usuarios', rutasUsuarios);
+app.use('/api/herramientas', rutasHerramientas); 
+app.use('/api/pedidos', rutasPedidos);
 
 // 3. Ruta de prueba o raíz
 app.get('/', (req, res) => {
