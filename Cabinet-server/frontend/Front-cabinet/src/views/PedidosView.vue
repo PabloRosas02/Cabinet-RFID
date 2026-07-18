@@ -19,7 +19,7 @@ const cargando = ref(false);
 const cargarInventario = async () => {
     cargando.value = true;
     try {
-        const response = await axios.get('http://localhost:3000/api/herramientas');
+        const response = await axios.get('/api/herramientas');
         inventario.value = response.data;
     } catch (error) {
         console.error("Error al cargar el inventario:", error);

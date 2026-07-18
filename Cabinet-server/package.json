@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "dependencies": {
     "@primevue/themes": "^4.5.4",
     "@prisma/client": "^7.8.0",

@@ -43,6 +43,11 @@ const router = createRouter({
       path: '/devoluciones', 
       name: 'devoluciones', 
       component: () => import('../views/DevolucionesView.vue') 
+    },
+    { 
+      path: '/historial', 
+      name: 'historial', 
+      component: () => import('../views/HistorialView.vue') 
     }
   ]
 })

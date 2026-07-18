@@ -7,6 +7,10 @@ import Button from 'primevue/button';
 import Toolbar from 'primevue/toolbar';
 import InputText from 'primevue/inputtext';
 
+// 1. AGREGAMOS LAS IMPORTACIONES DEL BUSCADOR
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
+
 import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import FormularioHerramienta from '@/components/herramientas/FormularioHerramientas.vue';
 
@@ -54,10 +58,11 @@ const eliminarSeleccionada = async () => {
                 :disabled="!herramientaSeleccionada" @click="eliminarSeleccionada" />
       </template>
       <template #end>
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
+        <!-- 2. CAMBIAMOS EL SPAN POR LOS COMPONENTES DE PRIMEVUE -->
+        <IconField iconPosition="left">
+          <InputIcon class="pi pi-search" />
           <InputText v-model="filtros['global'].value" placeholder="Buscar para editar..." class="input-oscuro" />
-        </span>
+        </IconField>
       </template>
     </Toolbar>
 

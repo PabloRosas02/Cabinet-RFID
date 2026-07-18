@@ -39,6 +39,11 @@ const cerrarSesion = () => {
         <i class="pi pi-chart-bar"></i>
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">Pedidos</span>
       </li>
+
+      <li @click="navegar('/devoluciones')" :class="['nav-item', { 'activo': route.path === '/devoluciones' }]">
+        <i class="pi pi-replay"></i>
+        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Devoluciones</span>
+      </li>
       
       <li @click="navegar('/nuevo-producto')" :class="['nav-item', { 'activo': route.path === '/nuevo-producto' }]">
         <i class="pi pi-plus-circle"></i>
@@ -48,6 +53,12 @@ const cerrarSesion = () => {
       <li @click="navegar('/movimientos')" :class="['nav-item', { 'activo': route.path === '/movimientos' }]">
         <i class="pi pi-history"></i>
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">Movimientos</span>
+      </li>
+
+      <!-- NUEVO ELEMENTO: HISTORIAL -->
+      <li @click="navegar('/historial')" :class="['nav-item', { 'activo': route.path === '/historial' }]">
+        <i class="pi pi-book"></i>
+        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Historial</span>
       </li>
       
       <li @click="navegar('/inventario')" :class="['nav-item', { 'activo': route.path === '/inventario' }]">

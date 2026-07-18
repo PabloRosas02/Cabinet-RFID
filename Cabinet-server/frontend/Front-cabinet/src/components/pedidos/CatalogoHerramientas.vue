@@ -5,7 +5,11 @@ import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
-import Tag from 'primevue/tag'; // Importación necesaria para el badge de Stock
+import Tag from 'primevue/tag'; 
+
+// 1. AÑADIMOS LAS IMPORTACIONES PARA EL BUSCADOR
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
 
 const props = defineProps({
     inventario: {
@@ -64,14 +68,15 @@ const obtenerTextoStock = (h) => {
         
         <!-- Buscador -->
         <div class="buscador-container mb-4">
-            <span class="p-input-icon-left w-full">
-                <i class="pi pi-search" />
+            <!-- 2. REEMPLAZAMOS EL SPAN POR ICONFIELD E INPUTICON -->
+            <IconField iconPosition="left" class="w-full">
+                <InputIcon class="pi pi-search" />
                 <InputText 
                     v-model="busqueda" 
                     placeholder="Buscar por código o nombre..." 
                     class="w-full input-oscuro" 
                 />
-            </span>
+            </IconField>
         </div>
 
         <!-- Tabla (Se cambió 'stock' por 'cantidadDisponible' para coincidir con tu BD) -->

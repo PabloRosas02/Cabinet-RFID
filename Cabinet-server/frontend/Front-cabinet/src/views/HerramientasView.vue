@@ -8,6 +8,10 @@ import Toolbar from 'primevue/toolbar';
 import ToggleButton from 'primevue/togglebutton';
 import InputText from 'primevue/inputtext';
 
+// 1. AÑADIMOS LAS IMPORTACIONES PARA EL BUSCADOR
+import IconField from 'primevue/iconfield';
+import InputIcon from 'primevue/inputicon';
+
 import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import DetalleHerramienta from '@/components/herramientas/DetalleHerramientas.vue';
 
@@ -56,10 +60,11 @@ const exportarCSV = () => {
                       onIcon="pi pi-check" offIcon="pi pi-exclamation-triangle" class="btn-toggle" />
       </template>
       <template #end>
-        <span class="p-input-icon-left">
-          <i class="pi pi-search" />
+        <!-- 2. REEMPLAZAMOS EL SPAN POR ICONFIELD E INPUTICON -->
+        <IconField iconPosition="left">
+          <InputIcon class="pi pi-search" />
           <InputText v-model="filtros['global'].value" placeholder="Buscar código, nombre..." class="input-oscuro" />
-        </span>
+        </IconField>
       </template>
     </Toolbar>
 
