@@ -1,7 +1,7 @@
 import { ref, onMounted } from 'vue';
 
 export function useHerramientas() {
-    const API_URL = 'http://localhost:3000/api/herramientas';
+    const API_URL = '/api/herramientas';
 
     // ESTADO
     const herramientas = ref([]);

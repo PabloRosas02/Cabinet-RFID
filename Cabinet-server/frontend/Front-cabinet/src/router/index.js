@@ -4,7 +4,7 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/login',
+      path: '/',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
       meta: {
@@ -15,9 +15,6 @@ const router = createRouter({
       path: '/usuarios',
       name: 'usuarios',
       component: () => import('../views/UsuariosView.vue'), 
-      meta: {
-        hideLayout: true
-      }
     },
     {
       path: '/inventario',

@@ -94,23 +94,58 @@ const formatearFecha = (fechaString) => {
 </template>
 
 <style scoped>
-/* Estilos de la tabla */
-:deep(.tabla-oscura .p-datatable-thead > tr > th) {
-    background-color: transparent !important; color: #94a3b8 !important; border: none !important; border-bottom: 1px solid #4a5568 !important; padding: 1.2rem 1rem;
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr > td) {
-    background-color: #121820 !important; color: #ffffff !important; border: none !important; border-bottom: 1px solid #1e252d !important; padding: 1rem;
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { background-color: #1e252d !important; }
-:deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem;}
-:deep(.p-paginator .p-paginator-page) { color: #94a3b8 !important; }
-:deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
-:deep(.tabla-oscura .p-datatable-header) { background-color: transparent !important; border: none !important; padding-bottom: 1rem; padding-left: 0; padding-right: 0;}
+/* =========================================================
+   BLINDAJE NUCLEAR DE LA TABLA (ATAQUE DIRECTO AL DOM)
+   ========================================================= */
 
-/* Estilos de botones y buscador */
-.btn-accion-devolver { background-color: #3b82f6 !important; border: none !important; font-weight: bold; }
-.btn-accion-devolver:hover { background-color: #2563eb !important; }
+/* 1. Fondo de la tabla y envolturas */
+:deep(.p-datatable),
+:deep(.p-datatable-wrapper),
+:deep(.p-datatable-table) {
+    background-color: transparent !important;
+}
 
+/* 2. Cabeceras (thead y th) */
+:deep(.p-datatable-thead),
+:deep(.p-datatable-thead > tr),
+:deep(.p-datatable-thead > tr > th) {
+    background-color: #121820 !important; 
+    color: #94a3b8 !important; 
+    border: none !important; 
+    border-bottom: 1px solid #4a5568 !important; 
+    padding: 1.2rem 1rem !important;
+}
+
+/* 3. Filas y Celdas del cuerpo (tbody, tr, td) */
+:deep(.p-datatable-tbody),
+:deep(.p-datatable-tbody > tr),
+:deep(.p-datatable-tbody > tr > td) {
+    background-color: #121820 !important; 
+    color: #ffffff !important; 
+    border: none !important; 
+    border-bottom: 1px solid #1e252d !important; 
+}
+
+/* 4. Hover de la fila y fila vacía */
+:deep(.p-datatable-tbody > tr:hover > td) { 
+    background-color: #1e252d !important; 
+}
+:deep(.p-datatable-tbody > tr.p-datatable-empty-message > td) {
+    background-color: #121820 !important;
+    color: #94a3b8 !important;
+    text-align: center;
+}
+
+/* 5. Cabecera superior (donde está el buscador) */
+:deep(.p-datatable-header) { 
+    background-color: transparent !important; 
+    border: none !important; 
+    padding: 0 0 1rem 0 !important;
+}
+
+/* =========================================================
+   BUSCADOR Y PAGINADOR
+   ========================================================= */
 :deep(.input-oscuro) { 
     background-color: #121820 !important; 
     color: #ffffff !important; 
@@ -119,5 +154,33 @@ const formatearFecha = (fechaString) => {
 :deep(.input-oscuro:focus) { 
     border-color: #5ab1ce !important; 
     box-shadow: 0 0 0 1px #5ab1ce !important; 
+}
+
+:deep(.p-paginator) { 
+    background-color: transparent !important; 
+    border: none !important; 
+    margin-top: 1rem;
+}
+:deep(.p-paginator .p-paginator-page),
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last) { 
+    color: #94a3b8 !important; 
+    background-color: transparent !important;
+}
+:deep(.p-paginator .p-paginator-page.p-highlight) { 
+    background-color: #5ab1ce !important; 
+    color: #ffffff !important; 
+    border-radius: 50%; 
+}
+
+/* =========================================================
+   BOTONES
+   ========================================================= */
+.btn-accion-devolver { 
+    background-color: #3b82f6 !important; 
+    border: none !important; 
+    font-weight: bold; 
 }
 </style>

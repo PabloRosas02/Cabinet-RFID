@@ -196,28 +196,88 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
+/* =========================================================
+   ESTILOS GENERALES DEL PANEL
+   ========================================================= */
 .panel-inventario { background-color: #2a323d; height: 100%; }
 .subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; }
 
 :deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 :deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
 
-/* Tabla */
-:deep(.tabla-oscura .p-datatable-thead > tr > th) { background-color: transparent !important; color: #cbd5e1 !important; border-bottom: 1px solid #4a5568 !important; }
-:deep(.tabla-oscura .p-datatable-tbody > tr > td) { background-color: transparent !important; color: #ffffff !important; border-bottom: 1px solid #3f4b5b !important; }
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { background-color: #36464d !important; }
+/* =========================================================
+   BLINDAJE DE LA TABLA PRIMEVUE (MODO OSCURO FORZADO)
+   ========================================================= */
+/* 1. Apagamos el fondo blanco maestro de PrimeVue */
+:deep(.tabla-oscura),
+:deep(.tabla-oscura .p-datatable-wrapper),
+:deep(.tabla-oscura .p-datatable-table) {
+    background-color: transparent !important;
+}
+
+/* 2. Cabecera */
+:deep(.tabla-oscura .p-datatable-thead > tr > th) { 
+    background-color: transparent !important; 
+    color: #cbd5e1 !important; 
+    border-bottom: 1px solid #4a5568 !important; 
+}
+
+/* 3. Filas y Celdas (Reemplazamos el 'transparent' por un color sólido oscuro) */
+:deep(.tabla-oscura .p-datatable-tbody > tr),
+:deep(.tabla-oscura .p-datatable-tbody > tr > td) { 
+    background-color: #1e252d !important; 
+    color: #ffffff !important; 
+    border-bottom: 1px solid #3f4b5b !important; 
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+}
+
+/* 4. Hover de la fila */
+:deep(.tabla-oscura .p-datatable-tbody > tr:hover),
+:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { 
+    background-color: #36464d !important; 
+}
 :deep(.tabla-oscura .p-datatable-tbody > tr) { cursor: pointer; }
+
+/* 5. Fila vacía (Cuando no hay herramientas) */
+:deep(.tabla-oscura .p-datatable-tbody > tr.p-datatable-empty-message > td) {
+    background-color: #1e252d !important;
+    color: #94a3b8 !important;
+    text-align: center;
+    border-bottom: 1px solid #3f4b5b !important;
+}
+
+/* =========================================================
+   PAGINADOR Y UTILIDADES
+   ========================================================= */
 :deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem; }
 :deep(.p-paginator .p-paginator-page) { color: #cbd5e1 !important; }
 :deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
 
-/* Clases de PrimeFlex adaptadas a tu modo oscuro */
+/* Forzar flechas del paginador a oscuro */
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last) {
+    color: #94a3b8 !important;
+    background-color: transparent !important;
+}
+:deep(.p-paginator .p-paginator-first:hover),
+:deep(.p-paginator .p-paginator-prev:hover),
+:deep(.p-paginator .p-paginator-next:hover),
+:deep(.p-paginator .p-paginator-last:hover) {
+    background-color: #36464d !important;
+}
+
 :deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }
 :deep(.surface-200) { background-color: #1e252d !important; }
 :deep(.text-500) { color: #94a3b8 !important; }
 :deep(.text-300) { color: #cbd5e1 !important; }
 
-/* Modal */
+/* =========================================================
+   MODAL (DIALOG) Y BOTONES
+   ========================================================= */
 :deep(.modal-oscuro-primeflex .p-dialog-header),
 :deep(.modal-oscuro-primeflex .p-dialog-content),
 :deep(.modal-oscuro-primeflex .p-dialog-footer) {
@@ -225,14 +285,9 @@ const obtenerTextoStock = (h) => {
     color: #ffffff !important;
     border: none;
 }
-:deep(.modal-oscuro-primeflex .p-dialog-header) {
-    border-bottom: 1px solid #2a323d !important;
-}
-:deep(.modal-oscuro-primeflex .p-dialog-footer) {
-    border-top: 1px solid #2a323d !important;
-}
+:deep(.modal-oscuro-primeflex .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
+:deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
 
-/* Botón Verde Personalizado */
 .boton-anadir-verde {
     background-color: #34d399 !important; 
     color: #064e3b !important; 
@@ -242,9 +297,7 @@ const obtenerTextoStock = (h) => {
     border-radius: 6px !important;
     transition: filter 0.2s;
 }
-.boton-anadir-verde:hover {
-    filter: brightness(1.1);
-}
+.boton-anadir-verde:hover { filter: brightness(1.1); }
 .boton-anadir-verde:disabled {
     background-color: #4a5568 !important;
     color: #94a3b8 !important;

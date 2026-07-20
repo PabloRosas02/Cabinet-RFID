@@ -7,6 +7,7 @@
 // Indicamos que usaremos el cliente de Node.js
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "windows", "linux-musl"]
 }
 
 // Indicamos que el motor es PostgreSQL y la URL viene del archivo .env
@@ -14,6 +15,10 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// ------------------------------------------------------
+// ENUMS
+// ------------------------------------------------------
 
 enum Departamento {
   INGENIERIA
@@ -34,34 +39,108 @@ enum EstadoHerramienta {
   DADA_DE_BAJA
 }
 
+// Enum para la Bitácora de Auditoría
+enum TipoAccion {
+  CREACION
+  MODIFICACION
+  ELIMINACION // Representará el Soft Delete (cambio de estado a DADA_DE_BAJA)
+}
+
+enum EstadoPedido {
+  PENDIENTE
+  DEVUELTO
+}
+
+// ------------------------------------------------------
+// MODELOS PRINCIPALES
+// ------------------------------------------------------
+
 model Usuario {
-  id             Int                  @id @default(autoincrement())
-  nombre         String
-  numTrabajador  Int                  @unique // Reemplaza al correo, se usará para el login
-  contrasena     String               // Aquí guardaremos el hash encriptado
-  depart         Departamento         @default(INGENIERIA)
-  rol            RolUsuario           @default(OPERADOR)
-  tarjetaRfid    Int?                 @unique // Int opcional (se asigna cuando se entrega el gafete)
-  creadoEn       DateTime             @default(now())
+  id            Int          @id @default(autoincrement())
+  nombre        String
+  numTrabajador Int          @unique
+  contrasena    String
+  depart        Departamento @default(INGENIERIA)
+  rol           RolUsuario   @default(OPERADOR)
+  tarjetaRfid   Int?         @unique 
+  creadoEn      DateTime     @default(now())
+
+  // Relación: Movimientos y acciones realizadas por este usuario en el sistema
+  movimientos   HistorialHerramienta[]
 }
 
 model Herramienta {
   id                 Int               @id @default(autoincrement())
-  codigo             String            @unique // Se usará para el código de barras
+  codigo             String            @unique
   nombre             String
   descripcion        String?
-  marca              String?           // Marca comercial o nombre del proveedor
+  marca              String?           
   
   // Control de Stock
-  cantidad           Int               @default(0) // Cantidad total en propiedad
-  cantidadDisponible Int               @default(0) // Stock físico real en el gabinete
-  cantidadMinima     Int               @default(0) // Umbral para disparar alertas/correos
+  cantidad           Int               @default(0)
+  cantidadDisponible Int               @default(0)
+  cantidadMinima     Int               @default(0)
   
   // Multimedia
-  imagen             String?           // Ruta o URL de la fotografía representativa
+  imagen             String?           
   
   estado             EstadoHerramienta @default(ACTIVA)
   
   creadoEn           DateTime          @default(now())
   actualizadoEn      DateTime          @updatedAt
+  
+  tipo               String?   
+  ubicacion          String?   
+
+  // Relación: Historial de todas las modificaciones de esta herramienta
+  historial          HistorialHerramienta[]
+  
+  // Relación: Detalles de préstamos donde se ha incluido esta herramienta
+  detallesPedido     DetallePedido[]
+}
+
+// TABLA: Bitácora de Auditoría
+model HistorialHerramienta {
+  id            Int          @id @default(autoincrement())
+  accion        TipoAccion   
+  fecha         DateTime     @default(now())
+  
+  // ¿Qué herramienta fue afectada?
+  herramientaId Int?
+  herramienta   Herramienta? @relation(fields: [herramientaId], references: [id])
+  
+  // ¿Quién lo hizo? 
+  usuarioId     Int
+  usuario       Usuario      @relation(fields: [usuarioId], references: [id])
+}
+
+// ------------------------------------------------------
+// MODELOS DE PEDIDOS Y PRÉSTAMOS
+// ------------------------------------------------------
+
+// TABLA: Registro general del préstamo
+model Pedido {
+  id               Int            @id @default(autoincrement())
+  trabajadorNumero String         // Guardado como texto para soportar números con ceros a la izquierda
+  trabajadorNombre String
+  prestadorNombre  String   @default("Administrador (Estático)") 
+  fechaPedido      DateTime       @default(now())
+  estado           EstadoPedido   @default(PENDIENTE)
+
+  // Relación: Lista de herramientas que se prestaron en este pedido
+  detalles         DetallePedido[]
+}
+
+// TABLA INTERMEDIA: Detalle de qué herramientas y cuántas se llevaron en un pedido
+model DetallePedido {
+  id               Int          @id @default(autoincrement())
+  
+  pedidoId         Int
+  pedido           Pedido       @relation(fields: [pedidoId], references: [id])
+  
+  herramientaId    Int
+  herramienta      Herramienta  @relation(fields: [herramientaId], references: [id])
+  
+  cantidadPrestada Int
+  cantidadRegresada Int @default(0)
 }

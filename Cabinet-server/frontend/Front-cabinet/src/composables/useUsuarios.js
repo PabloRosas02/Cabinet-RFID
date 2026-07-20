@@ -3,7 +3,7 @@ import { FilterMatchMode } from '@primevue/core/api';
 
 export function useUsuarios() {
     // URL de tu backend (ajusta el puerto si es necesario)
-    const API_URL = 'http://localhost:3000/api/usuarios';
+    const API_URL = '/api/usuarios';
 
     // 1. ESTADO
     const usuarios = ref([]);

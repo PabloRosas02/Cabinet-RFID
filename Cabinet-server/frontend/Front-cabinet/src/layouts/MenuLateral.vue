@@ -55,7 +55,6 @@ const cerrarSesion = () => {
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">Movimientos</span>
       </li>
 
-      <!-- NUEVO ELEMENTO: HISTORIAL -->
       <li @click="navegar('/historial')" :class="['nav-item', { 'activo': route.path === '/historial' }]">
         <i class="pi pi-book"></i>
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">Historial</span>
@@ -64,6 +63,12 @@ const cerrarSesion = () => {
       <li @click="navegar('/inventario')" :class="['nav-item', { 'activo': route.path === '/inventario' }]">
         <i class="pi pi-box"></i>
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">Inventario</span>
+      </li>
+
+      <!-- NUEVO ELEMENTO: USUARIOS -->
+      <li @click="navegar('/usuarios')" :class="['nav-item', { 'activo': route.path === '/usuarios' }]">
+        <i class="pi pi-users"></i>
+        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Usuarios</span>
       </li>
       
       <!-- La clase mt-auto empuja Configuración y Cerrar Sesión hacia el fondo -->

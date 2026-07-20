@@ -41,7 +41,7 @@ const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
 
 const verDetalles = (item) => {
-    herramientaActual.value = item;
+    herramientActual.value = item;
     mostrarDetalles.value = true;
 };
 
@@ -66,6 +66,8 @@ const obtenerTextoStock = (h) => {
 
         <!-- Formulario del Trabajador -->
         <div class="formulario-trabajador mb-4">
+            
+            <!-- Búsqueda por Número -->
             <div class="field mb-3">
                 <label class="label-blanco">No. de Empleado (Buscar o Escribir)</label>
                 <AutoComplete 
@@ -74,9 +76,10 @@ const obtenerTextoStock = (h) => {
                     @complete="buscarUsuario" 
                     @item-select="seleccionarUsuario"
                     field="numTrabajador"
-                    placeholder="Ej. 1045 o Nombre..." 
+                    placeholder="Ej. 1045..." 
                     class="w-full"
                     inputClass="w-full input-oscuro"
+                    panelClass="panel-autocomplete-oscuro"
                     :forceSelection="false"
                 >
                     <template #option="slotProps">
@@ -88,15 +91,30 @@ const obtenerTextoStock = (h) => {
                 </AutoComplete>
             </div>
             
+            <!-- Búsqueda por Nombre -->
             <div class="field">
-                <label for="nomTrabajador" class="label-blanco">Nombre del Trabajador</label>
-                <InputText 
-                    id="nomTrabajador" 
+                <label class="label-blanco">Nombre del Trabajador</label>
+                <AutoComplete 
                     v-model="trabajador.nombre" 
-                    class="w-full input-oscuro" 
-                    placeholder="Escribe el nombre o selecciónalo arriba" 
-                />
+                    :suggestions="resultadosSugeridos" 
+                    @complete="buscarUsuario" 
+                    @item-select="seleccionarUsuario"
+                    field="nombre"
+                    placeholder="Ej. Eduardo Cruz..." 
+                    class="w-full"
+                    inputClass="w-full input-oscuro"
+                    panelClass="panel-autocomplete-oscuro"
+                    :forceSelection="false"
+                >
+                    <template #option="slotProps">
+                        <div class="flex flex-column">
+                            <span class="font-bold text-white">{{ slotProps.option.nombre }}</span>
+                            <span class="text-sm text-blue-400">{{ slotProps.option.numTrabajador }}</span>
+                        </div>
+                    </template>
+                </AutoComplete>
             </div>
+            
         </div>
 
         <!-- Lista de Herramientas Seleccionadas -->
@@ -158,6 +176,9 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
+/* =========================================================
+   ESTILOS LOCALES (SCOPED)
+   ========================================================= */
 .panel-pedido { background-color: #2a323d; display: flex; flex-direction: column; height: 100%; }
 .subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; }
 .subtitulo-menor { color: #cbd5e1; font-size: 1.1rem; }
@@ -187,4 +208,30 @@ const obtenerTextoStock = (h) => {
 :deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
 :deep(.modal-oscuro-primeflex .p-dialog-header-icon) { color: #94a3b8 !important; }
 :deep(.modal-oscuro-primeflex .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
+</style>
+
+<style>
+/* =========================================================
+   ESTILOS GLOBALES (SIN SCOPED) PARA EL PANEL DEL AUTOCOMPLETE
+   ========================================================= */
+.panel-autocomplete-oscuro {
+    background-color: #1e252d !important;
+    border: 1px solid #4a5568 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+}
+.panel-autocomplete-oscuro .p-autocomplete-list {
+    background-color: transparent !important;
+    padding: 0 !important;
+}
+.panel-autocomplete-oscuro .p-autocomplete-option {
+    color: #cbd5e1 !important;
+    background-color: transparent !important;
+    padding: 0.75rem 1rem !important;
+}
+.panel-autocomplete-oscuro .p-autocomplete-option:hover,
+.panel-autocomplete-oscuro .p-autocomplete-option.p-focus {
+    background-color: #36464d !important;
+    color: #ffffff !important;
+}
 </style>

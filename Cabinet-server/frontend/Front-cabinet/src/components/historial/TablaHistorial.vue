@@ -79,20 +79,83 @@ const formatearFecha = (fechaString) => {
 </template>
 
 <style scoped>
-/* Tabla Oscura */
-:deep(.tabla-oscura .p-datatable-thead > tr > th) {
-    background-color: transparent !important; color: #94a3b8 !important;
-    border: none !important; border-bottom: 1px solid #4a5568 !important; padding: 1.2rem 1rem;
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr > td) {
-    background-color: #121820 !important; color: #ffffff !important;
-    border: none !important; border-bottom: 1px solid #1e252d !important; padding: 1rem;
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { background-color: #1e252d !important; }
+/* =========================================================
+   BLINDAJE DE LA TABLA (CONSISTENCIA CON ADMINISTRACIÓN)
+   ========================================================= */
 
-/* Paginador y Mensaje de vacío */
-:deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem;}
-:deep(.p-paginator .p-paginator-page) { color: #94a3b8 !important; }
-:deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
-:deep(.tabla-oscura .p-datatable-empty-message > td) { background-color: #121820 !important; color: #94a3b8 !important; text-align: center; padding: 2rem; font-weight: 500; }
+/* 1. Fondo de la tabla y envolturas */
+:deep(.p-datatable),
+:deep(.p-datatable-wrapper),
+:deep(.p-datatable-table) {
+    background-color: transparent !important;
+}
+
+/* 2. Cabeceras (thead y th) -> TRANSPARENTES para igualar a la vista principal */
+:deep(.p-datatable-thead),
+:deep(.p-datatable-thead > tr),
+:deep(.p-datatable-thead > tr > th) {
+    background-color: transparent !important; 
+    color: #94a3b8 !important; 
+    border: none !important; 
+    border-bottom: 1px solid #4a5568 !important; 
+    padding: 1.2rem 1rem !important;
+}
+
+/* 3. Filas y Celdas del cuerpo (tbody, tr, td) */
+:deep(.p-datatable-tbody),
+:deep(.p-datatable-tbody > tr),
+:deep(.p-datatable-tbody > tr > td) {
+    background-color: #121820 !important; 
+    color: #ffffff !important; 
+    border: none !important; 
+    border-bottom: 1px solid #1e252d !important; 
+}
+
+/* 4. Hover de la fila y fila vacía */
+:deep(.p-datatable-tbody > tr:hover > td) { 
+    background-color: #1e252d !important; 
+}
+:deep(.p-datatable-tbody > tr.p-datatable-empty-message > td) {
+    background-color: #121820 !important;
+    color: #94a3b8 !important;
+    text-align: center !important;
+    padding: 2rem !important;
+    font-weight: 500 !important;
+}
+
+/* =========================================================
+   PAGINADOR
+   ========================================================= */
+:deep(.p-paginator) { 
+    background-color: transparent !important; 
+    border: none !important; 
+    margin-top: 1rem;
+    border-top: 1px solid #4a5568 !important; /* Línea separadora igual a la vista 1 */
+    padding-top: 1rem !important;
+}
+:deep(.p-paginator .p-paginator-page),
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last) { 
+    color: #94a3b8 !important; 
+    background-color: transparent !important;
+}
+:deep(.p-paginator .p-paginator-page.p-highlight) { 
+    background-color: #5ab1ce !important; 
+    color: #ffffff !important; 
+    border-radius: 50%; 
+}
+
+/* =========================================================
+   ETIQUETAS DE ESTADO (TAGS) - TEMA OSCURO
+   ========================================================= */
+:deep(.p-tag.p-tag-success) {
+    background-color: rgba(34, 197, 94, 0.15) !important; /* Fondo verde translúcido */
+    color: #4ade80 !important; /* Texto verde brillante */
+}
+:deep(.p-tag.p-tag-danger) {
+    background-color: rgba(239, 68, 68, 0.15) !important; /* Fondo rojo translúcido */
+    color: #f87171 !important; /* Texto rojo brillante */
+}
 </style>
