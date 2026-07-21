@@ -1,4 +1,5 @@
 <script setup>
+import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 // Recibimos el estado de apertura desde App.vue como prop
@@ -14,16 +15,75 @@ const navegar = (ruta) => {
   router.push(ruta);
 };
 
+const obtenerRolUsuario = () => {
+  try {
+    const usuarioStr = localStorage.getItem('usuarioActivo');
+    if (usuarioStr) {
+      const usuario = JSON.parse(usuarioStr);
+      return usuario.rol || 'OPERADOR';
+    }
+  } catch (e) {
+    console.error('Error al leer el usuario activo:', e);
+  }
+  return 'OPERADOR'; 
+};
+
+// 2. Definimos todo el catálogo de elementos del menú con sus roles permitidos
+const menuCompleto = [
+  { 
+    titulo: 'Pedidos', 
+    icono: 'pi pi-chart-bar', 
+    ruta: '/pedidos', 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] 
+  },
+  { 
+    titulo: 'Devoluciones', 
+    icono: 'pi pi-replay', 
+    ruta: '/devoluciones', 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] 
+  },
+  { 
+    titulo: 'Nuevo producto', 
+    icono: 'pi pi-plus-circle', 
+    ruta: '/nuevo-producto', 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] 
+  },
+  { 
+    titulo: 'Movimientos', 
+    icono: 'pi pi-history', 
+    ruta: '/movimientos', 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] 
+  },
+  { 
+    titulo: 'Historial', 
+    icono: 'pi pi-book', 
+    ruta: '/historial', 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'OPERADOR'] 
+  },
+  { 
+    titulo: 'Inventario', 
+    icono: 'pi pi-box', 
+    ruta: '/inventario', 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] 
+  },
+  { 
+    titulo: 'Usuarios', 
+    icono: 'pi pi-users', 
+    ruta: '/usuarios', 
+    rolesPermitidos: ['ADMINISTRADOR'] // Exclusivo del Administrador
+  }
+];
+
+// 3. Propiedad computada que filtra el menú de forma dinámica según el rol del usuario
+const menuFiltrado = computed(() => {
+  const rolActual = obtenerRolUsuario();
+  return menuCompleto.filter(item => item.rolesPermitidos.includes(rolActual));
+});
+
 // Función para manejar el cierre de sesión
 const cerrarSesion = () => {
-  // 1. Limpiamos los datos del usuario en el almacenamiento local
   localStorage.removeItem('usuarioActivo');
-  
-  // (Opcional) Si usas tokens de sesión, elimínalos aquí también
-  // localStorage.removeItem('token');
-  
-  // 2. Redirigimos al usuario a la pantalla de login
-  router.push('/login'); // O la ruta que corresponda a tu login (ej. '/login')
+  router.push('/login');
 };
 </script>
 
@@ -35,40 +95,15 @@ const cerrarSesion = () => {
     </div>
 
     <ul class="nav-list">
-      <li @click="navegar('/pedidos')" :class="['nav-item', { 'activo': route.path === '/pedidos' }]">
-        <i class="pi pi-chart-bar"></i>
-        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Pedidos</span>
-      </li>
-
-      <li @click="navegar('/devoluciones')" :class="['nav-item', { 'activo': route.path === '/devoluciones' }]">
-        <i class="pi pi-replay"></i>
-        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Devoluciones</span>
-      </li>
-      
-      <li @click="navegar('/nuevo-producto')" :class="['nav-item', { 'activo': route.path === '/nuevo-producto' }]">
-        <i class="pi pi-plus-circle"></i>
-        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Nuevo producto</span>
-      </li>
-      
-      <li @click="navegar('/movimientos')" :class="['nav-item', { 'activo': route.path === '/movimientos' }]">
-        <i class="pi pi-history"></i>
-        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Movimientos</span>
-      </li>
-
-      <li @click="navegar('/historial')" :class="['nav-item', { 'activo': route.path === '/historial' }]">
-        <i class="pi pi-book"></i>
-        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Historial</span>
-      </li>
-      
-      <li @click="navegar('/inventario')" :class="['nav-item', { 'activo': route.path === '/inventario' }]">
-        <i class="pi pi-box"></i>
-        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Inventario</span>
-      </li>
-
-      <!-- NUEVO ELEMENTO: USUARIOS -->
-      <li @click="navegar('/usuarios')" :class="['nav-item', { 'activo': route.path === '/usuarios' }]">
-        <i class="pi pi-users"></i>
-        <span v-if="props.menuAbierto" class="ml-3 font-semibold">Usuarios</span>
+      <!-- RENDERIZADO DINÁMICO SEGÚN LOS ROLES PERMITIDOS -->
+      <li 
+        v-for="item in menuFiltrado" 
+        :key="item.ruta"
+        @click="navegar(item.ruta)" 
+        :class="['nav-item', { 'activo': route.path === item.ruta }]"
+      >
+        <i :class="item.icono"></i>
+        <span v-if="props.menuAbierto" class="ml-3 font-semibold">{{ item.titulo }}</span>
       </li>
       
       <!-- La clase mt-auto empuja Configuración y Cerrar Sesión hacia el fondo -->

@@ -1,8 +1,28 @@
+name: rfid-cabinet-system
+
+x-backend-base: &backend-base
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  restart: unless-stopped
+  networks:
+    - rfid_internal
+    - rfid_external
+
+x-frontend-base: &frontend-base
+  build:
+    context: ./frontend/Front-cabinet
+    dockerfile: Dockerfile
+  restart: unless-stopped
+  networks:
+    - rfid_external
+
 services:
+
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: rfid_mqtt_broker
-    restart: always
+    profiles: ["dev", "prod"]
     ports:
       - "1883:1883"
       - "9001:9001"
@@ -11,56 +31,72 @@ services:
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
     networks:
-      - rfid_network
+      - rfid_internal
 
   postgres:
     image: postgres:15-alpine
     container_name: rfid_postgres
-    restart: always
+    profiles: ["dev", "prod"]
     environment:
-      POSTGRES_USER: admin_cabinet
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: cabinet_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     networks:
-      - rfid_network
+      - rfid_internal
+      - rfid_external
 
   backend:
-    build: ./backend
-    container_name: rfid_backend_api
-    restart: always
+    container_name: rfid_backend
+    profiles: ["dev", "prod"]
     env_file:
-      - ./backend/.env
+      - .env 
     ports:
-      - "3000:3000" # Exponemos el puerto para que también puedas probar en localhost
+      - "3000:3000"
     depends_on:
       - mosquitto
       - postgres
-    networks:
-      - rfid_network
+    <<: *backend-base
 
-  # ==========================================
-  # NUEVO SERVICIO: TÚNEL NGROK
-  # ==========================================
-  ngrok:
-    image: ngrok/ngrok:latest
-    container_name: rfid_ngrok_tunnel
-    restart: always
-    # Ngrok buscará al contenedor llamado "backend" en su puerto interno 3000
-    command: "http rfid_backend_api:3000"
-    environment:
-      # Pega aquí tu token real (sin comillas)
-      - NGROK_AUTHTOKEN=3GgydGjsLPIHRTRrHbvL4JPEzSG_2Mj2L1vUXzzZ6SffqLGBN
+  frontend:
+    container_name: rfid_frontend
+    profiles: ["dev", "prod"]
     ports:
-      - "4040:4040" # Puerto para ver el panel de control local de ngrok
+      - "80:80"   
+      - "5173:5173" 
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    <<: *frontend-base
+
+  ngrok-tunnel:
+    image: ngrok/ngrok:alpine
+    container_name: rfid_ngrok_tunnel
+    profiles: ["prod"]
+    restart: unless-stopped
+    command: 
+      - "http"
+      - "backend:3000" 
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_TOKEN}
     depends_on:
       - backend
     networks:
-      - rfid_network
+      - rfid_external
+
+volumes:
+  postgres_data:
+    driver: local
+  frontend_node_modules:
 
 networks:
-  rfid_network:
+  rfid_external:
     driver: bridge
+  rfid_internal:
+    driver: bridge
+    internal: true 

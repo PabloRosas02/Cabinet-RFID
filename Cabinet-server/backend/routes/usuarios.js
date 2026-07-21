@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -108,8 +109,10 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'El número de trabajador no existe en el sistema.' });
         }
 
-        // 3. Verificar contraseña (ajusta esto si en el futuro usas bcrypt)
-        if (usuario.contrasena !== contrasena) {
+        // 3. Verificar la contraseña usando bcrypt.compare de forma segura
+        const passwordValida = await bcrypt.compare(contrasena, usuario.contrasena);
+
+        if (!passwordValida) {
             return res.status(401).json({ error: 'La contraseña es incorrecta.' });
         }
 

@@ -1,24 +1,32 @@
-# 1. Usamos la versión 'slim' (Debian) en lugar de 'alpine'
-FROM node:18-slim
+FROM node:20-slim AS frontend-builder
+WORKDIR /app/frontend
 
-# 2. Instalamos OpenSSL nativo de Debian
-RUN apt-get update -y && apt-get install -y openssl
-
-# 3. Directorio de trabajo
-WORKDIR /app
-
-# 4. Copiamos dependencias e instalamos
-COPY package*.json ./
+COPY frontend/Front-cabinet/package*.json ./
 RUN npm install
 
-# 5. Copiamos el resto del código (el .dockerignore evitará que pase tu node_modules de Windows)
-COPY . .
+COPY frontend/Front-cabinet/ ./
+RUN npm run build
 
-# 6. Forzamos a Prisma a generar el cliente exacto para este nuevo Linux
+FROM node:20-slim
+RUN apt-get update -y && \
+    apt-get install -y openssl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY backend/package*.json ./
+RUN npm install
+
+COPY backend/ ./
+
+COPY --from=frontend-builder /app/frontend/dist ./dist
+
 RUN npx prisma generate
 
-# 7. Exponemos el puerto
-EXPOSE 3000
+RUN groupadd -g 1001 nodejs && \
+    useradd -u 1001 -g nodejs -s /bin/bash -m nodejs && \
+    chown -R nodejs:nodejs /app
+USER nodejs
 
-# 8. Comando para iniciar (ajusta si tu script start es diferente)
+EXPOSE 3000
 CMD ["npm", "start"]

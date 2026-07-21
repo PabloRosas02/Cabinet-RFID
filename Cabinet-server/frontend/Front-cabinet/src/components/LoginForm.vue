@@ -36,18 +36,22 @@ const iniciarSesion = async () => {
             contrasena: contrasena.value 
         };
 
-        // AQUI ESTABA EL ERROR: Agregamos la URL completa del backend (Ej. puerto 3000)
         const response = await axios.post('/api/usuarios/login', credenciales);
         
-        if (recordar.value) {
-            localStorage.setItem('usuarioActivo', JSON.stringify(response.data.usuario));
-        }
+        // Extraemos el usuario de la respuesta
+        const usuarioLogueado = response.data.usuario;
+        
+        localStorage.setItem('usuarioActivo', JSON.stringify(usuarioLogueado));
 
-        router.push('/inventario'); 
+        if (usuarioLogueado.rol === 'ALMACENISTA') {
+            router.push('/pedidos'); // Pantalla de inicio para Almacenistas
+        } else {
+            router.push('/inventario'); // Pantalla de inicio para Administrador/Supervisor
+        }
 
     } catch (error) {
         if (error.response && error.response.status === 401) {
-            errorMensaje.value = error.response.data.error; // Mensaje desde el backend (ej. "Contraseña incorrecta")
+            errorMensaje.value = error.response.data.error || 'Credenciales incorrectas.';
         } else {
             errorMensaje.value = 'Error de conexión con el servidor. Verifica que el backend esté encendido.';
             console.error(error);
@@ -142,8 +146,14 @@ label { font-weight: 500; font-size: 0.9rem; color: #94a3b8; }
 :deep(.password-premium i) { color: #94a3b8 !important; right: 1rem !important; margin-top: -0.5rem !important; transition: color 0.2s; }
 :deep(.password-premium i:hover) { color: #ffffff !important; }
 
-:deep(.sin-flechas::-webkit-outer-spin-button), :deep(.sin-flechas::-webkit-inner-spin-button) { -webkit-appearance: none !important; margin: 0; }
-:deep(.sin-flechas) { -moz-appearance: textfield !important; }
+:deep(.sin-flechas::-webkit-outer-spin-button), :deep(.sin-flechas::-webkit-inner-spin-button) { 
+    -webkit-appearance: none !important; 
+    margin: 0; 
+}
+:deep(.sin-flechas) { 
+    appearance: textfield !important; 
+    -moz-appearance: textfield !important; 
+}
 
 :deep(.btn-crissair) { 
     background-color: #d4af37 !important; border-color: #d4af37 !important; color: #000000 !important; 
