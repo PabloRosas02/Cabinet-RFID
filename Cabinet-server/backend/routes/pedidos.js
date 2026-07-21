@@ -8,19 +8,24 @@ const prisma = new PrismaClient();
 // 1. POST /api/pedidos -> Crear un nuevo pedido (Préstamo)
 // =====================================================================
 router.post('/', async (req, res) => {
-    const { trabajadorNumero, trabajadorNombre, herramientas } = req.body;
+    const { trabajadorNumero, trabajadorNombre, prestadorId, herramientas } = req.body;
 
     try {
+        if (!prestadorId) {
+            return res.status(400).json({ error: 'No se especificó el ID del prestador.' });
+        }
+
         await prisma.$transaction(async (tx) => {
             await tx.pedido.create({
                 data: {
                     trabajadorNumero: trabajadorNumero.toString(),
                     trabajadorNombre,
+                    prestadorId: parseInt(prestadorId, 10), 
                     detalles: {
                         create: herramientas.map((h) => ({
                             herramientaId: h.id,
                             cantidadPrestada: h.cantidadPrestada,
-                            cantidadRegresada: 0 // Inicializamos en 0
+                            cantidadRegresada: 0 
                         }))
                     }
                 }
@@ -52,15 +57,29 @@ router.post('/', async (req, res) => {
 // =====================================================================
 router.get('/pendientes', async (req, res) => {
     try {
+        const { usuarioId, rol } = req.query; 
+
+        let filtrosConsulta = {
+            estado: {
+                not: 'DEVUELTO'
+            }
+        };
+
+        if (rol === 'ALMACENISTA' && usuarioId) {
+            filtrosConsulta = {
+                ...filtrosConsulta, 
+                OR: [
+                    { prestadorId: parseInt(usuarioId, 10) },
+                    { receptorId: parseInt(usuarioId, 10) }
+                ]
+            };
+        }
+
         const pedidos = await prisma.pedido.findMany({
-            // === CAMBIO AQUÍ ===
-            // Busca cualquier estado que NO sea "DEVUELTO"
-            where: { 
-                estado: {
-                    not: 'DEVUELTO'
-                } 
-            },
+            where: filtrosConsulta,
             include: {
+                prestador: true, 
+                receptor: true,  
                 detalles: {
                     include: { herramienta: true }
                 }
@@ -72,7 +91,10 @@ router.get('/pendientes', async (req, res) => {
             id: pedido.id,
             trabajadorNumero: pedido.trabajadorNumero,
             trabajadorNombre: pedido.trabajadorNombre,
+            prestadorNombre: pedido.prestador ? pedido.prestador.nombre : 'Desconocido',
+            receptorNombre: pedido.receptor ? pedido.receptor.nombre : null,
             fechaPedido: pedido.fechaPedido,
+            fechaDevolucion: pedido.fechaDevolucion,
             estado: pedido.estado,
             herramientas: pedido.detalles.map(detalle => ({
                 detalleId: detalle.id,
@@ -96,9 +118,13 @@ router.get('/pendientes', async (req, res) => {
 // =====================================================================
 router.put('/:id/devolver', async (req, res) => {
     const pedidoId = parseInt(req.params.id);
-    const { herramientasDevueltas } = req.body; 
+    const { herramientasDevueltas, receptorId } = req.body; 
 
     try {
+        if (!receptorId) {
+            return res.status(400).json({ error: 'No se especificó el ID del receptor de la devolución.' });
+        }
+
         await prisma.$transaction(async (tx) => {
             const pedido = await tx.pedido.findUnique({
                 where: { id: pedidoId },
@@ -114,7 +140,7 @@ router.put('/:id/devolver', async (req, res) => {
                 if (!detalle) throw new Error(`Detalle ID ${item.detalleId} no encontrado en este pedido`);
 
                 if ((detalle.cantidadRegresada + item.cantidad) > detalle.cantidadPrestada) {
-                    throw new Error(`La cantidad total devuelta para ${detalle.herramientaId} excede lo prestado.`);
+                    throw new Error(`La cantidad total devuelta para la herramienta excede lo prestado.`);
                 }
 
                 await tx.detallePedido.update({
@@ -137,12 +163,14 @@ router.put('/:id/devolver', async (req, res) => {
                 d => d.cantidadRegresada >= d.cantidadPrestada
             );
 
-            if (todasDevueltas) {
-                await tx.pedido.update({
-                    where: { id: pedidoId },
-                    data: { estado: 'DEVUELTO' }
-                });
-            }
+            await tx.pedido.update({
+                where: { id: pedidoId },
+                data: { 
+                    estado: todasDevueltas ? 'DEVUELTO' : pedido.estado, 
+                    receptorId: parseInt(receptorId, 10),
+                    fechaDevolucion: new Date() 
+                }
+            });
         });
 
         res.json({ mensaje: 'Devolución procesada correctamente' });
@@ -157,8 +185,32 @@ router.put('/:id/devolver', async (req, res) => {
 // =====================================================================
 router.get('/historial', async (req, res) => {
     try {
+        // AHORA RECIBIMOS TAMBIÉN EL numTrabajador
+        const { usuarioId, rol, numTrabajador } = req.query; 
+
+        let filtrosConsulta = {};
+
+        // REGLA 1: Si es ALMACENISTA, ve sus propios despachos y recepciones
+        if (rol === 'ALMACENISTA' && usuarioId) {
+            filtrosConsulta = {
+                OR: [
+                    { prestadorId: parseInt(usuarioId, 10) },
+                    { receptorId: parseInt(usuarioId, 10) }
+                ]
+            };
+        } 
+        // REGLA 2: Si es OPERADOR, ve solo los pedidos que él mismo solicitó
+        else if (rol === 'OPERADOR' && numTrabajador) {
+            filtrosConsulta = {
+                trabajadorNumero: numTrabajador.toString() // Comparamos como string tal como se guardó
+            };
+        }
+
         const pedidos = await prisma.pedido.findMany({
+            where: filtrosConsulta,
             include: {
+                prestador: true,
+                receptor: true,
                 detalles: {
                     include: { herramienta: true }
                 }
@@ -170,8 +222,10 @@ router.get('/historial', async (req, res) => {
             id: pedido.id,
             trabajadorNumero: pedido.trabajadorNumero,
             trabajadorNombre: pedido.trabajadorNombre,
-            prestadorNombre: pedido.prestadorNombre,
+            prestadorNombre: pedido.prestador ? pedido.prestador.nombre : 'Desconocido',
+            receptorNombre: pedido.receptor ? pedido.receptor.nombre : 'Pendiente / En curso',
             fechaPedido: pedido.fechaPedido,
+            fechaDevolucion: pedido.fechaDevolucion,
             estado: pedido.estado,
             herramientas: pedido.detalles.map(detalle => ({
                 codigo: detalle.herramienta.codigo,

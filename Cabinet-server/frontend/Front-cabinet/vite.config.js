@@ -3,17 +3,18 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
+  base: './',
   plugins: [vue()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
-  // AGREGA ESTA SECCIÓN DEL SERVIDOR (SERVER):
   server: {
+    host: true, // Importante para que Docker exponga el puerto correctamente
     proxy: {
       '/api': {
-        target: 'http://localhost:3000', // Cambia el 3000 por el puerto real de tu backend
+        target: 'http://backend:3000', // <-- AQUÍ ESTÁ EL CAMBIO CLAVE
         changeOrigin: true,
       }
     }

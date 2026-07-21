@@ -3,6 +3,8 @@ import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import MenuLateral from './layouts/MenuLateral.vue';
 
+
+console.log("Si llego")
 const route = useRoute();
 const menuAbierto = ref(true);
 </script>

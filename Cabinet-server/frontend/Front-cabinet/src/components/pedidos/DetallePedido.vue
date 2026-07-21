@@ -41,7 +41,7 @@ const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
 
 const verDetalles = (item) => {
-    herramientActual.value = item;
+    herramientaActual.value = item; // Corregido el error tipográfico
     mostrarDetalles.value = true;
 };
 
@@ -176,9 +176,6 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-/* =========================================================
-   ESTILOS LOCALES (SCOPED)
-   ========================================================= */
 .panel-pedido { background-color: #2a323d; display: flex; flex-direction: column; height: 100%; }
 .subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; }
 .subtitulo-menor { color: #cbd5e1; font-size: 1.1rem; }
@@ -211,9 +208,6 @@ const obtenerTextoStock = (h) => {
 </style>
 
 <style>
-/* =========================================================
-   ESTILOS GLOBALES (SIN SCOPED) PARA EL PANEL DEL AUTOCOMPLETE
-   ========================================================= */
 .panel-autocomplete-oscuro {
     background-color: #1e252d !important;
     border: 1px solid #4a5568 !important;

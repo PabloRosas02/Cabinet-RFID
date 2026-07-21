@@ -58,7 +58,7 @@ const menuCompleto = [
     titulo: 'Historial', 
     icono: 'pi pi-book', 
     ruta: '/historial', 
-    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'OPERADOR'] 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'OPERADOR','ALMACENISTA'] 
   },
   { 
     titulo: 'Inventario', 

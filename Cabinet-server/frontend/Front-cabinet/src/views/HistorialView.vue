@@ -26,7 +26,17 @@ const filtroEstado = ref('Todos');
 const cargarHistorial = async () => {
     cargando.value = true;
     try {
-        const response = await axios.get('/api/pedidos/historial');
+        // Obtenemos el usuario activo (priorizamos usuarioActivo que es el de tu login actual)
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
+
+        // Pasamos el ID, el Rol y el numTrabajador como parámetros (query) en la URL
+        const response = await axios.get('/api/pedidos/historial', {
+            params: {
+                usuarioId: usuarioSesion?.id,
+                rol: usuarioSesion?.rol,
+                numTrabajador: usuarioSesion?.numTrabajador // <-- ¡AQUÍ ESTÁ EL CAMBIO CLAVE!
+            }
+        });
         historial.value = response.data;
     } catch (error) {
         console.error("Error al cargar historial:", error);

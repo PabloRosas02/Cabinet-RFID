@@ -1,6 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+// Importamos nuestras nuevas funciones modulares
+import { encriptarContrasena, verificarContrasena } from '../utils/encriptacion.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -9,7 +10,6 @@ const prisma = new PrismaClient();
 router.get('/', async (req, res) => {
     try {
         const usuarios = await prisma.usuario.findMany({
-            // No enviamos la contraseña al frontend por seguridad
             select: {
                 id: true,
                 nombre: true,
@@ -33,20 +33,21 @@ router.post('/', async (req, res) => {
     try {
         const { nombre, numTrabajador, depart, rol, tarjetaRfid } = req.body;
         
+        // Usamos nuestra utilidad para encriptar
+        const contrasenaPlana = `Crissair${numTrabajador}`;
+        const contrasenaHasheada = await encriptarContrasena(contrasenaPlana);
+        
         const nuevoUsuario = await prisma.usuario.create({
             data: {
                 nombre,
                 numTrabajador,
-                depart: depart,
+                depart,
                 rol,
                 tarjetaRfid: tarjetaRfid || null,
-                // TODO: En producción, usar bcrypt para hashear la contraseña. 
-                // Por ahora asignamos una por defecto basada en el número de trabajador.
-                contrasena: `Crissair${numTrabajador}` 
+                contrasena: contrasenaHasheada 
             }
         });
         
-        // Removemos la contraseña de la respuesta
         delete nuevoUsuario.contrasena;
         res.status(201).json(nuevoUsuario);
     } catch (error) {
@@ -90,6 +91,12 @@ router.delete('/:id', async (req, res) => {
         res.json({ message: 'Usuario eliminado correctamente' });
     } catch (error) {
         console.error(error);
+        // Protección de llave foránea: Si el usuario ya prestó/recibió herramientas, no se puede borrar
+        if (error.code === 'P2003') {
+            return res.status(400).json({ 
+                error: 'No se puede eliminar: Este usuario tiene historial de pedidos asociado en el sistema.' 
+            });
+        }
         res.status(500).json({ error: 'Error al eliminar el usuario' });
     }
 });
@@ -99,24 +106,21 @@ router.post('/login', async (req, res) => {
     try {
         const { numTrabajador, contrasena } = req.body;
         
-        // 1. Buscar si el trabajador existe
         const usuario = await prisma.usuario.findUnique({
             where: { numTrabajador: parseInt(numTrabajador, 10) }
         });
 
-        // 2. Si no existe, rechazamos
         if (!usuario) {
             return res.status(401).json({ error: 'El número de trabajador no existe en el sistema.' });
         }
 
-        // 3. Verificar la contraseña usando bcrypt.compare de forma segura
-        const passwordValida = await bcrypt.compare(contrasena, usuario.contrasena);
+        // Usamos nuestra utilidad para verificar
+        const passwordValida = await verificarContrasena(contrasena, usuario.contrasena);
 
         if (!passwordValida) {
             return res.status(401).json({ error: 'La contraseña es incorrecta.' });
         }
 
-        // 4. Si todo es correcto, quitamos la contraseña por seguridad y enviamos éxito
         const { contrasena: _, ...usuarioSinPassword } = usuario;
         
         res.status(200).json({ 

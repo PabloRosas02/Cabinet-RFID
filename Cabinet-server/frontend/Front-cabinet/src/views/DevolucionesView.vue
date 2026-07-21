@@ -16,7 +16,7 @@ const pedidoSeleccionado = ref(null);
 const procesandoDevolucion = ref(false);
 const mensajeFeedback = ref({ visible: false, texto: '', tipo: 'success' });
 
-// 1. Cargar pedidos
+// Cargar pedidos
 const cargarPedidosPendientes = async () => {
     cargando.value = true;
     try {
@@ -33,17 +33,25 @@ onMounted(() => {
     cargarPedidosPendientes();
 });
 
-// 2. Abrir Modal (Activado por el componente hijo TablaPedidos)
+// Abrir Modal (Activado por el componente hijo TablaPedidos)
 const revisarDevolucion = (pedido) => {
     pedidoSeleccionado.value = pedido;
     mostrarModal.value = true;
 };
 
-// 3. Confirmar (Activado por el componente hijo ModalDevolucion)
+// Confirmar (Activado por el componente hijo ModalDevolucion)
 const confirmarDevolucion = async (pedidoModificado) => {
     procesandoDevolucion.value = true;
     try {
+        // Recuperamos el usuario logueado desde el localStorage
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
+
+        if (!usuarioSesion || !usuarioSesion.id) {
+            throw new Error('No se encontró una sesión activa. Por favor, vuelve a iniciar sesión.');
+        }
+
         const payload = {
+            receptorId: usuarioSesion.id, // ID del almacenista en turno que recibe la devolución
             herramientasDevueltas: pedidoModificado.herramientas.map(h => ({
                 detalleId: h.detalleId,
                 cantidad: h.cantidadARegresar
@@ -63,7 +71,7 @@ const confirmarDevolucion = async (pedidoModificado) => {
         console.error("Error al procesar la devolución:", error);
         mensajeFeedback.value = { 
             visible: true, 
-            texto: error.response?.data?.error || 'Error al procesar la devolución.', 
+            texto: error.response?.data?.error || error.message || 'Error al procesar la devolución.', 
             tipo: 'error' 
         };
     } finally {

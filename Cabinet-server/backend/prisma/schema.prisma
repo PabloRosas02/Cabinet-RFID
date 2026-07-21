@@ -6,7 +6,7 @@
 
 // Indicamos que usaremos el cliente de Node.js
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "windows", "linux-musl"]
 }
 
@@ -65,8 +65,12 @@ model Usuario {
   tarjetaRfid   Int?         @unique 
   creadoEn      DateTime     @default(now())
 
-  // Relación: Movimientos y acciones realizadas por este usuario en el sistema
+  // Relación: Movimientos y acciones (Bitácora)
   movimientos   HistorialHerramienta[]
+
+  // Relaciones duales con los Pedidos
+  pedidosPrestados   Pedido[] @relation("PrestadorPedido")
+  pedidosRecibidos   Pedido[] @relation("ReceptorPedido")
 }
 
 model Herramienta {
@@ -99,39 +103,41 @@ model Herramienta {
   detallesPedido     DetallePedido[]
 }
 
-// TABLA: Bitácora de Auditoría
 model HistorialHerramienta {
   id            Int          @id @default(autoincrement())
   accion        TipoAccion   
   fecha         DateTime     @default(now())
   
-  // ¿Qué herramienta fue afectada?
   herramientaId Int?
   herramienta   Herramienta? @relation(fields: [herramientaId], references: [id])
   
-  // ¿Quién lo hizo? 
   usuarioId     Int
   usuario       Usuario      @relation(fields: [usuarioId], references: [id])
 }
 
-// ------------------------------------------------------
-// MODELOS DE PEDIDOS Y PRÉSTAMOS
-// ------------------------------------------------------
-
-// TABLA: Registro general del préstamo
 model Pedido {
-  id               Int            @id @default(autoincrement())
-  trabajadorNumero String         // Guardado como texto para soportar números con ceros a la izquierda
+  id               Int          @id @default(autoincrement())
+  
+  // Datos del Solicitante (El trabajador que se lleva la herramienta)
+  trabajadorNumero String       
   trabajadorNombre String
-  prestadorNombre  String   @default("Administrador (Estático)") 
-  fechaPedido      DateTime       @default(now())
-  estado           EstadoPedido   @default(PENDIENTE)
 
-  // Relación: Lista de herramientas que se prestaron en este pedido
+  prestadorId      Int
+  prestador        Usuario      @relation("PrestadorPedido", fields: [prestadorId], references: [id])
+
+  receptorId       Int?
+  receptor         Usuario?     @relation("ReceptorPedido", fields: [receptorId], references: [id])
+
+  // Tiempos
+  fechaPedido      DateTime     @default(now())
+  fechaDevolucion  DateTime?    
+  
+  estado           EstadoPedido @default(PENDIENTE)
+
+  // Relación con el detalle de herramientas
   detalles         DetallePedido[]
 }
 
-// TABLA INTERMEDIA: Detalle de qué herramientas y cuántas se llevaron en un pedido
 model DetallePedido {
   id               Int          @id @default(autoincrement())
   
@@ -142,5 +148,5 @@ model DetallePedido {
   herramienta      Herramienta  @relation(fields: [herramientaId], references: [id])
   
   cantidadPrestada Int
-  cantidadRegresada Int @default(0)
+  cantidadRegresada Int         @default(0)
 }

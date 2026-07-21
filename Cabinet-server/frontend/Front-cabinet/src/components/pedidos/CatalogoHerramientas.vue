@@ -7,7 +7,7 @@ import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag'; 
 
-// 1. AÑADIMOS LAS IMPORTACIONES PARA EL BUSCADOR
+// Importaciones para el buscador de PrimeVue
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 
@@ -46,7 +46,7 @@ const emitirAgregar = (herramienta) => {
     emit('agregar', herramienta);
 };
 
-// --- Lógica de Stock idéntica a tu componente original ---
+// --- Lógica de Stock ---
 const obtenerSeveridadStock = (h) => {
     if (!h) return 'success';
     if (h.cantidadDisponible < h.cantidadMinima) return 'danger';
@@ -68,7 +68,6 @@ const obtenerTextoStock = (h) => {
         
         <!-- Buscador -->
         <div class="buscador-container mb-4">
-            <!-- 2. REEMPLAZAMOS EL SPAN POR ICONFIELD E INPUTICON -->
             <IconField iconPosition="left" class="w-full">
                 <InputIcon class="pi pi-search" />
                 <InputText 
@@ -79,7 +78,7 @@ const obtenerTextoStock = (h) => {
             </IconField>
         </div>
 
-        <!-- Tabla (Se cambió 'stock' por 'cantidadDisponible' para coincidir con tu BD) -->
+        <!-- Tabla de Inventario -->
         <DataTable 
             :value="herramientasDisponibles" 
             :paginator="true" 
@@ -106,7 +105,7 @@ const obtenerTextoStock = (h) => {
             </Column>
         </DataTable>
 
-        <!-- Modal de Detalles (Integrado con PrimeFlex) -->
+        <!-- Modal de Detalles -->
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
@@ -117,7 +116,7 @@ const obtenerTextoStock = (h) => {
         >
             <div v-if="herramientaActual" class="p-4">
                 
-                <!-- 1. Imagen y Badge dinámicos -->
+                <!-- Imagen y Badge dinámicos -->
                 <div class="flex flex-column align-items-center mb-5">
                     <img 
                         v-if="herramientaActual.imagen" 
@@ -134,7 +133,7 @@ const obtenerTextoStock = (h) => {
                     </div>
                 </div>
 
-                <!-- 2. Grid de Datos -->
+                <!-- Grid de Datos -->
                 <div class="grid">
                     <div class="col-12 md:col-6 mb-3">
                         <span class="text-500 block mb-1">Código</span>
@@ -172,7 +171,7 @@ const obtenerTextoStock = (h) => {
                 </div>
             </div>
             
-            <!-- 3. Footer con Botones -->
+            <!-- Footer con Botones -->
             <template #footer>
                 <div class="flex justify-content-end gap-3 mt-3">
                     <Button 
@@ -196,33 +195,25 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-/* =========================================================
-   ESTILOS GENERALES DEL PANEL
-   ========================================================= */
 .panel-inventario { background-color: #2a323d; height: 100%; }
 .subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; }
 
 :deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 :deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
 
-/* =========================================================
-   BLINDAJE DE LA TABLA PRIMEVUE (MODO OSCURO FORZADO)
-   ========================================================= */
-/* 1. Apagamos el fondo blanco maestro de PrimeVue */
+/* Blindaje de la tabla PrimeVue (Modo Oscuro) */
 :deep(.tabla-oscura),
 :deep(.tabla-oscura .p-datatable-wrapper),
 :deep(.tabla-oscura .p-datatable-table) {
     background-color: transparent !important;
 }
 
-/* 2. Cabecera */
 :deep(.tabla-oscura .p-datatable-thead > tr > th) { 
     background-color: transparent !important; 
     color: #cbd5e1 !important; 
     border-bottom: 1px solid #4a5568 !important; 
 }
 
-/* 3. Filas y Celdas (Reemplazamos el 'transparent' por un color sólido oscuro) */
 :deep(.tabla-oscura .p-datatable-tbody > tr),
 :deep(.tabla-oscura .p-datatable-tbody > tr > td) { 
     background-color: #1e252d !important; 
@@ -233,14 +224,12 @@ const obtenerTextoStock = (h) => {
     border-right: none !important;
 }
 
-/* 4. Hover de la fila */
 :deep(.tabla-oscura .p-datatable-tbody > tr:hover),
 :deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { 
     background-color: #36464d !important; 
 }
 :deep(.tabla-oscura .p-datatable-tbody > tr) { cursor: pointer; }
 
-/* 5. Fila vacía (Cuando no hay herramientas) */
 :deep(.tabla-oscura .p-datatable-tbody > tr.p-datatable-empty-message > td) {
     background-color: #1e252d !important;
     color: #94a3b8 !important;
@@ -248,14 +237,11 @@ const obtenerTextoStock = (h) => {
     border-bottom: 1px solid #3f4b5b !important;
 }
 
-/* =========================================================
-   PAGINADOR Y UTILIDADES
-   ========================================================= */
+/* Paginador y utilidades */
 :deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem; }
 :deep(.p-paginator .p-paginator-page) { color: #cbd5e1 !important; }
 :deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
 
-/* Forzar flechas del paginador a oscuro */
 :deep(.p-paginator .p-paginator-first),
 :deep(.p-paginator .p-paginator-prev),
 :deep(.p-paginator .p-paginator-next),
@@ -275,9 +261,7 @@ const obtenerTextoStock = (h) => {
 :deep(.text-500) { color: #94a3b8 !important; }
 :deep(.text-300) { color: #cbd5e1 !important; }
 
-/* =========================================================
-   MODAL (DIALOG) Y BOTONES
-   ========================================================= */
+/* Modal y Botones */
 :deep(.modal-oscuro-primeflex .p-dialog-header),
 :deep(.modal-oscuro-primeflex .p-dialog-content),
 :deep(.modal-oscuro-primeflex .p-dialog-footer) {

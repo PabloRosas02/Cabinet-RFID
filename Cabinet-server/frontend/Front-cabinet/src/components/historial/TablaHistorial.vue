@@ -20,6 +20,7 @@ defineProps({
 });
 
 const formatearFecha = (fechaString) => {
+    if (!fechaString) return 'N/A';
     return new Date(fechaString).toLocaleDateString('es-MX', { 
         year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
     });
@@ -34,31 +35,38 @@ const formatearFecha = (fechaString) => {
       :loading="cargando"
       dataKey="id"
       :filters="filtros" 
-      :globalFilterFields="['trabajadorNombre', 'trabajadorNumero', 'prestadorNombre']"
+      :globalFilterFields="['trabajadorNombre', 'trabajadorNumero', 'prestadorNombre', 'receptorNombre']"
       class="tabla-oscura w-full"
       emptyMessage="No hay registros en el historial para esta búsqueda."
     >
-      <Column field="id" header="Folio" style="width: 10%">
+      <Column field="id" header="Folio" style="width: 8%">
           <template #body="{ data }"><span class="font-bold text-400">#{{ data.id }}</span></template>
       </Column>
       
-      <Column field="prestadorNombre" header="Autorizó (Prestador)" style="width: 20%"></Column>
-      <Column header="Solicitó (Empleado)" style="width: 20%">
+      <Column field="prestadorNombre" header="Prestó (Almacenista)" style="width: 17%"></Column>
+      
+      <Column header="Recibió / Devolución" style="width: 17%">
+          <template #body="{ data }">
+              <span class="text-blue-400 font-medium">{{ data.receptorNombre || 'Pendiente' }}</span>
+          </template>
+      </Column>
+
+      <Column header="Solicitó (Empleado)" style="width: 18%">
           <template #body="{ data }">
               {{ data.trabajadorNumero }} - {{ data.trabajadorNombre }}
           </template>
       </Column>
 
-      <Column header="Fecha" style="width: 15%">
+      <Column header="Fecha Préstamo" style="width: 15%">
           <template #body="{ data }">{{ formatearFecha(data.fechaPedido) }}</template>
       </Column>
 
-      <Column header="Herramientas" style="width: 25%">
+      <Column header="Herramientas" style="width: 15%">
           <template #body="{ data }">
               <div class="text-sm">
                   <div v-for="(h, idx) in data.herramientas" :key="idx" class="mb-1 text-400">
                       • {{ h.cantidadPrestada }}x {{ h.nombre }} 
-                      <span v-if="h.cantidadRegresada > 0" class="text-green-500">
+                      <span v-if="h.cantidadRegresada > 0" class="text-green-500 block">
                           (Regresó: {{ h.cantidadRegresada }})
                       </span>
                   </div>
@@ -130,7 +138,7 @@ const formatearFecha = (fechaString) => {
     background-color: transparent !important; 
     border: none !important; 
     margin-top: 1rem;
-    border-top: 1px solid #4a5568 !important; /* Línea separadora igual a la vista 1 */
+    border-top: 1px solid #4a5568 !important; 
     padding-top: 1rem !important;
 }
 :deep(.p-paginator .p-paginator-page),
@@ -151,11 +159,11 @@ const formatearFecha = (fechaString) => {
    ETIQUETAS DE ESTADO (TAGS) - TEMA OSCURO
    ========================================================= */
 :deep(.p-tag.p-tag-success) {
-    background-color: rgba(34, 197, 94, 0.15) !important; /* Fondo verde translúcido */
-    color: #4ade80 !important; /* Texto verde brillante */
+    background-color: rgba(34, 197, 94, 0.15) !important; 
+    color: #4ade80 !important; 
 }
 :deep(.p-tag.p-tag-danger) {
-    background-color: rgba(239, 68, 68, 0.15) !important; /* Fondo rojo translúcido */
-    color: #f87171 !important; /* Texto rojo brillante */
+    background-color: rgba(239, 68, 68, 0.15) !important; 
+    color: #f87171 !important; 
 }
 </style>

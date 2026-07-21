@@ -12,7 +12,7 @@ const trabajador = ref({
 
 const inventario = ref([]);
 const pedidoActual = ref([]);
-const usuarios = ref([]); // <-- Inicializado como arreglo vacío para evitar errores
+const usuarios = ref([]); 
 const cargando = ref(false);
 
 // 2. Cargar datos desde tu backend real (PostgreSQL)
@@ -64,9 +64,17 @@ const manejarQuitar = (id) => {
 // 4. Registro de Pedido
 const procesarPedido = async () => {
     try {
+        // Recuperamos el usuario logueado desde el localStorage (quien entrega la herramienta en este turno)
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
+
+        if (!usuarioSesion || !usuarioSesion.id) {
+            throw new Error('No se encontró una sesión activa. Por favor, vuelve a iniciar sesión.');
+        }
+
         const payload = {
             trabajadorNumero: trabajador.value.numero,
             trabajadorNombre: trabajador.value.nombre,
+            prestadorId: usuarioSesion.id, // <-- ID del almacenista en turno que entrega la herramienta
             herramientas: pedidoActual.value.map(item => ({
                 id: item.id,
                 cantidadPrestada: item.cantidadLlevada
@@ -86,7 +94,7 @@ const procesarPedido = async () => {
 
     } catch (error) {
         console.error("Error al guardar el pedido:", error);
-        alert("Ocurrió un error al registrar el pedido: " + (error.response?.data?.error || "Error de conexión"));
+        alert("Ocurrió un error al registrar el pedido: " + (error.response?.data?.error || error.message || "Error de conexión"));
     }
 };
 </script>

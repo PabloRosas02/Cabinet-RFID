@@ -61,7 +61,7 @@ const router = createRouter({
       path: '/historial', 
       name: 'historial', 
       component: () => import('../views/HistorialView.vue'),
-      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN','OPERADOR'] }
+      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN','ALMACENISTA', 'OPERADOR'] }
     },
     {
       path: '/:pathMatch(.*)*',
@@ -70,7 +70,8 @@ const router = createRouter({
   ]
 })
 
-router.beforeEach((to, from, next) => {
+// === GUARDIA DE NAVEGACIÓN ACTUALIZADO ===
+router.beforeEach((to, from) => {
   // 1. Leemos la sesión actual del usuario
   const usuarioStr = localStorage.getItem('usuarioActivo');
   const usuario = usuarioStr ? JSON.parse(usuarioStr) : null;
@@ -79,34 +80,39 @@ router.beforeEach((to, from, next) => {
   // 2. Extraemos los roles permitidos de la ruta a la que intenta ir
   const rolesRequeridos = to.meta.rolesPermitidos;
 
-  // REGLA A: Si el usuario ya está logueado e intenta entrar al /login, lo regresamos a su inicio
-  if (to.path === '/login' && usuario) {
-    return next(rolUsuario === 'ALMACENISTA' ? '/pedidos' : '/inventario');
+  // Función de ayuda para saber a dónde mandar a cada quien
+  const obtenerRutaPorDefecto = (rol) => {
+    if (rol === 'ADMINISTRADOR' || rol === 'SUPERVISOR_ALMACEN') return '/inventario';
+    if (rol === 'ALMACENISTA') return '/pedidos';
+    if (rol === 'OPERADOR') return '/historial';
+    return '/login'; 
+  };
+
+  // REGLA A: Si el usuario ya está logueado e intenta entrar al /login o a la raíz (/)
+  if ((to.path === '/login' || to.path === '/') && usuario) {
+    return obtenerRutaPorDefecto(rolUsuario);
   }
 
   // REGLA B: Si la ruta requiere un rol específico (está protegida)
   if (rolesRequeridos) {
-    // Caso B1: No hay nadie logueado, Login
+    // Caso B1: No hay nadie logueado, mandarlo al Login
     if (!usuario) {
-      return next('/login');
+      return '/login';
     }
     
-    // Caso B2: Está logueado pero NO tiene el permiso -> Lo devolvemos a una vista segura
+    // Caso B2: Está logueado pero NO tiene el permiso -> Lo devolvemos a su vista segura
     if (!rolesRequeridos.includes(rolUsuario)) {
-      if (rolUsuario === 'ALMACENISTA') {
-        return next('/pedidos'); // Pantalla principal de Almacenista
-      } else {
-        return next('/inventario'); // Pantalla principal de Admin/Supervisor
-      }
+      return obtenerRutaPorDefecto(rolUsuario);
     }
   } 
 
   // REGLA C: Si intenta ir a una ruta suelta (y no es login) sin estar logueado
-  if (to.path !== '/login' && to.path !== '/' && !usuario) {
-    return next('/login');
+  if (to.path !== '/login' && to.path !== '/' && !usuario && !rolesRequeridos) {
+    return '/login';
   }
 
-  next();
+  // Si pasa todas las reglas, permitimos la navegación
+  return true;
 });
 
-export default router
+export default router;

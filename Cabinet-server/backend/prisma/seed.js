@@ -1,14 +1,10 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcrypt'; // <-- 1. IMPORTAMOS BCRYPT
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Iniciando la carga masiva de datos (10 Usuarios y 20 Herramientas)...\n');
-
-  // Encriptamos una contraseña genérica para todos los usuarios de prueba
-  // Contraseña en texto plano: "123456"
-  const defaultPassword = await bcrypt.hash('123456', 10);
 
   // =========================================
   // 1. CARGAR 10 USUARIOS
@@ -24,26 +20,34 @@ async function main() {
     { numTrabajador: 1006, nombre: 'Operador Gamma', depart: 'MANTENIMIENTO', rol: 'OPERADOR', tarjetaRfid: 100007 },
     { numTrabajador: 1007, nombre: 'Operador Delta', depart: 'ADMINISTRACION', rol: 'OPERADOR', tarjetaRfid: 100008 },
     { numTrabajador: 1008, nombre: 'Operador Epsilon', depart: 'INGENIERIA', rol: 'OPERADOR', tarjetaRfid: 100009 },
-    // El último usuario lo dejamos sin tarjeta RFID (null) para simular alguien nuevo
     { numTrabajador: 1009, nombre: 'Operador Zeta', depart: 'MANTENIMIENTO', rol: 'OPERADOR', tarjetaRfid: null } 
   ];
 
-  // Bucle para crear/actualizar usuarios
   for (const u of usuarios) {
+    // 2. ENCRIPTAMOS LA CONTRASEÑA ANTES DE GUARDARLA
+    const contrasenaPlana = `123456`;
+    const contrasenaHasheada = await bcrypt.hash(contrasenaPlana, 10); 
+
     await prisma.usuario.upsert({
       where: { numTrabajador: u.numTrabajador },
-      update: {},
+      update: {
+        nombre: u.nombre,
+        contrasena: contrasenaHasheada, // <-- Usamos la encriptada
+        depart: u.depart,
+        rol: u.rol,
+        tarjetaRfid: u.tarjetaRfid
+      },
       create: {
         numTrabajador: u.numTrabajador,
         nombre: u.nombre,
-        contrasena: defaultPassword,
+        contrasena: contrasenaHasheada, // <-- Usamos la encriptada
         depart: u.depart,
         rol: u.rol,
         tarjetaRfid: u.tarjetaRfid
       },
     });
   }
-  console.log('10 Usuarios creados exitosamente.');
+  console.log('10 Usuarios creados/actualizados exitosamente.');
 
   // =========================================
   // 2. CARGAR 20 HERRAMIENTAS
@@ -72,11 +76,19 @@ async function main() {
     { codigo: 'HERR-020', nombre: 'Lámpara de Trabajo LED', marca: 'Milwaukee', cantidad: 6, tipo: 'Iluminación', ubicacion: 'Estante E1' }
   ];
 
-  // Bucle para crear/actualizar herramientas
   for (const h of herramientas) {
     await prisma.herramienta.upsert({
       where: { codigo: h.codigo },
-      update: {},
+      update: {
+        nombre: h.nombre,
+        marca: h.marca,
+        tipo: h.tipo,
+        ubicacion: h.ubicacion,
+        cantidad: h.cantidad,
+        cantidadDisponible: h.cantidad, 
+        cantidadMinima: 2,              
+        estado: 'ACTIVA' 
+      },
       create: {
         codigo: h.codigo,
         nombre: h.nombre,
@@ -84,13 +96,13 @@ async function main() {
         tipo: h.tipo,
         ubicacion: h.ubicacion,
         cantidad: h.cantidad,
-        cantidadDisponible: h.cantidad, // Al principio todas están disponibles
-        cantidadMinima: 2,              // Límite para alertas
-        estado: 'ACTIVA'                // Usando el enum correcto
+        cantidadDisponible: h.cantidad, 
+        cantidadMinima: 2,              
+        estado: 'ACTIVA'                
       },
     });
   }
-  console.log('20 Herramientas creadas exitosamente.');
+  console.log('20 Herramientas creadas/actualizadas exitosamente.');
 
   console.log('\nBase de datos sembrada con éxito');
 }
