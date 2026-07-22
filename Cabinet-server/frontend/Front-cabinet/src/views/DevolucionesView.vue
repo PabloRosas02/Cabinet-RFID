@@ -20,7 +20,15 @@ const mensajeFeedback = ref({ visible: false, texto: '', tipo: 'success' });
 const cargarPedidosPendientes = async () => {
     cargando.value = true;
     try {
-        const response = await axios.get('/api/pedidos/pendientes'); 
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
+
+        // Añadimos los parámetros para que el backend filtre según el rol
+        const response = await axios.get('/api/pedidos/pendientes', {
+            params: {
+                usuarioId: usuarioSesion?.id,
+                rol: usuarioSesion?.rol
+            }
+        }); 
         pedidosPendientes.value = response.data;
     } catch (error) {
         console.error("Error al cargar pedidos pendientes:", error);
@@ -43,7 +51,6 @@ const revisarDevolucion = (pedido) => {
 const confirmarDevolucion = async (pedidoModificado) => {
     procesandoDevolucion.value = true;
     try {
-        // Recuperamos el usuario logueado desde el localStorage
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
@@ -51,12 +58,20 @@ const confirmarDevolucion = async (pedidoModificado) => {
         }
 
         const payload = {
-            receptorId: usuarioSesion.id, // ID del almacenista en turno que recibe la devolución
-            herramientasDevueltas: pedidoModificado.herramientas.map(h => ({
-                detalleId: h.detalleId,
-                cantidad: h.cantidadARegresar
-            }))
+            receptorId: usuarioSesion.id, 
+            // DOBLE CANDADO: Filtramos para enviar SOLO las herramientas con cantidad > 0
+            herramientasDevueltas: pedidoModificado.herramientas
+                .filter(h => h.cantidadARegresar > 0)
+                .map(h => ({
+                    detalleId: h.detalleId,
+                    cantidad: h.cantidadARegresar
+                }))
         };
+
+        // Si por alguna razón el payload queda vacío (falla de seguridad en frontend), abortamos
+        if (payload.herramientasDevueltas.length === 0) {
+            throw new Error('Debes seleccionar al menos una herramienta válida para devolver.');
+        }
 
         await axios.put(`/api/pedidos/${pedidoModificado.id}/devolver`, payload);
         
@@ -74,6 +89,7 @@ const confirmarDevolucion = async (pedidoModificado) => {
             texto: error.response?.data?.error || error.message || 'Error al procesar la devolución.', 
             tipo: 'error' 
         };
+        setTimeout(() => { mensajeFeedback.value.visible = false; }, 4000);
     } finally {
         procesandoDevolucion.value = false;
     }

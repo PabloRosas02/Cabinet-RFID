@@ -28,7 +28,7 @@ const router = createRouter({
     {
       path: '/inventario',
       name: 'inventario',
-      component: () => import('../views/HerramientasView.vue'),
+      component: () => import('../views/InventarioView.vue'),
       // Administrador y Supervisor
       meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
     },

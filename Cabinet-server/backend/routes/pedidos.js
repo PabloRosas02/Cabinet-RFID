@@ -57,7 +57,7 @@ router.post('/', async (req, res) => {
 // =====================================================================
 router.get('/pendientes', async (req, res) => {
     try {
-        const { usuarioId, rol } = req.query; 
+        const { rol, numTrabajador } = req.query; 
 
         let filtrosConsulta = {
             estado: {
@@ -65,14 +65,10 @@ router.get('/pendientes', async (req, res) => {
             }
         };
 
-        if (rol === 'ALMACENISTA' && usuarioId) {
-            filtrosConsulta = {
-                ...filtrosConsulta, 
-                OR: [
-                    { prestadorId: parseInt(usuarioId, 10) },
-                    { receptorId: parseInt(usuarioId, 10) }
-                ]
-            };
+        // REGLA ACTUALIZADA: Almacenistas, Supervisores y Administradores ven TODOS los pendientes.
+        // Si es OPERADOR, por seguridad, solo ve sus propios préstamos pendientes.
+        if (rol === 'OPERADOR' && numTrabajador) {
+            filtrosConsulta.trabajadorNumero = numTrabajador.toString();
         }
 
         const pedidos = await prisma.pedido.findMany({
@@ -118,11 +114,19 @@ router.get('/pendientes', async (req, res) => {
 // =====================================================================
 router.put('/:id/devolver', async (req, res) => {
     const pedidoId = parseInt(req.params.id);
-    const { herramientasDevueltas, receptorId } = req.body; 
+    let { herramientasDevueltas, receptorId } = req.body; 
 
     try {
         if (!receptorId) {
             return res.status(400).json({ error: 'No se especificó el ID del receptor de la devolución.' });
+        }
+
+        // Filtrar para ignorar todo lo que tenga cantidad 0
+        herramientasDevueltas = herramientasDevueltas.filter(item => item.cantidad > 0);
+
+        // Si después de filtrar no hay nada que devolver, marcamos error
+        if (herramientasDevueltas.length === 0) {
+            return res.status(400).json({ error: 'Debes registrar al menos una (1) herramienta para procesar la devolución.' });
         }
 
         await prisma.$transaction(async (tx) => {
@@ -140,14 +144,25 @@ router.put('/:id/devolver', async (req, res) => {
                 if (!detalle) throw new Error(`Detalle ID ${item.detalleId} no encontrado en este pedido`);
 
                 if ((detalle.cantidadRegresada + item.cantidad) > detalle.cantidadPrestada) {
-                    throw new Error(`La cantidad total devuelta para la herramienta excede lo prestado.`);
+                    throw new Error(`La cantidad total devuelta excede lo prestado.`);
                 }
 
+                // 1. Actualizamos el contador general del detalle
                 await tx.detallePedido.update({
                     where: { id: detalle.id },
                     data: { cantidadRegresada: { increment: item.cantidad } }
                 });
 
+                // 2. CREAMOS EL TICKET DE DEVOLUCIÓN PARCIAL
+                await tx.devolucionParcial.create({
+                    data: {
+                        detalleId: detalle.id,
+                        receptorId: parseInt(receptorId, 10),
+                        cantidadDevuelta: item.cantidad
+                    }
+                });
+
+                // 3. Regresamos el stock físico
                 await tx.herramienta.update({
                     where: { id: detalle.herramientaId },
                     data: { cantidadDisponible: { increment: item.cantidad } }
@@ -163,6 +178,7 @@ router.put('/:id/devolver', async (req, res) => {
                 d => d.cantidadRegresada >= d.cantidadPrestada
             );
 
+            // 4. Actualizamos el pedido maestro
             await tx.pedido.update({
                 where: { id: pedidoId },
                 data: { 
@@ -185,24 +201,15 @@ router.put('/:id/devolver', async (req, res) => {
 // =====================================================================
 router.get('/historial', async (req, res) => {
     try {
-        // AHORA RECIBIMOS TAMBIÉN EL numTrabajador
-        const { usuarioId, rol, numTrabajador } = req.query; 
+        const { rol, numTrabajador } = req.query; 
 
         let filtrosConsulta = {};
 
-        // REGLA 1: Si es ALMACENISTA, ve sus propios despachos y recepciones
-        if (rol === 'ALMACENISTA' && usuarioId) {
+        // REGLA ACTUALIZADA: Almacenistas, Supervisores y Administradores ven TODO el historial.
+        // Los operadores solo ven los pedidos que ellos mismos solicitaron.
+        if (rol === 'OPERADOR' && numTrabajador) {
             filtrosConsulta = {
-                OR: [
-                    { prestadorId: parseInt(usuarioId, 10) },
-                    { receptorId: parseInt(usuarioId, 10) }
-                ]
-            };
-        } 
-        // REGLA 2: Si es OPERADOR, ve solo los pedidos que él mismo solicitó
-        else if (rol === 'OPERADOR' && numTrabajador) {
-            filtrosConsulta = {
-                trabajadorNumero: numTrabajador.toString() // Comparamos como string tal como se guardó
+                trabajadorNumero: numTrabajador.toString() 
             };
         }
 
@@ -212,7 +219,12 @@ router.get('/historial', async (req, res) => {
                 prestador: true,
                 receptor: true,
                 detalles: {
-                    include: { herramienta: true }
+                    include: { 
+                        herramienta: true,
+                        devoluciones: {
+                            include: { receptor: true }
+                        }
+                    }
                 }
             },
             orderBy: { fechaPedido: 'desc' }
@@ -231,7 +243,12 @@ router.get('/historial', async (req, res) => {
                 codigo: detalle.herramienta.codigo,
                 nombre: detalle.herramienta.nombre,
                 cantidadPrestada: detalle.cantidadPrestada,
-                cantidadRegresada: detalle.cantidadRegresada
+                cantidadRegresada: detalle.cantidadRegresada,
+                historialDevoluciones: detalle.devoluciones.map(dev => ({
+                    receptorNombre: dev.receptor.nombre,
+                    cantidad: dev.cantidadDevuelta,
+                    fecha: dev.fechaDevolucion
+                }))
             }))
         }));
 
