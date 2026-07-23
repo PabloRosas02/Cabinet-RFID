@@ -71,10 +71,14 @@ export function useHerramientas() {
             const metodo = esEdicion.value ? 'PUT' : 'POST';
             const url = esEdicion.value ? `${API_URL}/${herramientaActual.value.id}` : API_URL;
 
+            // Extraemos el usuario para el historial
+            const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
+            const datosGuardar = { ...herramientaActual.value, usuarioId: usuarioSesion?.id };
+
             const respuesta = await fetch(url, {
                 method: metodo,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(herramientaActual.value)
+                body: JSON.stringify(datosGuardar)
             });
 
             if (!respuesta.ok) {
@@ -100,22 +104,35 @@ export function useHerramientas() {
         }
     };
 
-    // ELIMINAR (Soft Delete)
+    // ELIMINAR (Soft Delete) - CORREGIDO PARA ACEPTAR usuarioId en la URL
     const eliminarHerramienta = async (herramienta) => {
         const confirmado = confirm(`¿Estás seguro de dar de baja la herramienta ${herramienta.codigo} - ${herramienta.nombre}?`);
         if (!confirmado) return;
 
         try {
-            const respuesta = await fetch(`${API_URL}/${herramienta.id}`, {
+            const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
+            
+            // Construimos la URL con el usuarioId como query param para que el backend lo lea bien en un DELETE
+            const urlConParametros = usuarioSesion?.id 
+                ? `${API_URL}/${herramienta.id}?usuarioId=${usuarioSesion.id}` 
+                : `${API_URL}/${herramienta.id}`;
+
+            const respuesta = await fetch(urlConParametros, {
                 method: 'DELETE'
             });
 
-            if (!respuesta.ok) throw new Error('Error al dar de baja');
+            if (!respuesta.ok) {
+                const errorInfo = await respuesta.json().catch(() => ({}));
+                throw new Error(errorInfo.error || 'Error al dar de baja');
+            }
 
+            // Actualizamos la lista local eliminando la herramienta que se dio de baja
             herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
+            
+            // Opcional: Podrías usar un Toast aquí en lugar de un alert si quisieras
         } catch (error) {
             console.error(error);
-            alert("Hubo un problema al intentar dar de baja la herramienta.");
+            alert(`Hubo un problema al intentar dar de baja la herramienta: ${error.message}`);
         }
     };
 
@@ -133,6 +150,6 @@ export function useHerramientas() {
         prepararEdicion,
         procesarImagen,
         guardarHerramienta,
-        eliminarHerramienta
+        eliminarHerramienta 
     };
 }

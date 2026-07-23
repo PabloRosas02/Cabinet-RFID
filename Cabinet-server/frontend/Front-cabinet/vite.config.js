@@ -11,11 +11,13 @@ export default defineConfig({
     }
   },
   server: {
-    host: true, // Importante para que Docker exponga el puerto correctamente
+    host: true,
+    port: 5173,
     proxy: {
       '/api': {
-        target: 'http://backend:3000', // <-- AQUÍ ESTÁ EL CAMBIO CLAVE
+        target: 'http://backend:3000', 
         changeOrigin: true,
+        secure: false
       }
     }
   }

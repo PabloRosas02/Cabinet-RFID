@@ -21,6 +21,25 @@ router.get('/', async (req, res) => {
 });
 
 // =====================================================================
+// 1.5 GET /api/herramientas/bitacora -> Historial de creación/edición/baja
+// =====================================================================
+router.get('/bitacora', async (req, res) => {
+    try {
+        const historial = await prisma.historialHerramienta.findMany({
+            include: {
+                herramienta: true, // Trae los datos de la herramienta
+                usuario: true      // Trae los datos del usuario que hizo la acción
+            },
+            orderBy: { fecha: 'desc' } // Ordenado del más reciente al más antiguo
+        });
+        res.json(historial);
+    } catch (error) {
+        console.error("Error al obtener bitácora de herramientas:", error);
+        res.status(500).json({ error: "Error al obtener el historial de movimientos." });
+    }
+});
+
+// =====================================================================
 // 2. POST /api/herramientas -> Crear una nueva herramienta
 // =====================================================================
 router.post('/', async (req, res) => {
@@ -166,7 +185,8 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { usuarioId } = req.body; // Se puede mandar en el body para registrar quién dio de baja
+        // SOLUCIÓN: Buscamos el usuarioId en el query o en el body
+        const usuarioId = req.query.usuarioId || req.body.usuarioId; 
         const herramientaId = parseInt(id, 10);
 
         await prisma.$transaction(async (tx) => {

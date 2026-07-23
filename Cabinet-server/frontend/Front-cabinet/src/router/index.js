@@ -23,45 +23,49 @@ const router = createRouter({
       name: 'usuarios',
       component: () => import('../views/UsuariosView.vue'),
       // Exclusivo del Administrador
-      meta: { rolesPermitidos: ['ADMINISTRADOR'] } 
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR'] } 
     },
     {
       path: '/inventario',
       name: 'inventario',
       component: () => import('../views/InventarioView.vue'),
-      // Administrador y Supervisor
-      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
     },
     { 
       path: '/nuevo-producto', 
       name: 'nuevoProducto', 
       component: () => import('../views/NuevoProductoView.vue'),
-      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
     },
     { 
       path: '/movimientos', 
       name: 'movimientos', 
       component: () => import('../views/MovimientosView.vue'),
-      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
+    },
+    {
+      path: '/bitacora',
+      name: 'bitacora',
+      component: () => import('../views/BitacoraHerramientasView.vue'),
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
     },
     { 
       path: '/pedidos', 
       name: 'pedidos', 
       component: () => import('../views/PedidosView.vue'),
-      // Todos los roles tienen acceso
-      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] }
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] }
     },
     { 
       path: '/devoluciones', 
       name: 'devoluciones', 
       component: () => import('../views/DevolucionesView.vue'),
-      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] }
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] }
     },
     { 
       path: '/historial', 
       name: 'historial', 
       component: () => import('../views/HistorialView.vue'),
-      meta: { rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN','ALMACENISTA', 'OPERADOR'] }
+      meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN','ALMACENISTA', 'OPERADOR'] }
     },
     {
       path: '/:pathMatch(.*)*',
@@ -70,14 +74,15 @@ const router = createRouter({
   ]
 })
 
-// === GUARDIA DE NAVEGACIÓN ACTUALIZADO ===
+// === GUARDIA DE NAVEGACIÓN BLINDADA ===
 router.beforeEach((to, from) => {
-  // 1. Leemos la sesión actual del usuario
+  // Leemos la sesión actual del usuario
   const usuarioStr = localStorage.getItem('usuarioActivo');
   const usuario = usuarioStr ? JSON.parse(usuarioStr) : null;
   const rolUsuario = usuario ? usuario.rol : null;
 
-  // 2. Extraemos los roles permitidos de la ruta a la que intenta ir
+  // Extraemos los permisos de la ruta
+  const requiereAutenticacion = to.meta.requiresAuth;
   const rolesRequeridos = to.meta.rolesPermitidos;
 
   // Función de ayuda para saber a dónde mandar a cada quien
@@ -88,30 +93,32 @@ router.beforeEach((to, from) => {
     return '/login'; 
   };
 
-  // REGLA A: Si el usuario ya está logueado e intenta entrar al /login o a la raíz (/)
+  // REGLA 1: Si el usuario ya está logueado e intenta entrar al /login o a la raíz (/)
   if ((to.path === '/login' || to.path === '/') && usuario) {
     return obtenerRutaPorDefecto(rolUsuario);
   }
 
-  // REGLA B: Si la ruta requiere un rol específico (está protegida)
-  if (rolesRequeridos) {
-    // Caso B1: No hay nadie logueado, mandarlo al Login
+  // REGLA 2: Si la ruta requiere estar logueado de forma obligatoria
+  if (requiereAutenticacion) {
+    // Si no hay sesión iniciada, ¡pa' fuera! Al login.
     if (!usuario) {
       return '/login';
     }
-    
-    // Caso B2: Está logueado pero NO tiene el permiso -> Lo devolvemos a su vista segura
-    if (!rolesRequeridos.includes(rolUsuario)) {
+
+    // REGLA 3: Si además requiere un rol específico y el usuario no lo tiene
+    if (rolesRequeridos && !rolesRequeridos.includes(rolUsuario)) {
+      // Lo devolvemos a su panel principal por defecto
       return obtenerRutaPorDefecto(rolUsuario);
     }
-  } 
+  }
 
-  // REGLA C: Si intenta ir a una ruta suelta (y no es login) sin estar logueado
-  if (to.path !== '/login' && to.path !== '/' && !usuario && !rolesRequeridos) {
+  // REGLA 4: Si intenta ir a una ruta suelta (y no es login) sin estar logueado
+  // (Esto cubre cualquier ruta rara que se nos haya escapado proteger con requiresAuth)
+  if (to.path !== '/login' && to.path !== '/' && !usuario && !requiereAutenticacion) {
     return '/login';
   }
 
-  // Si pasa todas las reglas, permitimos la navegación
+  // Si pasa todas las aduanas, permitimos el acceso
   return true;
 });
 

@@ -45,7 +45,7 @@ const abrirDetalles = (herramienta) => {
     mostrarModalDetalle.value = true;
 };
 
-// <-- 2. OPCIONES DEL MENÚ DE EXPORTACIÓN -->
+// <-- OPCIONES DEL MENÚ DE EXPORTACIÓN -->
 const opcionesExportar = ref([
     {
         label: 'Exportar a CSV',
@@ -96,6 +96,11 @@ const realizarExportacion = (formato) => {
 const irAMovimientos = () => {
     router.push('/movimientos');
 };
+
+// <-- NUEVA FUNCIÓN: Navegar a la Bitácora -->
+const irABitacora = () => {
+    router.push('/bitacora');
+};
 </script>
 
 <template>
@@ -131,8 +136,16 @@ const irAMovimientos = () => {
             label="Actualizar Inventario" 
             icon="pi pi-sync" 
             severity="info"
-            class="btn-actualizar"
+            class="mr-2 btn-actualizar"
             @click="irAMovimientos" 
+        />
+
+        <!-- <-- NUEVO BOTÓN: Bitácora de Auditoría -->
+        <Button 
+            label="Bitácora de Auditoría" 
+            icon="pi pi-history" 
+            class="btn-bitacora"
+            @click="irABitacora" 
         />
       </template>
       <template #end>
@@ -160,18 +173,18 @@ const irAMovimientos = () => {
 </template>
 
 <style scoped>
-/* 1. CONTENEDOR PRINCIPAL - Fondo de Pedidos */
+/* CONTENEDOR PRINCIPAL - Fondo de Pedidos */
 .panel-herramientas { 
     background-color: #2a323d !important; 
     color: #ffffff;
 }
 
-/* 2. TOOLBAR OSCURA */
+/* TOOLBAR OSCURA */
 .toolbar-oscuro {
     background-color: #1e252d !important;
 }
 
-/* 3. INPUT OSCURO */
+/* INPUT OSCURO */
 :deep(.input-oscuro) { 
     background-color: #121820 !important; 
     color: #ffffff !important; 
@@ -182,7 +195,7 @@ const irAMovimientos = () => {
     box-shadow: 0 0 0 1px #5ab1ce !important; 
 }
 
-/* 4. BOTONES CORREGIDOS */
+/* BOTONES CORREGIDOS */
 .btn-exportar {
     background-color: #16a34a !important; 
     border: none !important;
@@ -196,6 +209,16 @@ const irAMovimientos = () => {
 }
 .btn-actualizar:hover {
     background-color: #0284c7 !important;
+}
+
+/* <-- ESTILOS PARA EL NUEVO BOTÓN DE BITÁCORA --> */
+.btn-bitacora {
+    background-color: #4b5563 !important; 
+    border: none !important;
+    color: white !important;
+}
+.btn-bitacora:hover {
+    background-color: #374151 !important;
 }
 
 :deep(.btn-alertas.p-button-warning.p-button-outlined) {
@@ -216,8 +239,10 @@ const irAMovimientos = () => {
     background-color: #16a34a !important;
 }
 
+/* Aplicamos blanco a todos los íconos de nuestros botones sólidos */
 .btn-exportar i,
-.btn-actualizar i {
+.btn-actualizar i,
+.btn-bitacora i {
     color: white !important;
 }
 
