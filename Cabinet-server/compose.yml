@@ -11,7 +11,7 @@ x-backend-base: &backend-base
 
 x-frontend-base: &frontend-base
   build:
-    context: ./frontend/Front-cabinet
+    context: ./Front-cabinet
     dockerfile: Dockerfile
   restart: unless-stopped
   networks:
