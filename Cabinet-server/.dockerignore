@@ -1,7 +1,4 @@
-node_modules
-.env
-dist
-backend/node_modules
-frontend/Front-cabinet/node_modules
-frontend/Front-cabinet/dist
-backend/.env
+
+**/.env
+**/node_modules
+**/dist
