@@ -43,22 +43,16 @@ const menuCompleto = [
     rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] 
   },
   { 
-    titulo: 'Nuevo producto', 
-    icono: 'pi pi-plus-circle', 
-    ruta: '/nuevo-producto', 
-    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] 
-  },
-  { 
-    titulo: 'Movimientos', 
-    icono: 'pi pi-history', 
-    ruta: '/movimientos', 
-    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] 
-  },
-  { 
     titulo: 'Historial', 
     icono: 'pi pi-book', 
     ruta: '/historial', 
     rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'OPERADOR','ALMACENISTA'] 
+  },
+  { 
+    titulo: 'Nuevo producto', 
+    icono: 'pi pi-plus-circle', 
+    ruta: '/nuevo-producto', 
+    rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] 
   },
   { 
     titulo: 'Inventario', 

@@ -2,9 +2,10 @@
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
+import { defineProps, defineEmits } from 'vue';
 
 // Recibimos los datos ya filtrados desde el padre
-defineProps({
+const props = defineProps({
     historial: {
         type: Array,
         required: true
@@ -19,8 +20,16 @@ defineProps({
     }
 });
 
+// Definimos el evento que vamos a emitir al hacer doble clic
+const emit = defineEmits(['doble-click']);
+
+// Función que captura el evento de PrimeVue y emite solo la data del pedido seleccionado
+const onRowDblClick = (event) => {
+    emit('doble-click', event.data);
+};
+
 const formatearFecha = (fechaString) => {
-    if (!fechaString) return 'N/A';
+    if (!fechaString) return '--'; // Si no hay fecha (Pendiente), mostramos unos guiones
     return new Date(fechaString).toLocaleDateString('es-MX', { 
         year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
     });
@@ -28,6 +37,7 @@ const formatearFecha = (fechaString) => {
 </script>
 
 <template>
+    <!-- Agregamos selectionMode y el evento @row-dblclick a la DataTable -->
     <DataTable 
       :value="historial" 
       :paginator="true" 
@@ -36,32 +46,43 @@ const formatearFecha = (fechaString) => {
       dataKey="id"
       :filters="filtros" 
       :globalFilterFields="['trabajadorNombre', 'trabajadorNumero', 'prestadorNombre', 'receptorNombre']"
-      class="tabla-oscura w-full"
+      class="tabla-oscura w-full cursor-pointer"
       emptyMessage="No hay registros en el historial para esta búsqueda."
+      selectionMode="single"
+      @row-dblclick="onRowDblClick"
     >
       <Column field="id" header="Folio" style="width: 8%">
           <template #body="{ data }"><span class="font-bold text-400">#{{ data.id }}</span></template>
       </Column>
       
-      <Column field="prestadorNombre" header="Prestó (Almacenista)" style="width: 17%"></Column>
+      <Column field="prestadorNombre" header="Prestó (Almacenista)" style="width: 15%"></Column>
       
-      <Column header="Recibió / Devolución" style="width: 17%">
+      <Column header="Recibió / Devolución" style="width: 15%">
           <template #body="{ data }">
               <span class="text-blue-400 font-medium">{{ data.receptorNombre || 'Pendiente' }}</span>
           </template>
       </Column>
 
-      <Column header="Solicitó (Empleado)" style="width: 18%">
+      <Column header="Solicitó (Empleado)" style="width: 16%">
           <template #body="{ data }">
               {{ data.trabajadorNumero }} - {{ data.trabajadorNombre }}
           </template>
       </Column>
 
-      <Column header="Fecha Préstamo" style="width: 15%">
+      <Column header="Fecha Préstamo" style="width: 12%">
           <template #body="{ data }">{{ formatearFecha(data.fechaPedido) }}</template>
       </Column>
 
-      <Column header="Herramientas" style="width: 15%">
+      <!-- NUEVA COLUMNA: FECHA DE DEVOLUCIÓN -->
+      <Column header="Fecha Devolución" style="width: 12%">
+          <template #body="{ data }">
+              <span :class="{'text-400': !data.fechaDevolucion}">
+                  {{ formatearFecha(data.fechaDevolucion) }}
+              </span>
+          </template>
+      </Column>
+
+      <Column header="Herramientas" style="width: 14%">
           <template #body="{ data }">
               <div class="text-sm">
                   <div v-for="(h, idx) in data.herramientas" :key="idx" class="mb-1 text-400">
@@ -74,7 +95,7 @@ const formatearFecha = (fechaString) => {
           </template>
       </Column>
 
-      <Column field="estado" header="Estado" style="width: 10%">
+      <Column field="estado" header="Estado" style="width: 8%">
           <template #body="{ data }">
               <Tag 
                 :severity="data.estado === 'DEVUELTO' ? 'success' : 'danger'" 
@@ -91,14 +112,19 @@ const formatearFecha = (fechaString) => {
    BLINDAJE DE LA TABLA (CONSISTENCIA CON ADMINISTRACIÓN)
    ========================================================= */
 
-/* 1. Fondo de la tabla y envolturas */
+/* Hacemos que el puntero cambie a una "manita" para indicar que se le puede dar clic */
+.cursor-pointer :deep(.p-datatable-tbody > tr) {
+    cursor: pointer;
+}
+
+/* Fondo de la tabla y envolturas */
 :deep(.p-datatable),
 :deep(.p-datatable-wrapper),
 :deep(.p-datatable-table) {
     background-color: transparent !important;
 }
 
-/* 2. Cabeceras (thead y th) -> TRANSPARENTES para igualar a la vista principal */
+/* Cabeceras (thead y th) -> TRANSPARENTES para igualar a la vista principal */
 :deep(.p-datatable-thead),
 :deep(.p-datatable-thead > tr),
 :deep(.p-datatable-thead > tr > th) {
@@ -109,7 +135,7 @@ const formatearFecha = (fechaString) => {
     padding: 1.2rem 1rem !important;
 }
 
-/* 3. Filas y Celdas del cuerpo (tbody, tr, td) */
+/* Filas y Celdas del cuerpo (tbody, tr, td) */
 :deep(.p-datatable-tbody),
 :deep(.p-datatable-tbody > tr),
 :deep(.p-datatable-tbody > tr > td) {
@@ -119,7 +145,7 @@ const formatearFecha = (fechaString) => {
     border-bottom: 1px solid #1e252d !important; 
 }
 
-/* 4. Hover de la fila y fila vacía */
+/* Hover de la fila y fila vacía */
 :deep(.p-datatable-tbody > tr:hover > td) { 
     background-color: #1e252d !important; 
 }

@@ -1,16 +1,11 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
-// Indicamos que usaremos el cliente de Node.js
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native", "windows", "linux-musl"]
 }
 
-// Indicamos que el motor es PostgreSQL y la URL viene del archivo .env
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -27,10 +22,10 @@ enum Departamento {
 }
 
 enum RolUsuario {
-  ADMINISTRADOR       // Acceso total al sistema
-  SUPERVISOR_ALMACEN  // Puede agregar/modificar herramientas y stock
-  ALMACENISTA         // Solo procesa salidas y regresos
-  OPERADOR            // Solo interactúa con el sistema físico
+  ADMINISTRADOR
+  SUPERVISOR_ALMACEN
+  ALMACENISTA
+  OPERADOR
 }
 
 enum EstadoHerramienta {
@@ -39,11 +34,10 @@ enum EstadoHerramienta {
   DADA_DE_BAJA
 }
 
-// Enum para la Bitácora de Auditoría
 enum TipoAccion {
   CREACION
   MODIFICACION
-  ELIMINACION // Representará el Soft Delete (cambio de estado a DADA_DE_BAJA)
+  ELIMINACION 
 }
 
 enum EstadoPedido {
@@ -65,12 +59,11 @@ model Usuario {
   tarjetaRfid   Int?         @unique 
   creadoEn      DateTime     @default(now())
 
-  // Relación: Movimientos y acciones (Bitácora)
-  movimientos   HistorialHerramienta[]
-
-  // Relaciones duales con los Pedidos
+  movimientos        HistorialHerramienta[]
   pedidosPrestados   Pedido[] @relation("PrestadorPedido")
   pedidosRecibidos   Pedido[] @relation("ReceptorPedido")
+  
+  recepcionesParciales DevolucionParcial[] @relation("RecepcionesParciales")
 }
 
 model Herramienta {
@@ -80,14 +73,11 @@ model Herramienta {
   descripcion        String?
   marca              String?           
   
-  // Control de Stock
   cantidad           Int               @default(0)
   cantidadDisponible Int               @default(0)
   cantidadMinima     Int               @default(0)
   
-  // Multimedia
   imagen             String?           
-  
   estado             EstadoHerramienta @default(ACTIVA)
   
   creadoEn           DateTime          @default(now())
@@ -96,10 +86,7 @@ model Herramienta {
   tipo               String?   
   ubicacion          String?   
 
-  // Relación: Historial de todas las modificaciones de esta herramienta
   historial          HistorialHerramienta[]
-  
-  // Relación: Detalles de préstamos donde se ha incluido esta herramienta
   detallesPedido     DetallePedido[]
 }
 
@@ -118,7 +105,6 @@ model HistorialHerramienta {
 model Pedido {
   id               Int          @id @default(autoincrement())
   
-  // Datos del Solicitante (El trabajador que se lleva la herramienta)
   trabajadorNumero String       
   trabajadorNombre String
 
@@ -128,25 +114,39 @@ model Pedido {
   receptorId       Int?
   receptor         Usuario?     @relation("ReceptorPedido", fields: [receptorId], references: [id])
 
-  // Tiempos
   fechaPedido      DateTime     @default(now())
   fechaDevolucion  DateTime?    
   
   estado           EstadoPedido @default(PENDIENTE)
 
-  // Relación con el detalle de herramientas
   detalles         DetallePedido[]
 }
 
 model DetallePedido {
-  id               Int          @id @default(autoincrement())
+  id                Int          @id @default(autoincrement())
   
-  pedidoId         Int
-  pedido           Pedido       @relation(fields: [pedidoId], references: [id])
+  pedidoId          Int
+  pedido            Pedido       @relation(fields: [pedidoId], references: [id])
   
-  herramientaId    Int
-  herramienta      Herramienta  @relation(fields: [herramientaId], references: [id])
+  herramientaId     Int
+  herramienta       Herramienta  @relation(fields: [herramientaId], references: [id])
   
-  cantidadPrestada Int
-  cantidadRegresada Int         @default(0)
+  cantidadPrestada  Int
+  cantidadRegresada Int          @default(0)
+
+  // NUEVA RELACIÓN: El historial de recepciones de esta herramienta específica
+  devoluciones      DevolucionParcial[]
+}
+
+model DevolucionParcial {
+  id               Int           @id @default(autoincrement())
+  
+  detalleId        Int
+  detalle          DetallePedido @relation(fields: [detalleId], references: [id])
+  
+  receptorId       Int
+  receptor         Usuario       @relation("RecepcionesParciales", fields: [receptorId], references: [id])
+  
+  cantidadDevuelta Int
+  fechaDevolucion  DateTime      @default(now())
 }

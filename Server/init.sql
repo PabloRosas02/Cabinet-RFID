@@ -1,9 +1,6 @@
 -- ------------------------------------------------------
-
 -- ENUMS
-
 -- ------------------------------------------------------
-
 
 CREATE TYPE "Departamento" AS ENUM ('INGENIERIA', 'MANTENIMIENTO', 'ADMINISTRACION');
 CREATE TYPE "RolUsuario" AS ENUM ('ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA', 'OPERADOR');
@@ -12,11 +9,8 @@ CREATE TYPE "TipoAccion" AS ENUM ('CREACION', 'MODIFICACION', 'ELIMINACION');
 CREATE TYPE "EstadoPedido" AS ENUM ('PENDIENTE', 'DEVUELTO');
 
 -- ------------------------------------------------------
-
 -- TABLAS
-
 -- ------------------------------------------------------
-
 
 CREATE TABLE "Usuario" (
     "id" SERIAL NOT NULL,
@@ -95,22 +89,16 @@ CREATE TABLE "DevolucionParcial" (
 );
 
 -- ------------------------------------------------------
-
 -- ÍNDICES
-
 -- ------------------------------------------------------
-
 
 CREATE UNIQUE INDEX "Usuario_numTrabajador_key" ON "Usuario"("numTrabajador");
 CREATE UNIQUE INDEX "Usuario_tarjetaRfid_key" ON "Usuario"("tarjetaRfid");
 CREATE UNIQUE INDEX "Herramienta_codigo_key" ON "Herramienta"("codigo");
 
 -- ------------------------------------------------------
-
 -- LLAVES FORÁNEAS (FOREIGN KEYS)
-
 -- ------------------------------------------------------
-
 
 ALTER TABLE "HistorialHerramienta" ADD CONSTRAINT "HistorialHerramienta_herramientaId_fkey" FOREIGN KEY ("herramientaId") REFERENCES "Herramienta"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "HistorialHerramienta" ADD CONSTRAINT "HistorialHerramienta_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -123,3 +111,45 @@ ALTER TABLE "DetallePedido" ADD CONSTRAINT "DetallePedido_herramientaId_fkey" FO
 
 ALTER TABLE "DevolucionParcial" ADD CONSTRAINT "DevolucionParcial_detalleId_fkey" FOREIGN KEY ("detalleId") REFERENCES "DetallePedido"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "DevolucionParcial" ADD CONSTRAINT "DevolucionParcial_receptorId_fkey" FOREIGN KEY ("receptorId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- ------------------------------------------------------
+-- DATOS INICIALES (SEED)
+-- ------------------------------------------------------
+
+-- 1. CARGAR 10 USUARIOS (Contraseña encriptada para todos: 123456)
+INSERT INTO "Usuario" ("numTrabajador", "nombre", "contrasena", "depart", "rol", "tarjetaRfid") VALUES
+(1000, 'Admin Principal', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'ADMINISTRACION', 'ADMINISTRADOR', 100001),
+(1001, 'Supervisor Almacén', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'INGENIERIA', 'SUPERVISOR_ALMACEN', 100002),
+(1002, 'Almacenista Uno', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'MANTENIMIENTO', 'ALMACENISTA', 100003),
+(1003, 'Almacenista Dos', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'INGENIERIA', 'ALMACENISTA', 100004),
+(1004, 'Operador Alpha', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'MANTENIMIENTO', 'OPERADOR', 100005),
+(1005, 'Operador Beta', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'INGENIERIA', 'OPERADOR', 100006),
+(1006, 'Operador Gamma', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'MANTENIMIENTO', 'OPERADOR', 100007),
+(1007, 'Operador Delta', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'ADMINISTRACION', 'OPERADOR', 100008),
+(1008, 'Operador Epsilon', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'INGENIERIA', 'OPERADOR', 100009),
+(1009, 'Operador Zeta', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'MANTENIMIENTO', 'OPERADOR', NULL)
+ON CONFLICT ("numTrabajador") DO NOTHING;
+
+-- 2. CARGAR 20 HERRAMIENTAS
+INSERT INTO "Herramienta" ("codigo", "nombre", "marca", "cantidad", "cantidadDisponible", "cantidadMinima", "tipo", "ubicacion", "estado", "actualizadoEn") VALUES
+('HERR-001', 'Taladro Inalámbrico 20V', 'DeWalt', 5, 5, 2, 'Eléctrica', 'Estante A1', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-002', 'Multímetro Digital', 'Fluke', 3, 3, 2, 'Medición', 'Estante A2', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-003', 'Cautín 40W', 'Weller', 10, 10, 2, 'Soldadura', 'Estante B1', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-004', 'Osciloscopio 100MHz', 'Tektronix', 2, 2, 2, 'Medición', 'Estante A3', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-005', 'Fuente de Poder DC', 'Korad', 4, 4, 2, 'Electrónica', 'Estante B2', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-006', 'Juego de Desarmadores', 'Truper', 15, 15, 2, 'Manual', 'Estante C1', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-007', 'Pinzas de Corte Diagonal', 'Klein Tools', 8, 8, 2, 'Manual', 'Estante C2', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-008', 'Pinzas Pelacables', 'Stanley', 12, 12, 2, 'Manual', 'Estante C2', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-009', 'Esmeriladora 4-1/2"', 'Makita', 3, 3, 2, 'Eléctrica', 'Estante A4', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-010', 'Sierra Circular 7-1/4"', 'Bosch', 2, 2, 2, 'Eléctrica', 'Estante A4', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-011', 'Pistola de Calor', 'Black+Decker', 5, 5, 2, 'Eléctrica', 'Estante B3', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-012', 'Vernier Digital', 'Mitutoyo', 6, 6, 2, 'Medición', 'Estante A2', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-013', 'Llave Inglesa 10"', 'Crescent', 10, 10, 2, 'Manual', 'Estante D1', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-014', 'Juego de Llaves Allen', 'Bondhus', 20, 20, 2, 'Manual', 'Estante D2', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-015', 'Martillo de Uña 16 oz', 'Truper', 8, 8, 2, 'Manual', 'Estante D3', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-016', 'Cinta Métrica 5m', 'Stanley', 15, 15, 2, 'Medición', 'Estante D4', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-017', 'Nivel de Gota 24"', 'Empire', 4, 4, 2, 'Medición', 'Estante D4', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-018', 'Estación de Soldadura', 'Hakko', 3, 3, 2, 'Soldadura', 'Estante B1', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-019', 'Extractor de Soldadura', 'Steren', 10, 10, 2, 'Soldadura', 'Estante B1', 'ACTIVA', CURRENT_TIMESTAMP),
+('HERR-020', 'Lámpara de Trabajo LED', 'Milwaukee', 6, 6, 2, 'Iluminación', 'Estante E1', 'ACTIVA', CURRENT_TIMESTAMP)
+ON CONFLICT ("codigo") DO NOTHING;

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
@@ -27,6 +27,17 @@ watch(() => props.pedido, (nuevoPedido) => {
         };
     }
 }, { immediate: true });
+
+// NUEVO: Calculamos en tiempo real si el usuario está regresando al menos 1 herramienta
+const totalHerramientasARegresar = computed(() => {
+    if (!pedidoLocal.value || !pedidoLocal.value.herramientas) return 0;
+    
+    // Sumamos la cantidadARegresar de todas las herramientas en la lista
+    return pedidoLocal.value.herramientas.reduce((total, item) => {
+        return total + (item.cantidadARegresar || 0);
+    }, 0);
+});
+
 </script>
 
 <template>
@@ -70,13 +81,32 @@ watch(() => props.pedido, (nuevoPedido) => {
                     </div>
                 </li>
             </ul>
+
+            <!-- MENSAJE DE ADVERTENCIA (Opcional, ayuda a la experiencia de usuario) -->
+            <div v-if="totalHerramientasARegresar === 0" class="mt-3 text-red-400 text-sm text-right">
+                <i class="pi pi-info-circle mr-1"></i> Debes devolver al menos 1 herramienta para continuar.
+            </div>
         </div>
         
         <template #footer>
             <div class="flex justify-content-end gap-3 mt-3">
-                <Button label="Cancelar" icon="pi pi-times" class="btn-limpiar" @click="emit('cerrar')" :disabled="procesando" />
-                <!-- Enviamos de regreso el pedidoLocal editado -->
-                <Button label="Confirmar Devolución" icon="pi pi-check" class="btn-registrar" @click="emit('confirmar', pedidoLocal)" :loading="procesando" />
+                <Button 
+                    label="Cancelar" 
+                    icon="pi pi-times" 
+                    class="btn-limpiar" 
+                    @click="emit('cerrar')" 
+                    :disabled="procesando" 
+                />
+                
+                <!-- NUEVO: Bloqueamos el botón si está procesando O si el total a regresar es 0 -->
+                <Button 
+                    label="Confirmar Devolución" 
+                    icon="pi pi-check" 
+                    class="btn-registrar" 
+                    @click="emit('confirmar', pedidoLocal)" 
+                    :loading="procesando" 
+                    :disabled="procesando || totalHerramientasARegresar === 0"
+                />
             </div>
         </template>
     </Dialog>
@@ -87,7 +117,10 @@ watch(() => props.pedido, (nuevoPedido) => {
 :deep(.modal-oscuro .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
 :deep(.modal-oscuro .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
 
-.btn-registrar { background-color: #22c55e !important; border: none !important; color: #000000 !important; font-weight: bold; }
+/* Agregamos una transición suave y efecto de opacidad cuando está deshabilitado */
+.btn-registrar { background-color: #22c55e !important; border: none !important; color: #000000 !important; font-weight: bold; transition: opacity 0.3s; }
+.btn-registrar:disabled { opacity: 0.5; cursor: not-allowed; }
+
 .btn-limpiar { background-color: #4a5568 !important; border: none !important; color: white !important; }
 .surface-ground-custom { background-color: #121820; border: 1px solid #3f4b5b; }
 .lista-herramientas { list-style: none; overflow-x: hidden; }

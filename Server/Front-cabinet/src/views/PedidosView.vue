@@ -1,10 +1,15 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
+import { useToast } from 'primevue/usetoast';
+import Toast from 'primevue/toast'; 
+
 import CatalogoHerramientas from '../components/pedidos/CatalogoHerramientas.vue';
 import DetallePedido from '../components/pedidos/DetallePedido.vue';
 
-// 1. Estados reactivos
+// Estados reactivos y utilidades
+const toast = useToast(); 
+
 const trabajador = ref({
     numero: '',
     nombre: ''
@@ -15,7 +20,7 @@ const pedidoActual = ref([]);
 const usuarios = ref([]); 
 const cargando = ref(false);
 
-// 2. Cargar datos desde tu backend real (PostgreSQL)
+// Cargar datos desde tu backend real (PostgreSQL)
 const cargarInventario = async () => {
     cargando.value = true;
     try {
@@ -42,7 +47,7 @@ onMounted(() => {
     cargarUsuarios();
 });
 
-// 3. Lógica del Carrito
+// Lógica del Carrito
 const manejarAgregar = (herramienta) => {
     const itemExistente = pedidoActual.value.find(h => h.id === herramienta.id);
     
@@ -50,7 +55,12 @@ const manejarAgregar = (herramienta) => {
         if (itemExistente.cantidadLlevada < herramienta.cantidadDisponible) {
             itemExistente.cantidadLlevada++;
         } else {
-            alert("Has alcanzado el límite de stock disponible.");
+            toast.add({ 
+                severity: 'warn', 
+                summary: 'Límite alcanzado', 
+                detail: 'Has alcanzado el límite de stock disponible para esta herramienta.', 
+                life: 3000 
+            });
         }
     } else {
         pedidoActual.value.push({ ...herramienta, cantidadLlevada: 1 });
@@ -61,10 +71,9 @@ const manejarQuitar = (id) => {
     pedidoActual.value = pedidoActual.value.filter(h => h.id !== id);
 };
 
-// 4. Registro de Pedido
+// Registro de Pedido
 const procesarPedido = async () => {
     try {
-        // Recuperamos el usuario logueado desde el localStorage (quien entrega la herramienta en este turno)
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
@@ -74,7 +83,7 @@ const procesarPedido = async () => {
         const payload = {
             trabajadorNumero: trabajador.value.numero,
             trabajadorNombre: trabajador.value.nombre,
-            prestadorId: usuarioSesion.id, // <-- ID del almacenista en turno que entrega la herramienta
+            prestadorId: usuarioSesion.id, 
             herramientas: pedidoActual.value.map(item => ({
                 id: item.id,
                 cantidadPrestada: item.cantidadLlevada
@@ -83,24 +92,38 @@ const procesarPedido = async () => {
 
         await axios.post('/api/pedidos', payload);
 
-        alert("¡Pedido registrado exitosamente! El inventario ha sido actualizado.");
+        // REEMPLAZAMOS EL ALERT POR UN TOAST DE ÉXITO
+        toast.add({ 
+            severity: 'success', 
+            summary: '¡Éxito!', 
+            detail: 'Pedido registrado exitosamente. El inventario ha sido actualizado.', 
+            life: 3000 
+        });
         
-        // Recargar inventario para ver los nuevos niveles de stock
         await cargarInventario();
         
-        // Limpiar formulario
         trabajador.value = { numero: '', nombre: '' };
         pedidoActual.value = [];
 
     } catch (error) {
         console.error("Error al guardar el pedido:", error);
-        alert("Ocurrió un error al registrar el pedido: " + (error.response?.data?.error || error.message || "Error de conexión"));
+        
+        // REEMPLAZAMOS EL ALERT POR UN TOAST DE ERROR
+        toast.add({ 
+            severity: 'error', 
+            summary: 'Error al registrar', 
+            detail: error.response?.data?.error || error.message || "Error de conexión con el servidor.", 
+            life: 5000 
+        });
     }
 };
 </script>
 
 <template>
   <div class="pedidos-contenedor">
+    <!-- INYECTAMOS EL COMPONENTE TOAST AQUÍ PARA QUE FLOTE EN LA VISTA -->
+    <Toast />
+
     <h2 class="titulo-seccion">Registro de Préstamos</h2>
 
     <div class="layout-dos-columnas mt-4">
@@ -130,7 +153,7 @@ const procesarPedido = async () => {
 
 <style scoped>
 .pedidos-contenedor { padding: 1rem; color: #e2e8f0; }
-.titulo-seccion { color: #5ab1ce; margin-bottom: 1.5rem; }
+.titulo-seccion { color: #5ab1ce; margin-bottom: 1.5rem; font-weight: bold; }
 .layout-dos-columnas { display: flex; gap: 1.5rem; align-items: stretch; }
 .columna-inventario { flex: 2; min-width: 0; }
 .columna-pedido { flex: 1.2; min-width: 350px; }

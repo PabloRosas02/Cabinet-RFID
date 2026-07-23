@@ -12,7 +12,6 @@ const props = defineProps({
 const emit = defineEmits(['seleccion', 'doble-click']);
 
 const herramientaSeleccionada = ref(null);
-const dt = ref();
 
 const onSelectionChange = (valor) => emit('seleccion', valor);
 const onRowDoubleClick = (event) => emit('doble-click', event.data);
@@ -23,7 +22,6 @@ const getEstadoStock = (herramienta) => {
     return 'optimo';
 };
 
-// FUNCIÓN NUEVA: Comprueba manualmente si la fila es la seleccionada y le asigna una clase
 const obtenerClaseFila = (data) => {
     if (herramientaSeleccionada.value && herramientaSeleccionada.value.id === data.id) {
         return 'fila-activa-crissair';
@@ -31,14 +29,11 @@ const obtenerClaseFila = (data) => {
     return '';
 };
 
-const exportar = () => dt.value.exportCSV();
-defineExpose({ exportar });
 </script>
 
 <template>
   <div class="tabla-contenedor p-3 border-round shadow-1 mt-4">
     <DataTable 
-      ref="dt"
       :value="herramientas" 
       v-model:selection="herramientaSeleccionada" 
       @update:selection="onSelectionChange"
@@ -53,8 +48,6 @@ defineExpose({ exportar });
       emptyMessage="No se encontraron herramientas."
       :rowClass="obtenerClaseFila" 
     >
-      <!-- ↑ Agregamos :rowClass="obtenerClaseFila" justo arriba -->
-
       <Column field="codigo" header="Código" style="width: 15%"></Column>
       <Column field="nombre" header="Nombre" style="width: 25%"></Column>
       <Column field="tipo" header="Tipo" style="width: 15%"></Column>
@@ -110,9 +103,9 @@ defineExpose({ exportar });
 :deep(.tabla-oscura .p-datatable-tbody > tr.p-highlight > td),
 :deep(.tabla-oscura .p-datatable-tbody > tr[data-p-highlight="true"] > td),
 :deep(.tabla-oscura .p-datatable-tbody > tr[aria-selected="true"] > td) {
-    background-color: #233544 !important; /* Mantenemos el fondo que hace visible la selección */
+    background-color: #233544 !important; 
     color: #ffffff !important;
-    border-bottom: 1px solid #1e252d !important; /* Regresamos al borde ultra oscuro normal */
+    border-bottom: 1px solid #1e252d !important; 
     outline: none !important;
     box-shadow: none !important;
 }
