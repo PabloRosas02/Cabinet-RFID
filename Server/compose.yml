@@ -6,16 +6,14 @@ x-backend-base: &backend-base
     dockerfile: backend/Dockerfile
   restart: unless-stopped
   networks:
+    - default
     - rfid_internal
-    - rfid_external
 
 x-frontend-base: &frontend-base
   build:
     context: ./Front-cabinet
     dockerfile: Dockerfile
   restart: unless-stopped
-  networks:
-    - rfid_external
 
 services:
 
@@ -30,8 +28,6 @@ services:
       - ./mosquitto/config:/mosquitto/config
       - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
-    networks:
-      - rfid_internal
 
   postgres:
     image: postgres:15-alpine
@@ -48,7 +44,6 @@ services:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - rfid_internal
-      - rfid_external
 
   backend:
     container_name: rfid_backend
@@ -87,8 +82,6 @@ services:
       - NGROK_AUTHTOKEN=${NGROK_TOKEN}
     depends_on:
       - backend
-    networks:
-      - rfid_external
 
 volumes:
   postgres_data:
@@ -96,8 +89,9 @@ volumes:
   frontend_node_modules:
 
 networks:
-  rfid_external:
-    driver: bridge
   rfid_internal:
     driver: bridge
-    internal: true 
+    internal: true
+  default:
+    name: rfid_external
+    driver: bridge
