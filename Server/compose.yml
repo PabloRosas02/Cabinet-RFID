@@ -26,8 +26,8 @@ services:
       - "9001:9001"
     volumes:
       - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
-      - ./mosquitto/log:/mosquitto/log
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
 
   postgres:
     image: postgres:15-alpine
@@ -87,6 +87,8 @@ volumes:
   postgres_data:
     driver: local
   frontend_node_modules:
+  mosquitto_data:
+  mosquitto_log:
 
 networks:
   rfid_internal:
