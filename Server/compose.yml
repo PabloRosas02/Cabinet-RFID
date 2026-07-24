@@ -8,16 +8,7 @@ x-backend-base: &backend-base
   networks:
     - default
     - rfid_internal
-
-x-frontend-base: &frontend-base
-  build:
-    context: ./Front-cabinet
-    dockerfile: Dockerfile
-    target: production
-  restart: unless-stopped
-
 services:
-
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: rfid_mqtt_broker
@@ -58,24 +49,44 @@ services:
       - postgres
     <<: *backend-base
 
-  frontend:
-    container_name: rfid_frontend
-    profiles: ["dev", "prod"]
+  frontend-dev:
+    container_name: rfid_frontend_dev
+    profiles: ["dev"]
+    build:
+      context: ./Front-cabinet
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Front-cabinet:/app 
+      - frontend_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - default
+
+  frontend-prod:
+    container_name: rfid_frontend_prod
+    profiles: ["prod"]
+    build:
+      context: ./Front-cabinet
+      dockerfile: Dockerfile
+      target: production
     ports:
       - "80:80"
-      - "5173:5173"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - nginx_cache:/tmp/nginx_cache
-      - ./Front-cabinet:/app
-      - frontend_node_modules:/app/node_modules
     security_opt:
       - no-new-privileges:true
     depends_on:
       - backend
-    command: npm run dev -- --host 
-    <<: *frontend-base
+    restart: unless-stopped
+    networks:
+      - default
 
   ngrok-tunnel:
     image: ngrok/ngrok:alpine
@@ -84,11 +95,11 @@ services:
     restart: unless-stopped
     command: 
       - "http"
-      - "forntend:80"
+      - "frontend-prod:80"
     environment:
       - NGROK_AUTHTOKEN=${NGROK_TOKEN}
     depends_on:
-      - backend
+      - frontend-prod
 
 volumes:
   postgres_data:
