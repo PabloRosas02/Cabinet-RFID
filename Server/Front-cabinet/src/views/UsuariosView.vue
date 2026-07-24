@@ -5,13 +5,13 @@ import Column from 'primevue/column';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
+import Password from 'primevue/password'; 
 import Select from 'primevue/select';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import Tag from 'primevue/tag';
 import Dialog from 'primevue/dialog';
 
-// Importamos TODA nuestra lógica desde el archivo separado
 import { useUsuarios } from '../composables/useUsuarios';
 
 const rolLogueado = ref('ADMINISTRADOR'); 
@@ -116,28 +116,41 @@ const getSeverityRol = (rol) => {
             <div class="flex flex-column gap-2 pt-2">
                 
                 <div class="field flex flex-column gap-1">
-                    <label for="numTrabajador" class="label-blanco">Número de Empleado</label>
-                    <InputNumber id="numTrabajador" v-model="usuarioActual.numTrabajador" :useGrouping="false" class="w-full" inputClass="w-full input-oscuro" />
+                    <label class="label-blanco">Número de Empleado</label>
+                    <InputNumber inputId="numTrabajador" v-model="usuarioActual.numTrabajador" :useGrouping="false" class="w-full" inputClass="w-full input-oscuro" />
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <label for="nombre" class="label-blanco">Nombre Completo</label>
+                    <label class="label-blanco">Nombre Completo</label>
                     <InputText id="nombre" v-model="usuarioActual.nombre" class="w-full input-oscuro" />
                 </div>
 
-                <div class="field flex flex-column gap-1">
-                    <label for="depart" class="label-blanco">Departamento</label>
-                    <Select id="depart" v-model="usuarioActual.depart" :options="opcionesDepartamentos" class="w-full input-oscuro" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
+                <div class="field flex flex-column gap-1" v-if="!esEdicion">
+                    <label class="label-blanco">Contraseña</label>
+                    <Password 
+                        inputId="contrasena" 
+                        v-model="usuarioActual.contrasena" 
+                        :feedback="false" 
+                        toggleMask 
+                        class="w-full" 
+                        inputClass="w-full input-oscuro" 
+                        placeholder="Asigna una contraseña segura" 
+                    />
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <label for="rol" class="label-blanco">Nivel de Acceso (Rol)</label>
-                    <Select id="rol" v-model="usuarioActual.rol" :options="opcionesRoles" class="w-full input-oscuro" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
+                    <label class="label-blanco">Departamento</label>
+                    <Select inputId="depart" v-model="usuarioActual.depart" :options="opcionesDepartamentos" class="w-full input-oscuro" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <label for="rfid" class="label-blanco">Código RFID (Opcional)</label>
-                    <InputNumber id="rfid" v-model="usuarioActual.tarjetaRfid" :useGrouping="false" placeholder="Asignar luego..." class="w-full" inputClass="w-full input-oscuro" />
+                    <label class="label-blanco">Nivel de Acceso (Rol)</label>
+                    <Select inputId="rol" v-model="usuarioActual.rol" :options="opcionesRoles" class="w-full input-oscuro" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
+                </div>
+
+                <div class="field flex flex-column gap-1">
+                    <label class="label-blanco">Código RFID (Opcional)</label>
+                    <InputNumber inputId="rfid" v-model="usuarioActual.tarjetaRfid" :useGrouping="false" placeholder="Asignar luego..." class="w-full" inputClass="w-full input-oscuro" />
                 </div>
             </div>
 
@@ -196,7 +209,7 @@ const getSeverityRol = (rol) => {
 :deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
 
 /* =========================================================
-   ETIQUETAS DE ROLES (TAGS) - TEMA OSCURO
+   ETIQUETAS DE ROLES - TEMA OSCURO
    ========================================================= */
 :deep(.tag-rol) { border-radius: 6px !important; }
 :deep(.p-tag.p-tag-danger) { background-color: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; }
@@ -265,6 +278,14 @@ input.input-oscuro::placeholder, .p-iconfield input::placeholder { color: #94a3b
 }
 .btn-cancelar:hover {
     background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+}
+
+/* Color del ícono del ojito en el input de contraseña */
+.p-password .p-icon {
+    color: #94a3b8 !important;
+}
+.p-password .p-icon:hover {
     color: #ffffff !important;
 }
 </style>

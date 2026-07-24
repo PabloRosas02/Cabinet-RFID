@@ -31,10 +31,13 @@ router.get('/', async (req, res) => {
 // 2. CREAR UN NUEVO USUARIO (POST)
 router.post('/', async (req, res) => {
     try {
-        const { nombre, numTrabajador, depart, rol, tarjetaRfid } = req.body;
+        // Agregamos "contrasena" a la extracción del body
+        const { nombre, numTrabajador, depart, rol, tarjetaRfid, contrasena } = req.body;
         
-        // Usamos nuestra utilidad para encriptar
-        const contrasenaPlana = `Crissair${numTrabajador}`;
+        // Usamos la contraseña del formulario. Si por alguna razón está vacía, usamos el default.
+        const contrasenaPlana = contrasena || `Crissair${numTrabajador}`;
+        
+        // Encriptamos
         const contrasenaHasheada = await encriptarContrasena(contrasenaPlana);
         
         const nuevoUsuario = await prisma.usuario.create({

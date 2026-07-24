@@ -85,7 +85,7 @@ const iniciarSesion = async () => {
             <div class="field">
                 <label for="contrasena">Contraseña</label>
                 <Password 
-                    id="contrasena" 
+                    inputId="contrasena" 
                     v-model="contrasena" 
                     placeholder="Tu contraseña" 
                     :feedback="false" 

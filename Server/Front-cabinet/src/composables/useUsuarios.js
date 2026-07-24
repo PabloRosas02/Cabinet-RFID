@@ -37,7 +37,14 @@ export function useUsuarios() {
 
     // Preparar UI
     const prepararNuevoUsuario = () => {
-        usuarioActual.value = { nombre: '', numTrabajador: null, depart: null, rol: null, tarjetaRfid: null };
+        usuarioActual.value = { 
+            nombre: '', 
+            numTrabajador: null, 
+            contrasena: '',
+            depart: null, 
+            rol: null, 
+            tarjetaRfid: null 
+        };
         esEdicion.value = false;
         mostrarModal.value = true;
     };
