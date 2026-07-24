@@ -153,3 +153,4 @@ INSERT INTO "Herramienta" ("codigo", "nombre", "marca", "cantidad", "cantidadDis
 ('HERR-019', 'Extractor de Soldadura', 'Steren', 10, 10, 2, 'Soldadura', 'Estante B1', 'ACTIVA', CURRENT_TIMESTAMP),
 ('HERR-020', 'Lámpara de Trabajo LED', 'Milwaukee', 6, 6, 2, 'Iluminación', 'Estante E1', 'ACTIVA', CURRENT_TIMESTAMP)
 ON CONFLICT ("codigo") DO NOTHING;
+
