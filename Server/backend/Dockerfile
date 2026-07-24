@@ -1,14 +1,16 @@
-FROM node:20-slim
+ARG NODE_VERSION=26.5.0
+
+FROM node:${NODE_VERSION}-slim
 RUN apt-get update -y && \
     apt-get install -y openssl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY backend/package*.json ./
+COPY package*.json ./
 RUN npm install
 
-COPY backend/ ./
+COPY . .
 
 RUN npx prisma generate
 
