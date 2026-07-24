@@ -41,9 +41,7 @@ services:
     container_name: rfid_backend
     profiles: ["dev", "prod"]
     env_file:
-      - .env 
-    ports:
-      - "3000:3000"
+      - .env
     depends_on:
       - mosquitto
       - postgres
