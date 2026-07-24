@@ -1,12 +1,3 @@
-FROM node:20-slim AS frontend-builder
-WORKDIR /app/frontend
-
-COPY Front-cabinet/package*.json ./
-RUN npm install
-
-COPY Front-cabinet/ ./
-RUN npm run build
-
 FROM node:20-slim
 RUN apt-get update -y && \
     apt-get install -y openssl && \
@@ -18,8 +9,6 @@ COPY backend/package*.json ./
 RUN npm install
 
 COPY backend/ ./
-
-COPY --from=frontend-builder /app/frontend/dist ./dist
 
 RUN npx prisma generate
 
