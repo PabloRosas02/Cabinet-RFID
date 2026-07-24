@@ -123,7 +123,7 @@ const realizarExportacion = (formato) => {
     const sufijoFecha = filtroTiempo.value === 'Hoy' || filtroTiempo.value === 'Todos' ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString('es-MX', { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
                         filtroTiempo.value === 'Este Mes' ? `${hoy.toLocaleString('es-MX', { month: 'long' })}_${hoy.getFullYear()}` : 
                         filtroTiempo.value === 'Este Año' ? `${hoy.getFullYear()}` : `Semana_${hoy.getDate()}`; 
-    const nombreArchivo = `Reporte_Historial_${sufijoFecha}`; // <-- Cambiado a Historial
+    const nombreArchivo = `Reporte_Historial_${sufijoFecha}`; 
     
     if (formato === 'csv') {
         const cabeceras = ['Folio', 'Autorizó (Prestador)', 'Solicitó (Empleado)', 'Fecha Préstamo', 'Fecha Devolución General', 'Resumen de Herramientas', 'Observaciones (Rastreo Parcial)', 'Estado'];
@@ -214,9 +214,26 @@ const realizarExportacion = (formato) => {
         <div class="flex flex-column sm:flex-row gap-3 w-full md:w-auto">
             <IconField iconPosition="left" class="w-full sm:w-20rem">
                 <InputIcon class="pi pi-search" />
-                <InputText v-model="filtros['global'].value" placeholder="Buscar por empleado o prestador..." class="w-full input-oscuro" />
+                <InputText 
+                    id="buscadorHistorial"
+                    name="buscadorHistorial"
+                    aria-label="Buscar por empleado o prestador"
+                    v-model="filtros['global'].value" 
+                    placeholder="Buscar por empleado o prestador..." 
+                    class="w-full input-oscuro" 
+                />
             </IconField>
-            <Select v-model="filtroTiempo" :options="opcionesTiempo" placeholder="Filtrar por período" class="w-full sm:w-15rem input-oscuro" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
+            <Select 
+                inputId="filtroTiempoHistorial"
+                name="filtroTiempoHistorial"
+                aria-label="Filtrar por período de tiempo"
+                v-model="filtroTiempo" 
+                :options="opcionesTiempo" 
+                placeholder="Filtrar por período" 
+                class="w-full sm:w-15rem input-oscuro" 
+                overlayClass="menu-oscuro-global" 
+                panelClass="menu-oscuro-global" 
+            />
         </div>
     </div>
 

@@ -58,43 +58,43 @@ defineExpose({ limpiar });
             <div class="col-12 md:col-8 grid">
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="codigoProducto" class="font-bold label-oscura">Código *</label>
-                    <InputText id="codigoProducto" v-model="herramienta.codigo" required placeholder="Código único del producto" />
+                    <InputText id="codigoProducto" name="codigoProducto" v-model="herramienta.codigo" required placeholder="Código único del producto" />
                 </div>
                 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="nombreProducto" class="font-bold label-oscura">Nombre *</label>
-                    <InputText id="nombreProducto" v-model="herramienta.nombre" required placeholder="Nombre del producto" />
+                    <InputText id="nombreProducto" name="nombreProducto" v-model="herramienta.nombre" required placeholder="Nombre del producto" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="tipoProducto" class="font-bold label-oscura">Tipo / Categoría</label>
-                    <InputText id="tipoProducto" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" />
+                    <InputText id="tipoProducto" name="tipoProducto" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="marcaProducto" class="font-bold label-oscura">Marca / Proveedor</label>
-                    <InputText id="marcaProducto" v-model="herramienta.marca" placeholder="Ej. Truper" />
+                    <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" placeholder="Ej. Truper" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="stockFisico" class="font-bold label-oscura">Stock Físico Inicial</label>
-                    <InputNumber inputId="stockFisico" v-model="herramienta.cantidadDisponible" integeronly />
+                    <InputNumber inputId="stockFisico" name="stockFisico" v-model="herramienta.cantidadDisponible" integeronly />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="stockMinimo" class="font-bold label-oscura">Stock Mínimo (Alerta)</label>
-                    <InputNumber inputId="stockMinimo" v-model="herramienta.cantidadMinima" integeronly />
+                    <InputNumber inputId="stockMinimo" name="stockMinimo" v-model="herramienta.cantidadMinima" integeronly />
                 </div>
 
                 <div class="col-12 mb-3 flex flex-column gap-2">
                     <label for="ubicacionFisica" class="font-bold label-oscura">Ubicación Física</label>
-                    <InputText id="ubicacionFisica" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" />
+                    <InputText id="ubicacionFisica" name="ubicacionFisica" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" />
                 </div>
             </div>
 
             <!-- Columna Derecha: Fotografía -->
             <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
-                <label id="labelFotografia" class="font-bold label-oscura">Fotografía</label>
+                <label for="inputFileImagen" class="font-bold label-oscura">Fotografía</label>
                 <div class="area-imagen flex flex-column align-items-center justify-content-center p-3 border-round shadow-1 w-full h-full" style="min-height: 300px;">
                     
                     <img v-if="herramienta.imagen" 
@@ -106,14 +106,13 @@ defineExpose({ limpiar });
                         <i class="pi pi-image text-6xl" style="color: #4a5568;"></i>
                     </div>
                     
-                    <!-- Agregamos id y aria-labelledby para asociarlo correctamente -->
                     <input 
                         id="inputFileImagen" 
+                        name="inputFileImagen"
                         type="file" 
                         accept="image/*" 
                         @change="procesarImagen" 
                         class="p-inputtext p-component p-2 w-full text-sm mt-auto input-file-oscuro" 
-                        aria-labelledby="labelFotografia"
                     />
                 </div>
             </div>
@@ -121,7 +120,7 @@ defineExpose({ limpiar });
             <!-- Descripción -->
             <div class="col-12 mb-4 flex flex-column gap-2">
                 <label for="descripcionProducto" class="font-bold label-oscura">Descripción / Detalles</label>
-                <Textarea id="descripcionProducto" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones adicionales..." />
+                <Textarea id="descripcionProducto" name="descripcionProducto" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones adicionales..." />
             </div>
             
             <!-- Botones de Acción -->

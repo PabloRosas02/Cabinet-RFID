@@ -71,6 +71,9 @@ const obtenerTextoStock = (h) => {
             <IconField iconPosition="left" class="w-full">
                 <InputIcon class="pi pi-search" />
                 <InputText 
+                    id="buscadorHerramientas"
+                    name="buscadorHerramientas"
+                    aria-label="Buscar herramienta"
                     v-model="busqueda" 
                     placeholder="Buscar por código o nombre..." 
                     class="w-full input-oscuro" 

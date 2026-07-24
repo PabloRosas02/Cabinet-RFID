@@ -2,12 +2,10 @@ import { ref, onMounted } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 
 export function useUsuarios() {
-    // URL de tu backend (ajusta el puerto si es necesario)
     const API_URL = '/api/usuarios';
 
-    // 1. ESTADO
     const usuarios = ref([]);
-    const cargando = ref(false); // Para mostrar un spinner si la red es lenta
+    const cargando = ref(false); 
     
     const filtros = ref({
         global: { value: null, matchMode: FilterMatchMode.CONTAINS }
@@ -17,7 +15,6 @@ export function useUsuarios() {
     const usuarioActual = ref({});
     const esEdicion = ref(false);
 
-    // 2. ACCIONES (Llamadas HTTP)
 
     // Obtener datos al cargar la página
     const cargarUsuarios = async () => {
@@ -50,7 +47,7 @@ export function useUsuarios() {
     };
 
     const prepararEdicion = (usuario) => {
-        usuarioActual.value = { ...usuario };
+        usuarioActual.value = { ...usuario, contrasena: '' };
         esEdicion.value = true;
         mostrarModal.value = true;
     };
@@ -111,7 +108,6 @@ export function useUsuarios() {
         }
     };
 
-    // 3. CICLO DE VIDA
     // Se ejecuta automáticamente en cuanto el componente Vue se monta en pantalla
     onMounted(() => {
         cargarUsuarios();

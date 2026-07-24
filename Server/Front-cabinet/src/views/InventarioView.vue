@@ -97,7 +97,6 @@ const irAMovimientos = () => {
     router.push('/movimientos');
 };
 
-// <-- NUEVA FUNCIÓN: Navegar a la Bitácora -->
 const irABitacora = () => {
     router.push('/bitacora');
 };
@@ -140,7 +139,6 @@ const irABitacora = () => {
             @click="irAMovimientos" 
         />
 
-        <!-- <-- NUEVO BOTÓN: Bitácora de Auditoría -->
         <Button 
             label="Bitácora de Auditoría" 
             icon="pi pi-history" 
@@ -151,7 +149,14 @@ const irABitacora = () => {
       <template #end>
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search" />
-          <InputText v-model="filtros['global'].value" placeholder="Buscar código, nombre..." class="input-oscuro" />
+          <InputText 
+              id="buscadorInventario"
+              name="buscadorInventario"
+              aria-label="Buscar código o nombre"
+              v-model="filtros['global'].value" 
+              placeholder="Buscar código, nombre..." 
+              class="input-oscuro" 
+          />
         </IconField>
       </template>
     </Toolbar>

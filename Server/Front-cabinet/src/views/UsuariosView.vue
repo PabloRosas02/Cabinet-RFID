@@ -52,7 +52,14 @@ const getSeverityRol = (rol) => {
             <div class="w-full md:w-auto">
                 <IconField iconPosition="left" class="w-full sm:w-20rem">
                     <InputIcon class="pi pi-search" />
-                    <InputText v-model="filtros['global'].value" placeholder="Buscar empleado..." class="w-full input-oscuro" />
+                    <!-- Buscador con aria-label -->
+                    <InputText 
+                        name="buscadorGeneral" 
+                        aria-label="Buscar empleado" 
+                        v-model="filtros['global'].value" 
+                        placeholder="Buscar empleado..." 
+                        class="w-full input-oscuro" 
+                    />
                 </IconField>
             </div>
             
@@ -114,43 +121,82 @@ const getSeverityRol = (rol) => {
         <!-- VENTANA EMERGENTE (MODAL) PARA CREAR/EDITAR -->
         <Dialog v-model:visible="mostrarModal" :header="esEdicion ? 'Editar Empleado' : 'Nuevo Empleado'" :modal="true" :style="{ width: '420px' }" class="modal-oscuro">
             <div class="flex flex-column gap-2 pt-2">
-                
+
                 <div class="field flex flex-column gap-1">
-                    <label class="label-blanco">Número de Empleado</label>
-                    <InputNumber inputId="numTrabajador" v-model="usuarioActual.numTrabajador" :useGrouping="false" class="w-full" inputClass="w-full input-oscuro" />
+                    <span class="label-blanco">Número de Empleado</span>
+                    <InputNumber 
+                        name="numTrabajador"
+                        aria-label="Número de Empleado"
+                        v-model="usuarioActual.numTrabajador" 
+                        :useGrouping="false" 
+                        class="w-full" 
+                        inputClass="w-full input-oscuro" 
+                    />
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <label class="label-blanco">Nombre Completo</label>
-                    <InputText id="nombre" v-model="usuarioActual.nombre" class="w-full input-oscuro" />
+                    <span class="label-blanco">Nombre Completo</span>
+                    <InputText 
+                        name="nombreCompleto"
+                        aria-label="Nombre Completo"
+                        v-model="usuarioActual.nombre" 
+                        class="w-full input-oscuro" 
+                    />
                 </div>
 
-                <div class="field flex flex-column gap-1" v-if="!esEdicion">
-                    <label class="label-blanco">Contraseña</label>
+                <div class="field flex flex-column gap-1">
+                    <span class="label-blanco">
+                        {{ esEdicion ? 'Nueva Contraseña (Opcional)' : 'Contraseña *' }}
+                    </span>
                     <Password 
-                        inputId="contrasena" 
+                        name="contrasena"
+                        aria-label="Contraseña"
                         v-model="usuarioActual.contrasena" 
                         :feedback="false" 
                         toggleMask 
                         class="w-full" 
                         inputClass="w-full input-oscuro" 
-                        placeholder="Asigna una contraseña segura" 
+                        :placeholder="esEdicion ? 'Dejar en blanco para no cambiar' : 'Asigna una contraseña segura'" 
                     />
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <label class="label-blanco">Departamento</label>
-                    <Select inputId="depart" v-model="usuarioActual.depart" :options="opcionesDepartamentos" class="w-full input-oscuro" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
+                    <span class="label-blanco">Departamento</span>
+                    <Select 
+                        name="departamento"
+                        aria-label="Departamento"
+                        v-model="usuarioActual.depart" 
+                        :options="opcionesDepartamentos" 
+                        class="w-full input-oscuro" 
+                        overlayClass="menu-oscuro-global" 
+                        panelClass="menu-oscuro-global" 
+                    />
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <label class="label-blanco">Nivel de Acceso (Rol)</label>
-                    <Select inputId="rol" v-model="usuarioActual.rol" :options="opcionesRoles" class="w-full input-oscuro" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
+                    <span class="label-blanco">Nivel de Acceso (Rol)</span>
+                    <Select 
+                        name="rol"
+                        aria-label="Nivel de Acceso"
+                        v-model="usuarioActual.rol" 
+                        :options="opcionesRoles" 
+                        class="w-full input-oscuro" 
+                        overlayClass="menu-oscuro-global" 
+                        panelClass="menu-oscuro-global" 
+                    />
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <label class="label-blanco">Código RFID (Opcional)</label>
-                    <InputNumber inputId="rfid" v-model="usuarioActual.tarjetaRfid" :useGrouping="false" placeholder="Asignar luego..." class="w-full" inputClass="w-full input-oscuro" />
+                    <span class="label-blanco">Código RFID (Opcional)</span>
+                    <InputNumber 
+                        name="rfid"
+                        aria-label="Código RFID"
+                        v-model="usuarioActual.tarjetaRfid" 
+                        :useGrouping="false" 
+                        placeholder="Asignar luego..." 
+                        class="w-full" 
+                        inputClass="w-full input-oscuro" 
+                    />
                 </div>
             </div>
 

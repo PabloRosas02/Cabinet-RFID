@@ -55,6 +55,9 @@ const formatearFecha = (fechaString) => {
               <IconField iconPosition="left" class="w-full sm:w-20rem">
                   <InputIcon class="pi pi-search" />
                   <InputText 
+                      id="buscadorDevoluciones"
+                      name="buscadorDevoluciones"
+                      aria-label="Buscar por folio o empleado"
                       v-model="filtros['global'].value" 
                       placeholder="Buscar por folio o empleado..." 
                       class="w-full input-oscuro" 
@@ -98,14 +101,14 @@ const formatearFecha = (fechaString) => {
    BLINDAJE NUCLEAR DE LA TABLA (ATAQUE DIRECTO AL DOM)
    ========================================================= */
 
-/* 1. Fondo de la tabla y envolturas */
+/* Fondo de la tabla y envolturas */
 :deep(.p-datatable),
 :deep(.p-datatable-wrapper),
 :deep(.p-datatable-table) {
     background-color: transparent !important;
 }
 
-/* 2. Cabeceras (thead y th) */
+/* Cabeceras (thead y th) */
 :deep(.p-datatable-thead),
 :deep(.p-datatable-thead > tr),
 :deep(.p-datatable-thead > tr > th) {
@@ -116,7 +119,7 @@ const formatearFecha = (fechaString) => {
     padding: 1.2rem 1rem !important;
 }
 
-/* 3. Filas y Celdas del cuerpo (tbody, tr, td) */
+/* Filas y Celdas del cuerpo (tbody, tr, td) */
 :deep(.p-datatable-tbody),
 :deep(.p-datatable-tbody > tr),
 :deep(.p-datatable-tbody > tr > td) {
@@ -126,7 +129,7 @@ const formatearFecha = (fechaString) => {
     border-bottom: 1px solid #1e252d !important; 
 }
 
-/* 4. Hover de la fila y fila vacía */
+/* Hover de la fila y fila vacía */
 :deep(.p-datatable-tbody > tr:hover > td) { 
     background-color: #1e252d !important; 
 }
@@ -136,7 +139,7 @@ const formatearFecha = (fechaString) => {
     text-align: center;
 }
 
-/* 5. Cabecera superior (donde está el buscador) */
+/* Cabecera superior (donde está el buscador) */
 :deep(.p-datatable-header) { 
     background-color: transparent !important; 
     border: none !important; 

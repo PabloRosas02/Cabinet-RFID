@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import Message from 'primevue/message';
 import Button from 'primevue/button'; 
-import Menu from 'primevue/menu'; // <-- AGREGADO: Componente Menu de PrimeVue
+import Menu from 'primevue/menu'; 
 import ExcelJS from 'exceljs';
 
 import FormularioProducto from '@/components/productos/FomularioProducto.vue'; 
@@ -90,7 +90,6 @@ const descargarPlantilla = (formato) => {
         const filaEjemplo = ['"HERR-EJEMPLO"', '"Taladro Inalámbrico"', '"DeWalt"', '"Taladro de 20V con batería"', '"5"', '"1"', '"Eléctrica"', '"Estante A"'];
         generarDescarga('Plantilla_Nuevas_Herramientas.csv', cabeceras, [filaEjemplo.join(',')]);
     } else {
-        // Formato objeto para ExcelJS
         const datosParaExcel = [{
             Codigo: 'HERR-EJEMPLO',
             Nombre: 'Taladro Inalámbrico',
@@ -118,7 +117,6 @@ const procesarArchivo = async (evento) => {
     try {
         let herramientas = [];
 
-        // LÓGICA PARA ARCHIVOS .CSV
         if (archivo.name.toLowerCase().endsWith('.csv')) {
             const texto = await archivo.text();
             const lineas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -159,7 +157,6 @@ const procesarArchivo = async (evento) => {
                 if (obj.codigo && obj.nombre) herramientas.push(obj);
             }
         } 
-        // LÓGICA PARA ARCHIVOS EXCEL (.xlsx)
         else if (archivo.name.toLowerCase().endsWith('.xlsx')) {
             const arrayBuffer = await archivo.arrayBuffer();
             const workbook = new ExcelJS.Workbook();
@@ -239,7 +236,6 @@ const procesarArchivo = async (evento) => {
         <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Registrar Nuevo Producto</h2>
         
         <div class="flex gap-2">
-            <!-- BOTÓN CON MENÚ DESPLEGABLE -->
             <Button 
                 type="button" 
                 label="Descargar Plantilla" 
@@ -253,6 +249,9 @@ const procesarArchivo = async (evento) => {
             <Menu ref="menuDescarga" id="overlay_menu" :model="opcionesDescarga" :popup="true" class="menu-oscuro" />
             
             <input 
+                id="inputSubirArchivo"
+                name="inputSubirArchivo"
+                aria-label="Importar archivo excel o csv"
                 type="file" 
                 ref="fileInput" 
                 accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 

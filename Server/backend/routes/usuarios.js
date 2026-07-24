@@ -63,17 +63,24 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { nombre, numTrabajador, depart, rol, tarjetaRfid } = req.body;
+        const { nombre, numTrabajador, depart, rol, tarjetaRfid, contrasena } = req.body;
+
+        let datosAActualizar = {
+            nombre,
+            numTrabajador,
+            depart,
+            rol,
+            tarjetaRfid: tarjetaRfid || null
+        };
+
+        if (contrasena && contrasena.trim() !== '') {
+            const contrasenaHasheada = await encriptarContrasena(contrasena);
+            datosAActualizar.contrasena = contrasenaHasheada;
+        }
 
         const usuarioActualizado = await prisma.usuario.update({
             where: { id: parseInt(id) },
-            data: {
-                nombre,
-                numTrabajador,
-                depart,
-                rol,
-                tarjetaRfid: tarjetaRfid || null
-            }
+            data: datosAActualizar
         });
 
         delete usuarioActualizado.contrasena;

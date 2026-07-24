@@ -1,6 +1,5 @@
 <script setup>
 import { ref } from 'vue';
-import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
@@ -69,8 +68,9 @@ const obtenerTextoStock = (h) => {
             
             <!-- Búsqueda por Número -->
             <div class="field mb-3">
-                <label class="label-blanco">No. de Empleado (Buscar o Escribir)</label>
+                <label for="buscarNumEmpleado" class="label-blanco">No. de Empleado (Buscar o Escribir)</label>
                 <AutoComplete 
+                    inputId="buscarNumEmpleado"
                     v-model="trabajador.numero" 
                     :suggestions="resultadosSugeridos" 
                     @complete="buscarUsuario" 
@@ -93,8 +93,9 @@ const obtenerTextoStock = (h) => {
             
             <!-- Búsqueda por Nombre -->
             <div class="field">
-                <label class="label-blanco">Nombre del Trabajador</label>
+                <label for="buscarNomEmpleado" class="label-blanco">Nombre del Trabajador</label>
                 <AutoComplete 
+                    inputId="buscarNomEmpleado"
                     v-model="trabajador.nombre" 
                     :suggestions="resultadosSugeridos" 
                     @complete="buscarUsuario" 
@@ -132,7 +133,14 @@ const obtenerTextoStock = (h) => {
                     <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" tooltip="Ver Detalles" />
                     <div class="control-cantidad">
                         <span class="etiqueta-cant">Cant:</span>
-                        <input type="number" v-model.number="item.cantidadLlevada" min="1" :max="item.cantidadDisponible" class="input-oscuro input-numero" />
+                        <input 
+                            type="number" 
+                            v-model.number="item.cantidadLlevada" 
+                            min="1" 
+                            :max="item.cantidadDisponible" 
+                            class="input-oscuro input-numero" 
+                            aria-label="Cantidad a llevar"
+                        />
                         <span class="etiqueta-stock">/ {{ item.cantidadDisponible }}</span>
                     </div>
                     <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" tooltip="Quitar" />
