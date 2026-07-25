@@ -6,23 +6,18 @@ const router = createRouter({
     {
       path: '/',
       redirect: '/login',
-      meta: {
-        hideLayout: true 
-      } 
+      meta: { hideLayout: true } 
     },
     {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
-      meta: {
-        hideLayout: true 
-      }
+      meta: { hideLayout: true }
     },
     {
       path: '/usuarios',
       name: 'usuarios',
       component: () => import('../views/UsuariosView.vue'),
-      // Exclusivo del Administrador
       meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR'] } 
     },
     {
@@ -74,18 +69,17 @@ const router = createRouter({
   ]
 })
 
-// === GUARDIA DE NAVEGACIÓN BLINDADA ===
 router.beforeEach((to, from) => {
-  // Leemos la sesión actual del usuario
+  // 1. Buscamos el GAFETE (Token) y los datos del usuario
+  const token = localStorage.getItem('token');
   const usuarioStr = localStorage.getItem('usuarioActivo');
+  
   const usuario = usuarioStr ? JSON.parse(usuarioStr) : null;
   const rolUsuario = usuario ? usuario.rol : null;
 
-  // Extraemos los permisos de la ruta
   const requiereAutenticacion = to.meta.requiresAuth;
   const rolesRequeridos = to.meta.rolesPermitidos;
 
-  // Función de ayuda para saber a dónde mandar a cada quien
   const obtenerRutaPorDefecto = (rol) => {
     if (rol === 'ADMINISTRADOR' || rol === 'SUPERVISOR_ALMACEN') return '/inventario';
     if (rol === 'ALMACENISTA') return '/pedidos';
@@ -93,32 +87,32 @@ router.beforeEach((to, from) => {
     return '/login'; 
   };
 
-  // REGLA 1: Si el usuario ya está logueado e intenta entrar al /login o a la raíz (/)
-  if ((to.path === '/login' || to.path === '/') && usuario) {
+  // REGLA 1: Si TIENE TOKEN e intenta ir al login, lo regresamos a su panel
+  if ((to.path === '/login' || to.path === '/') && token && usuario) {
     return obtenerRutaPorDefecto(rolUsuario);
   }
 
-  // REGLA 2: Si la ruta requiere estar logueado de forma obligatoria
+  // REGLA 2: Si la ruta es privada
   if (requiereAutenticacion) {
-    // Si no hay sesión iniciada, ¡pa' fuera! Al login.
-    if (!usuario) {
+    // Si NO hay token o NO hay datos de usuario
+    if (!token || !usuario) {
+      // Limpiamos por si quedó basura en el storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('usuarioActivo');
       return '/login';
     }
 
-    // REGLA 3: Si además requiere un rol específico y el usuario no lo tiene
+    // REGLA 3: Verificamos el rol para la UX
     if (rolesRequeridos && !rolesRequeridos.includes(rolUsuario)) {
-      // Lo devolvemos a su panel principal por defecto
       return obtenerRutaPorDefecto(rolUsuario);
     }
   }
 
-  // REGLA 4: Si intenta ir a una ruta suelta (y no es login) sin estar logueado
-  // (Esto cubre cualquier ruta rara que se nos haya escapado proteger con requiresAuth)
-  if (to.path !== '/login' && to.path !== '/' && !usuario && !requiereAutenticacion) {
+  // REGLA 4: Si es una ruta rara y no está logueado
+  if (to.path !== '/login' && to.path !== '/' && !token && !requiereAutenticacion) {
     return '/login';
   }
 
-  // Si pasa todas las aduanas, permitimos el acceso
   return true;
 });
 

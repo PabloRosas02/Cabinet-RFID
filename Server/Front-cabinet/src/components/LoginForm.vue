@@ -38,9 +38,10 @@ const iniciarSesion = async () => {
 
         const response = await axios.post('/api/usuarios/login', credenciales);
         
-        // Extraemos el usuario de la respuesta
         const usuarioLogueado = response.data.usuario;
+        const tokenAcceso = response.data.token;
         
+        localStorage.setItem('token', tokenAcceso);
         localStorage.setItem('usuarioActivo', JSON.stringify(usuarioLogueado));
 
         if (usuarioLogueado.rol === 'ALMACENISTA') {

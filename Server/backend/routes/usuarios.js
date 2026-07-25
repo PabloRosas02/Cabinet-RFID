@@ -1,13 +1,14 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-// Importamos nuestras nuevas funciones modulares
 import { encriptarContrasena, verificarContrasena } from '../utils/encriptacion.js';
+import jwt from 'jsonwebtoken';
+import { verificarToken } from '../middlewares/auth.js'; 
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // 1. OBTENER TODOS LOS USUARIOS (GET)
-router.get('/', async (req, res) => {
+router.get('/', verificarToken, async (req, res) => {
     try {
         const usuarios = await prisma.usuario.findMany({
             select: {
@@ -29,15 +30,11 @@ router.get('/', async (req, res) => {
 });
 
 // 2. CREAR UN NUEVO USUARIO (POST)
-router.post('/', async (req, res) => {
+router.post('/', verificarToken, async (req, res) => {
     try {
-        // Agregamos "contrasena" a la extracción del body
         const { nombre, numTrabajador, depart, rol, tarjetaRfid, contrasena } = req.body;
         
-        // Usamos la contraseña del formulario. Si por alguna razón está vacía, usamos el default.
         const contrasenaPlana = contrasena || `Crissair${numTrabajador}`;
-        
-        // Encriptamos
         const contrasenaHasheada = await encriptarContrasena(contrasenaPlana);
         
         const nuevoUsuario = await prisma.usuario.create({
@@ -60,7 +57,7 @@ router.post('/', async (req, res) => {
 });
 
 // 3. ACTUALIZAR UN USUARIO (PUT)
-router.put('/:id', async (req, res) => {
+router.put('/:id', verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, numTrabajador, depart, rol, tarjetaRfid, contrasena } = req.body;
@@ -92,7 +89,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // 4. ELIMINAR UN USUARIO (DELETE)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
         await prisma.usuario.delete({
@@ -101,7 +98,6 @@ router.delete('/:id', async (req, res) => {
         res.json({ message: 'Usuario eliminado correctamente' });
     } catch (error) {
         console.error(error);
-        // Protección de llave foránea: Si el usuario ya prestó/recibió herramientas, no se puede borrar
         if (error.code === 'P2003') {
             return res.status(400).json({ 
                 error: 'No se puede eliminar: Este usuario tiene historial de pedidos asociado en el sistema.' 
@@ -111,7 +107,7 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// 5. INICIAR SESIÓN (POST /login)
+// 5. INICIAR SESIÓN CON JWT (POST /login) 
 router.post('/login', async (req, res) => {
     try {
         const { numTrabajador, contrasena } = req.body;
@@ -124,17 +120,27 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: 'El número de trabajador no existe en el sistema.' });
         }
 
-        // Usamos nuestra utilidad para verificar
         const passwordValida = await verificarContrasena(contrasena, usuario.contrasena);
 
         if (!passwordValida) {
             return res.status(401).json({ error: 'La contraseña es incorrecta.' });
         }
 
+        const payload = {
+            id: usuario.id,
+            numTrabajador: usuario.numTrabajador,
+            nombre: usuario.nombre,
+            rol: usuario.rol
+        };
+
+        const firmaSecreta = process.env.JWT_SECRET || 'FirmaSecretaCrissair2026';
+        const token = jwt.sign(payload, firmaSecreta, { expiresIn: '8h' });
+
         const { contrasena: _, ...usuarioSinPassword } = usuario;
         
         res.status(200).json({ 
             message: 'Login exitoso', 
+            token: token,
             usuario: usuarioSinPassword 
         });
 

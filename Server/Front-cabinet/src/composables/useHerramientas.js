@@ -1,4 +1,5 @@
 import { ref, onMounted } from 'vue';
+import axios from 'axios'; // 👈 Importamos axios para usar el interceptor global con el Token
 
 export function useHerramientas() {
     const API_URL = '/api/herramientas';
@@ -12,15 +13,11 @@ export function useHerramientas() {
     const herramientaActual = ref({});
     const esEdicion = ref(false);
 
-    // OBTENER DATOS
     const cargarHerramientas = async () => {
         cargando.value = true;
         try {
-            const respuesta = await fetch(API_URL);
-            if (!respuesta.ok) throw new Error('Error al conectar con el servidor');
-            
-            const data = await respuesta.json();
-            herramientas.value = data;
+            const respuesta = await axios.get(API_URL);
+            herramientas.value = respuesta.data;
         } catch (error) {
             console.error("Error al cargar herramientas:", error);
             alert("No se pudo cargar el inventario."); 
@@ -65,30 +62,22 @@ export function useHerramientas() {
         }
     };
 
-    // GUARDAR (Crear o Actualizar)
+    // GUARDAR (Crear o Actualizar con Axios)
     const guardarHerramienta = async () => {
         try {
-            const metodo = esEdicion.value ? 'PUT' : 'POST';
-            const url = esEdicion.value ? `${API_URL}/${herramientaActual.value.id}` : API_URL;
+            const esActEdicion = esEdicion.value;
+            const url = esActEdicion ? `${API_URL}/${herramientaActual.value.id}` : API_URL;
 
-            // Extraemos el usuario para el historial
-            const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
-            const datosGuardar = { ...herramientaActual.value, usuarioId: usuarioSesion?.id };
-
-            const respuesta = await fetch(url, {
-                method: metodo,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datosGuardar)
-            });
-
-            if (!respuesta.ok) {
-                const errorData = await respuesta.json();
-                throw new Error(errorData.error || 'Error al guardar la herramienta');
+            let respuesta;
+            if (esActEdicion) {
+                respuesta = await axios.put(url, herramientaActual.value);
+            } else {
+                respuesta = await axios.post(url, herramientaActual.value);
             }
 
-            const herramientaGuardada = await respuesta.json();
+            const herramientaGuardada = respuesta.data;
 
-            if (esEdicion.value) {
+            if (esActEdicion) {
                 const index = herramientas.value.findIndex(h => h.id === herramientaActual.value.id);
                 if (index !== -1) {
                     herramientas.value.splice(index, 1, herramientaGuardada);
@@ -100,39 +89,27 @@ export function useHerramientas() {
             mostrarModal.value = false;
         } catch (error) {
             console.error(error);
-            alert(`Error: ${error.message}`);
+            const mensajeError = error.response?.data?.error || error.message;
+            alert(`Error: ${mensajeError}`);
         }
     };
 
-    // ELIMINAR (Soft Delete) - CORREGIDO PARA ACEPTAR usuarioId en la URL
+    // ELIMINAR (Soft Delete con Axios)
     const eliminarHerramienta = async (herramienta) => {
         const confirmado = confirm(`¿Estás seguro de dar de baja la herramienta ${herramienta.codigo} - ${herramienta.nombre}?`);
         if (!confirmado) return;
 
         try {
-            const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
-            
-            // Construimos la URL con el usuarioId como query param para que el backend lo lea bien en un DELETE
-            const urlConParametros = usuarioSesion?.id 
-                ? `${API_URL}/${herramienta.id}?usuarioId=${usuarioSesion.id}` 
-                : `${API_URL}/${herramienta.id}`;
+            // El token viaja automáticamente, el backend sabrá qué usuario realizó la baja
+            await axios.delete(`${API_URL}/${herramienta.id}`);
 
-            const respuesta = await fetch(urlConParametros, {
-                method: 'DELETE'
-            });
-
-            if (!respuesta.ok) {
-                const errorInfo = await respuesta.json().catch(() => ({}));
-                throw new Error(errorInfo.error || 'Error al dar de baja');
-            }
-
-            // Actualizamos la lista local eliminando la herramienta que se dio de baja
+            // Actualizamos la lista local eliminando la herramienta dada de baja
             herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
             
-            // Opcional: Podrías usar un Toast aquí en lugar de un alert si quisieras
         } catch (error) {
             console.error(error);
-            alert(`Hubo un problema al intentar dar de baja la herramienta: ${error.message}`);
+            const mensajeError = error.response?.data?.error || error.message;
+            alert(`Hubo un problema al intentar dar de baja la herramienta: ${mensajeError}`);
         }
     };
 

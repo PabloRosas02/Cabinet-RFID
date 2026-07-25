@@ -1,13 +1,14 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { verificarToken } from '../middlewares/auth.js';
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
 // =====================================================================
-// 1. POST /api/pedidos -> Crear un nuevo pedido (Préstamo)
+// 1. POST /api/pedidos -> Crear un nuevo pedido (Préstamo) 
 // =====================================================================
-router.post('/', async (req, res) => {
+router.post('/', verificarToken, async (req, res) => {
     const { trabajadorNumero, trabajadorNombre, prestadorId, herramientas } = req.body;
 
     try {
@@ -53,11 +54,11 @@ router.post('/', async (req, res) => {
 });
 
 // =====================================================================
-// 2. GET /api/pedidos/pendientes
+// 2. GET /api/pedidos/pendientes 
 // =====================================================================
-router.get('/pendientes', async (req, res) => {
+router.get('/pendientes', verificarToken, async (req, res) => {
     try {
-        const { rol, numTrabajador } = req.query; 
+        const { rol, numTrabajador } = req.usuario; 
 
         let filtrosConsulta = {
             estado: {
@@ -65,7 +66,6 @@ router.get('/pendientes', async (req, res) => {
             }
         };
 
-        // REGLA ACTUALIZADA: Almacenistas, Supervisores y Administradores ven TODOS los pendientes.
         // Si es OPERADOR, por seguridad, solo ve sus propios préstamos pendientes.
         if (rol === 'OPERADOR' && numTrabajador) {
             filtrosConsulta.trabajadorNumero = numTrabajador.toString();
@@ -110,9 +110,9 @@ router.get('/pendientes', async (req, res) => {
 });
 
 // =====================================================================
-// 3. PUT /api/pedidos/:id/devolver -> Procesar Devolución Parcial o Total
+// 3. PUT /api/pedidos/:id/devolver -> Procesar Devolución 
 // =====================================================================
-router.put('/:id/devolver', async (req, res) => {
+router.put('/:id/devolver', verificarToken, async (req, res) => {
     const pedidoId = parseInt(req.params.id);
     let { herramientasDevueltas, receptorId } = req.body; 
 
@@ -121,10 +121,8 @@ router.put('/:id/devolver', async (req, res) => {
             return res.status(400).json({ error: 'No se especificó el ID del receptor de la devolución.' });
         }
 
-        // Filtrar para ignorar todo lo que tenga cantidad 0
         herramientasDevueltas = herramientasDevueltas.filter(item => item.cantidad > 0);
 
-        // Si después de filtrar no hay nada que devolver, marcamos error
         if (herramientasDevueltas.length === 0) {
             return res.status(400).json({ error: 'Debes registrar al menos una (1) herramienta para procesar la devolución.' });
         }
@@ -147,13 +145,11 @@ router.put('/:id/devolver', async (req, res) => {
                     throw new Error(`La cantidad total devuelta excede lo prestado.`);
                 }
 
-                // 1. Actualizamos el contador general del detalle
                 await tx.detallePedido.update({
                     where: { id: detalle.id },
                     data: { cantidadRegresada: { increment: item.cantidad } }
                 });
 
-                // 2. CREAMOS EL TICKET DE DEVOLUCIÓN PARCIAL
                 await tx.devolucionParcial.create({
                     data: {
                         detalleId: detalle.id,
@@ -162,7 +158,6 @@ router.put('/:id/devolver', async (req, res) => {
                     }
                 });
 
-                // 3. Regresamos el stock físico
                 await tx.herramienta.update({
                     where: { id: detalle.herramientaId },
                     data: { cantidadDisponible: { increment: item.cantidad } }
@@ -178,7 +173,6 @@ router.put('/:id/devolver', async (req, res) => {
                 d => d.cantidadRegresada >= d.cantidadPrestada
             );
 
-            // 4. Actualizamos el pedido maestro
             await tx.pedido.update({
                 where: { id: pedidoId },
                 data: { 
@@ -197,15 +191,14 @@ router.put('/:id/devolver', async (req, res) => {
 });
 
 // =====================================================================
-// 4. GET /api/pedidos/historial -> Traer TODO el historial para reportes
+// 4. GET /api/pedidos/historial -> Traer historial para reportes 
 // =====================================================================
-router.get('/historial', async (req, res) => {
+router.get('/historial', verificarToken, async (req, res) => {
     try {
-        const { rol, numTrabajador } = req.query; 
+        const { rol, numTrabajador } = req.usuario; 
 
         let filtrosConsulta = {};
 
-        // REGLA ACTUALIZADA: Almacenistas, Supervisores y Administradores ven TODO el historial.
         // Los operadores solo ven los pedidos que ellos mismos solicitaron.
         if (rol === 'OPERADOR' && numTrabajador) {
             filtrosConsulta = {
