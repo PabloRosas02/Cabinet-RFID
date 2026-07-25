@@ -40,8 +40,9 @@ const getSeverityRol = (rol) => {
 
 <template>
     <Toast /> 
-    <!-- Contenedor Principal Oscuro unificado (estilo Historial) -->
-    <div class="panel-principal p-4 border-round-xl shadow-1 mt-4">
+    
+    <!-- Contenedor Principal Oscuro (padding ajustado para móvil) -->
+    <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
         
         <!-- Encabezado de la vista -->
         <div class="flex justify-content-between align-items-center mb-4">
@@ -52,9 +53,9 @@ const getSeverityRol = (rol) => {
         <div class="flex flex-column md:flex-row justify-content-between mb-4 gap-3 align-items-start md:align-items-center">
             
             <div class="w-full md:w-auto">
-                <IconField iconPosition="left" class="w-full sm:w-20rem">
+                <!-- Buscador 100% ancho en móvil, 20rem en escritorio -->
+                <IconField iconPosition="left" class="w-full md:w-20rem">
                     <InputIcon class="pi pi-search" />
-                    <!-- Buscador con aria-label -->
                     <InputText 
                         name="buscadorGeneral" 
                         aria-label="Buscar empleado" 
@@ -65,18 +66,18 @@ const getSeverityRol = (rol) => {
                 </IconField>
             </div>
             
-            <div>
+            <div class="w-full md:w-auto">
                 <Button 
                     v-if="rolLogueado === 'ADMINISTRADOR'"
                     label="Nuevo Empleado" 
                     icon="pi pi-user-plus" 
-                    class="btn-nuevo font-bold" 
+                    class="btn-nuevo font-bold w-full md:w-auto" 
                     @click="prepararNuevoUsuario" 
                 />
             </div>
         </div>
 
-        <!-- Tabla de Usuarios (Blindada) -->
+        <!-- Tabla de Usuarios (Con scroll horizontal responsivo) -->
         <DataTable 
             :value="usuarios" 
             paginator 
@@ -86,22 +87,24 @@ const getSeverityRol = (rol) => {
             :globalFilterFields="['nombre', 'numTrabajador', 'departamento']"
             emptyMessage="No se encontraron usuarios en el sistema."
             class="tabla-oscura w-full"
+            scrollable
         >
-            <Column field="numTrabajador" header="No. Empleado" sortable style="width: 15%">
+            <!-- A cada columna se le asigna un min-width para garantizar su legibilidad en móvil -->
+            <Column field="numTrabajador" header="No. Empleado" sortable style="min-width: 140px; width: 15%;">
                 <template #body="{ data }"><span class="font-bold text-400">{{ data.numTrabajador }}</span></template>
             </Column>
-            <Column field="nombre" header="Nombre Completo" sortable style="width: 25%">
+            <Column field="nombre" header="Nombre Completo" sortable style="min-width: 220px; width: 25%;">
                 <template #body="{ data }"><span class="text-white">{{ data.nombre }}</span></template>
             </Column>
-            <Column field="depart" header="Departamento" sortable style="width: 15%"></Column>
+            <Column field="depart" header="Departamento" sortable style="min-width: 160px; width: 15%;"></Column>
             
-            <Column header="Rol (Acceso)" style="width: 15%">
+            <Column header="Rol (Acceso)" style="min-width: 200px; width: 15%;">
                 <template #body="slotProps">
                     <Tag :value="slotProps.data.rol.replace('_', ' ')" :severity="getSeverityRol(slotProps.data.rol)" class="px-3 py-1 font-bold tag-rol" />
                 </template>
             </Column>
 
-            <Column header="Tarjeta RFID" style="width: 15%">
+            <Column header="Tarjeta RFID" style="min-width: 160px; width: 15%;">
                 <template #body="slotProps">
                     <span v-if="slotProps.data.tarjetaRfid" class="rfid-badge font-bold" style="color: #38bdf8;">
                         <i class="pi pi-id-card mr-2"></i> {{ slotProps.data.tarjetaRfid }}
@@ -110,18 +113,25 @@ const getSeverityRol = (rol) => {
                 </template>
             </Column>
             
-            <Column v-if="rolLogueado === 'ADMINISTRADOR'" header="Acciones" style="width: 15%">
+            <Column v-if="rolLogueado === 'ADMINISTRADOR'" header="Acciones" style="min-width: 120px; width: 15%;">
                 <template #body="{ data }">
                     <div class="action-buttons flex gap-2">
-                        <Button icon="pi pi-pencil" class="p-button-rounded btn-accion p-button-info" @click="prepararEdicion(data)" tooltip="Editar" />
-                        <Button icon="pi pi-trash" class="p-button-rounded btn-accion p-button-danger" @click="eliminarUsuario(data)" tooltip="Eliminar" />
+                        <Button icon="pi pi-pencil" class="p-button-rounded btn-accion p-button-info" @click="prepararEdicion(data)" tooltip="Editar" tooltipOptions="{position: 'top'}" />
+                        <Button icon="pi pi-trash" class="p-button-rounded btn-accion p-button-danger" @click="eliminarUsuario(data)" tooltip="Eliminar" tooltipOptions="{position: 'top'}" />
                     </div>
                 </template>
             </Column>
         </DataTable>
 
         <!-- VENTANA EMERGENTE (MODAL) PARA CREAR/EDITAR -->
-        <Dialog v-model:visible="mostrarModal" :header="esEdicion ? 'Editar Empleado' : 'Nuevo Empleado'" :modal="true" :style="{ width: '420px' }" class="modal-oscuro">
+        <Dialog 
+            v-model:visible="mostrarModal" 
+            :header="esEdicion ? 'Editar Empleado' : 'Nuevo Empleado'" 
+            :modal="true" 
+            :breakpoints="{ '1199px': '75vw', '575px': '95vw' }" 
+            :style="{ width: '420px' }" 
+            class="modal-oscuro"
+        >
             <div class="flex flex-column gap-2 pt-2">
 
                 <div class="field flex flex-column gap-1">
@@ -221,6 +231,7 @@ const getSeverityRol = (rol) => {
     background-color: #2a323d !important; 
     color: #ffffff; 
     border: 1px solid #4a5568 !important; 
+    overflow-x: hidden; /* Evitar scroll a nivel del panel */
 }
 .label-blanco { color: #cbd5e1; font-weight: 500; font-size: 0.95rem; }
 
@@ -238,7 +249,7 @@ const getSeverityRol = (rol) => {
 :deep(.btn-accion:hover) { filter: brightness(1.3); }
 
 /* =========================================================
-   BLINDAJE DE LA TABLA (CONSISTENCIA GLOBAL)
+   BLINDAJE DE LA TABLA (CONSISTENCIA GLOBAL Y RESPONSIVE)
    ========================================================= */
 :deep(.p-datatable), :deep(.p-datatable-wrapper), :deep(.p-datatable-table) { background-color: transparent !important; }
 :deep(.p-datatable-thead > tr > th) {
@@ -250,6 +261,11 @@ const getSeverityRol = (rol) => {
 }
 :deep(.p-datatable-tbody > tr:hover > td) { background-color: #1e252d !important; }
 :deep(.p-datatable-empty-message > td) { background-color: #121820 !important; color: #94a3b8 !important; text-align: center !important; padding: 2rem !important; }
+
+/* Scroll horizontal fino en dispositivos móviles (Oculta la barra fea) */
+:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 
 /* Paginador */
 :deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem; border-top: 1px solid #4a5568 !important; padding-top: 1rem !important; }
@@ -294,7 +310,7 @@ input.input-oscuro::placeholder, .p-iconfield input::placeholder { color: #94a3b
    ========================================================= */
 .modal-oscuro {
     background-color: #1e252d !important;
-    border: 1px solid #4a5568 !important; /* Quitamos el borde blanco extraño */
+    border: 1px solid #4a5568 !important; 
     border-radius: 8px !important;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
 }

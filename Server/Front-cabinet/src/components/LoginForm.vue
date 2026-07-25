@@ -75,11 +75,13 @@ const iniciarSesion = async () => {
                 <label for="numTrabajador">Número de Trabajador</label>
                 <InputText 
                     id="numTrabajador" 
+                    name="numTrabajador"
                     v-model="numTrabajador" 
                     type="number" 
                     placeholder="Ej. 10452" 
                     class="w-full input-premium sin-flechas" 
                     @keydown="prevenirCaracteresInvalidos"
+                    autocomplete="username"
                 />
             </div>
             
@@ -87,17 +89,19 @@ const iniciarSesion = async () => {
                 <label for="contrasena">Contraseña</label>
                 <Password 
                     inputId="contrasena" 
+                    name="contrasena"
                     v-model="contrasena" 
                     placeholder="Tu contraseña" 
                     :feedback="false" 
                     toggleMask 
                     class="w-full password-premium" 
                     inputClass="w-full input-premium" 
+                    autocomplete="current-password"
                 />
             </div>
 
             <div class="field-checkbox">
-                <Checkbox v-model="recordar" inputId="recordar" :binary="true" />
+                <Checkbox v-model="recordar" inputId="recordar" name="recordar" :binary="true" />
                 <label for="recordar" class="ml-2">Recordar mi sesión</label>
             </div>
 
@@ -117,8 +121,11 @@ const iniciarSesion = async () => {
 </template>
 
 <style scoped>
-.form-wrapper { width: 100%; max-width: 380px; }
-.logo { width: 260px; margin-bottom: 2.5rem; display: block; }
+/* =========================================================
+   ESTILOS GENERALES (Mobile-First y Escritorio)
+   ========================================================= */
+.form-wrapper { width: 100%; max-width: 380px; margin: 0 auto; padding: 1rem; }
+.logo { width: 100%; max-width: 260px; margin-bottom: 2.5rem; display: block; }
 .title { font-size: 2.2rem; color: #fff; margin-bottom: 0.5rem; font-weight: 800; letter-spacing: -0.5px; }
 .subtitle { color: #94a3b8; margin-bottom: 2.5rem; font-size: 0.95rem; line-height: 1.5; }
 .field { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; }
@@ -130,6 +137,9 @@ label { font-weight: 500; font-size: 0.9rem; color: #94a3b8; }
 .error-text { color: #ef4444; font-size: 0.9rem; font-weight: 500; margin-bottom: 1rem; display: flex; align-items: center; }
 .mr-1 { margin-right: 0.25rem; }
 
+/* =========================================================
+   ESTILOS PREMIUM Y COMPONENTES
+   ========================================================= */
 :deep(.input-premium) {
     background-color: #122230 !important;
     border: 1px solid #2a3f54 !important;
@@ -166,4 +176,33 @@ label { font-weight: 500; font-size: 0.9rem; color: #94a3b8; }
 }
 :deep(.btn-crissair:active) { transform: translateY(0); }
 :deep(.btn-crissair:disabled) { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+/* =========================================================
+   MEDIA QUERIES (RESPONSIVE)
+   ========================================================= */
+
+/* Para teléfonos móviles y pantallas pequeñas (menores a 576px) */
+@media screen and (max-width: 576px) {
+    .form-wrapper {
+        padding: 0.5rem; /* Menos relleno en los bordes */
+    }
+    .logo {
+        max-width: 200px; /* Logo más pequeño para que quepa bien */
+        margin-bottom: 2rem;
+    }
+    .title {
+        font-size: 1.8rem; /* Título un poco más pequeño */
+    }
+    .subtitle {
+        font-size: 0.85rem; /* Subtítulo ajustado */
+        margin-bottom: 2rem;
+    }
+    :deep(.input-premium) {
+        padding: 0.75rem 1rem !important; /* Cuadros de texto un poco más compactos */
+    }
+    :deep(.btn-crissair) {
+        padding: 0.85rem !important; /* Botón ligeramente más delgado */
+        font-size: 1rem !important;
+    }
+}
 </style>

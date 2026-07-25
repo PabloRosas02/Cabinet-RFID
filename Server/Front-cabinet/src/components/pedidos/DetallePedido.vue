@@ -13,7 +13,6 @@ const props = defineProps({
 
 const emit = defineEmits(['quitar', 'registrar']);
 
-// --- Lógica de Búsqueda de Usuario (AutoComplete) ---
 const resultadosSugeridos = ref([]);
 
 const buscarUsuario = (event) => {
@@ -35,12 +34,11 @@ const seleccionarUsuario = (event) => {
     }
 };
 
-// --- Lógica del Modal de Detalles ---
 const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
 
 const verDetalles = (item) => {
-    herramientaActual.value = item; // Corregido el error tipográfico
+    herramientaActual.value = item; 
     mostrarDetalles.value = true;
 };
 
@@ -60,8 +58,8 @@ const obtenerTextoStock = (h) => {
 </script>
 
 <template>
-    <div class="panel-pedido p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo">Detalle del Pedido</h3>
+    <div class="panel-pedido p-3 md:p-4 border-round-xl shadow-1">
+        <h3 class="subtitulo text-xl md:text-2xl font-bold">Detalle del Pedido</h3>
 
         <!-- Formulario del Trabajador -->
         <div class="formulario-trabajador mb-4">
@@ -124,13 +122,16 @@ const obtenerTextoStock = (h) => {
         <div v-if="pedido.length === 0" class="mensaje-vacio">Aún no has agregado herramientas.</div>
 
         <ul v-else class="lista-pedido">
-            <li v-for="item in pedido" :key="item.id" class="item-pedido">
-                <div class="item-info">
-                    <span class="item-codigo">{{ item.codigo }}</span>
-                    <span class="item-nombre">{{ item.nombre }}</span>
+            <li v-for="item in pedido" :key="item.id" class="item-pedido flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-3 sm:gap-0">
+
+                <div class="item-info w-full sm:w-5">
+                    <span class="item-codigo block mb-1 sm:mb-0">{{ item.codigo }}</span>
+                    <span class="item-nombre block text-lg sm:text-base">{{ item.nombre }}</span>
                 </div>
-                <div class="item-acciones">
-                    <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" tooltip="Ver Detalles" />
+
+                <div class="item-acciones w-full sm:w-7 flex justify-content-between sm:justify-content-end align-items-center">
+                    <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" aria-label="Ver Detalles" />
+                    
                     <div class="control-cantidad">
                         <span class="etiqueta-cant">Cant:</span>
                         <input 
@@ -143,7 +144,8 @@ const obtenerTextoStock = (h) => {
                         />
                         <span class="etiqueta-stock">/ {{ item.cantidadDisponible }}</span>
                     </div>
-                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" tooltip="Quitar" />
+                    
+                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" aria-label="Quitar" />
                 </div>
             </li>
         </ul>
@@ -156,14 +158,20 @@ const obtenerTextoStock = (h) => {
             @click="emit('registrar')" 
             :disabled="pedido.length === 0 || !trabajador.numero || !trabajador.nombre"
         />
-
-        <!-- MODAL DE DETALLES INTEGRADO -->
-        <Dialog v-model:visible="mostrarDetalles" :style="{width: '700px'}" header="Detalles de la Herramienta" :modal="true" dismissableMask class="modal-oscuro-primeflex">
-            <div v-if="herramientaActual" class="p-4">
+        <Dialog 
+            v-model:visible="mostrarDetalles" 
+            :style="{width: '700px'}" 
+            :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
+            header="Detalles de la Herramienta" 
+            :modal="true" 
+            dismissableMask 
+            class="modal-oscuro-primeflex"
+        >
+            <div v-if="herramientaActual" class="p-2 md:p-4">
                 <div class="flex flex-column align-items-center mb-5">
                     <img v-if="herramientaActual.imagen" :src="herramientaActual.imagen" @error="$event.target.src='https://via.placeholder.com/250x150/1e252d/ffffff?text=Error'" class="shadow-3 border-round" style="max-width: 100%; max-height: 300px; object-fit: contain;" />
-                    <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 200px; height: 200px;"><i class="pi pi-image text-7xl text-400"></i></div>
-                    <div class="mt-4"><Tag class="text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramientaActual)" :value="obtenerTextoStock(herramientaActual)" /></div>
+                    <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 100%; max-width: 200px; height: 200px;"><i class="pi pi-image text-7xl text-400"></i></div>
+                    <div class="mt-4"><Tag class="text-lg md:text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramientaActual)" :value="obtenerTextoStock(herramientaActual)" /></div>
                 </div>
 
                 <div class="grid">
@@ -173,11 +181,13 @@ const obtenerTextoStock = (h) => {
                     <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Ubicación Física</span><span class="text-lg text-white">{{ herramientaActual.ubicacion || 'N/A' }}</span></div>
                     <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Marca / Proveedor</span><span class="text-lg text-white">{{ herramientaActual.marca || 'N/A' }}</span></div>
                     <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Stock Actual vs Mínimo</span><span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} unidades</span></div>
-                    <div class="col-12 mb-3"><span class="text-500 block mb-1">Descripción y Notas</span><div class="surface-100 p-3 border-round text-lg line-height-3 text-300">{{ herramientaActual.descripcion || 'Sin descripción disponible.' }}</div></div>
+                    <div class="col-12 mb-3"><span class="text-500 block mb-1">Descripción y Notas</span><div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">{{ herramientaActual.descripcion || 'Sin descripción disponible.' }}</div></div>
                 </div>
             </div>
             <template #footer>
-                <div class="flex justify-content-end mt-3"><Button label="Cerrar" icon="pi pi-times" class="p-button-text text-500 hover:text-white" @click="mostrarDetalles = false" autofocus /></div>
+                <div class="flex justify-content-end mt-2 md:mt-3">
+                    <Button label="Cerrar" icon="pi pi-times" class="p-button-text text-500 hover:text-white w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
+                </div>
             </template>
         </Dialog>
     </div>
@@ -185,30 +195,57 @@ const obtenerTextoStock = (h) => {
 
 <style scoped>
 .panel-pedido { background-color: #2a323d; display: flex; flex-direction: column; height: 100%; }
-.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; }
+.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; }
 .subtitulo-menor { color: #cbd5e1; font-size: 1.1rem; }
 .label-blanco { display: block; color: #cbd5e1; margin-bottom: 0.5rem; font-weight: 500; }
+
 :deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 :deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
+
 .mensaje-vacio { color: #94a3b8; font-style: italic; text-align: center; padding: 1rem 0; }
 .lista-pedido { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; max-height: 350px; }
-.item-pedido { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background-color: #1e252d; border: 1px solid #4a5568; border-radius: 8px; margin-bottom: 0.5rem; }
-.item-info { display: flex; flex-direction: column; width: 35%; }
+.item-pedido { padding: 0.75rem; background-color: #1e252d; border: 1px solid #4a5568; border-radius: 8px; margin-bottom: 0.5rem; }
+
+/* Eliminamos los anchos fijos, PrimeFlex se encarga ahora */
+.item-info { display: flex; flex-direction: column; }
 .item-codigo { font-size: 0.8rem; color: #94a3b8; }
 .item-nombre { font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.item-acciones { display: flex; align-items: center; justify-content: flex-end; width: 65%; }
+
+.item-acciones { display: flex; }
 .control-cantidad { display: flex; align-items: center; background-color: #2a323d; padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid #3f4b5b; }
 .etiqueta-cant, .etiqueta-stock { color: #94a3b8; font-size: 0.85rem; }
 .input-numero { width: 50px; text-align: center; margin: 0 0.5rem; padding: 0.3rem; border-radius: 4px; }
 .input-numero::-webkit-outer-spin-button, .input-numero::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .input-numero[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
 .boton-registrar { background-color: #3b82f6 !important; border: none !important; padding: 1rem !important; font-weight: bold !important; transition: all 0.2s; }
 .boton-registrar:disabled { background-color: #4a5568 !important; color: #94a3b8 !important; cursor: not-allowed; }
+
 :deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }
 :deep(.surface-200) { background-color: #1e252d !important; }
 :deep(.text-500) { color: #94a3b8 !important; }
 :deep(.text-300) { color: #cbd5e1 !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-header), :deep(.modal-oscuro-primeflex .p-dialog-content), :deep(.modal-oscuro-primeflex .p-dialog-footer) { background-color: #1e252d !important; color: #ffffff !important; border: none; }
+
+/* Modal responsivo */
+:deep(.modal-oscuro-primeflex .p-dialog-header), 
+:deep(.modal-oscuro-primeflex .p-dialog-content), 
+:deep(.modal-oscuro-primeflex .p-dialog-footer) { 
+    background-color: #1e252d !important; 
+    color: #ffffff !important; 
+    border: none; 
+    padding-left: 1rem !important; 
+    padding-right: 1rem !important;
+}
+
+@media (min-width: 768px) {
+    :deep(.modal-oscuro-primeflex .p-dialog-header), 
+    :deep(.modal-oscuro-primeflex .p-dialog-content), 
+    :deep(.modal-oscuro-primeflex .p-dialog-footer) { 
+        padding-left: 1.5rem !important; 
+        padding-right: 1.5rem !important;
+    }
+}
+
 :deep(.modal-oscuro-primeflex .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
 :deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
 :deep(.modal-oscuro-primeflex .p-dialog-header-icon) { color: #94a3b8 !important; }
@@ -216,6 +253,7 @@ const obtenerTextoStock = (h) => {
 </style>
 
 <style>
+/* Estilos globales para AutoComplete */
 .panel-autocomplete-oscuro {
     background-color: #1e252d !important;
     border: 1px solid #4a5568 !important;

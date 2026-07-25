@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'; // Importamos ref
+import { ref, onMounted, onUnmounted } from 'vue'; 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
@@ -23,6 +23,19 @@ defineProps({
 });
 
 const emit = defineEmits(['revisar']);
+
+// =========================================================
+// LÓGICA RESPONSIVA DINÁMICA
+// =========================================================
+const esMovil = ref(window.innerWidth <= 992);
+
+const actualizarVista = () => {
+    esMovil.value = window.innerWidth <= 992;
+};
+
+// Escuchamos si el usuario redimensiona la ventana
+onMounted(() => window.addEventListener('resize', actualizarVista));
+onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 
 const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
@@ -48,8 +61,8 @@ const formatearFecha = (fechaString) => {
       :globalFilterFields="['id', 'trabajadorNumero', 'trabajadorNombre']"
       class="tabla-oscura w-full"
       emptyMessage="No hay préstamos pendientes de devolución."
+      :scrollable="esMovil"
     >
-      <!-- ESTA ES LA CABECERA NATIVA DE LA TABLA -->
       <template #header>
           <div class="flex justify-content-end">
               <IconField iconPosition="left" class="w-full sm:w-20rem">
@@ -61,34 +74,40 @@ const formatearFecha = (fechaString) => {
                       v-model="filtros['global'].value" 
                       placeholder="Buscar por folio o empleado..." 
                       class="w-full input-oscuro" 
+                      autocomplete="off"
                   />
               </IconField>
           </div>
       </template>
 
-      <Column field="id" header="Folio Pedido" style="width: 15%">
+      <Column field="id" header="Folio Pedido" :style="esMovil ? { minWidth: '120px' } : { width: '15%' }">
           <template #body="{ data }">
               <span class="font-bold text-400">#{{ data.id }}</span>
           </template>
       </Column>
-      <Column field="trabajadorNumero" header="No. Empleado" style="width: 15%"></Column>
-      <Column field="trabajadorNombre" header="Nombre del Trabajador" style="width: 30%"></Column>
-      <Column header="Fecha de Préstamo" style="width: 20%">
+      
+      <Column field="trabajadorNumero" header="No. Empleado" :style="esMovil ? { minWidth: '140px' } : { width: '15%' }"></Column>
+      
+      <Column field="trabajadorNombre" header="Nombre del Trabajador" :style="esMovil ? { minWidth: '220px' } : { width: '30%' }"></Column>
+      
+      <Column header="Fecha de Préstamo" :style="esMovil ? { minWidth: '160px' } : { width: '20%' }">
           <template #body="{ data }">
               {{ formatearFecha(data.fechaPedido) }}
           </template>
       </Column>
-      <Column header="Estado" style="width: 10%">
+      
+      <Column header="Estado" :style="esMovil ? { minWidth: '120px' } : { width: '10%' }">
           <template #body>
               <Tag severity="danger" value="Pendiente" class="px-3 py-1 bg-red-500 text-white font-bold" style="border-radius: 4px;" />
           </template>
       </Column>
-      <Column header="Acción" style="width: 10%" alignFrozen="right">
+      
+      <Column header="Acción" :style="esMovil ? { minWidth: '140px' } : { width: '10%' }">
         <template #body="{ data }">
             <Button 
                 icon="pi pi-replay" 
                 label="Devolver" 
-                class="btn-accion-devolver p-button-sm" 
+                class="btn-accion-devolver p-button-sm w-full sm:w-auto" 
                 @click="emit('revisar', data)" 
             />
         </template>
@@ -98,7 +117,7 @@ const formatearFecha = (fechaString) => {
 
 <style scoped>
 /* =========================================================
-   BLINDAJE NUCLEAR DE LA TABLA (ATAQUE DIRECTO AL DOM)
+   BLINDAJE NUCLEAR DE LA TABLA 
    ========================================================= */
 
 /* Fondo de la tabla y envolturas */
@@ -119,7 +138,7 @@ const formatearFecha = (fechaString) => {
     padding: 1.2rem 1rem !important;
 }
 
-/* Filas y Celdas del cuerpo (tbody, tr, td) */
+/* Filas y Celdas del cuerpo */
 :deep(.p-datatable-tbody),
 :deep(.p-datatable-tbody > tr),
 :deep(.p-datatable-tbody > tr > td) {
@@ -179,11 +198,16 @@ const formatearFecha = (fechaString) => {
 }
 
 /* =========================================================
-   BOTONES
+   BOTONES Y SCROLL HORIZONTAL
    ========================================================= */
 .btn-accion-devolver { 
     background-color: #3b82f6 !important; 
     border: none !important; 
     font-weight: bold; 
 }
+
+/* Scroll horizontal responsivo */
+:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 </style>

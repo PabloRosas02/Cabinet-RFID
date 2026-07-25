@@ -8,9 +8,7 @@ import { useExportarCSV } from '@/composables/useExportarCSV.js';
 import Menu from 'primevue/menu';
 
 import Button from 'primevue/button';
-import Toolbar from 'primevue/toolbar';
 import InputText from 'primevue/inputtext';
-
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 
@@ -103,19 +101,24 @@ const irABitacora = () => {
 </script>
 
 <template>
-  <div class="panel-herramientas p-4 border-round-xl shadow-1">
+  <!-- Padding adaptativo: p-3 en móvil, p-4 en PC -->
+  <div class="panel-herramientas p-3 md:p-4 border-round-xl shadow-1 mt-4">
+    
     <div class="flex justify-content-between align-items-center mb-4">
-      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Control de Inventario - Herramientas</h2>
+      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Control de Inventario</h2>
     </div>
 
-    <Toolbar class="mb-4 border-none toolbar-oscuro p-3">
-      <template #start>
+    <!-- REEMPLAZO DEL TOOLBAR POR UN CONTENEDOR 100% RESPONSIVO -->
+    <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
+      
+      <!-- Botones: En PC se muestran en fila (flex-wrap por si la pantalla es mediana), en móvil se apilan al 100% -->
+      <div class="flex flex-wrap gap-2 w-full xl:w-auto">
         <Button 
             type="button" 
             label="Exportar Inventario" 
             icon="pi pi-angle-down" 
             iconPos="right"
-            class="mr-2 btn-exportar"
+            class="btn-exportar w-full sm:w-auto"
             @click="toggleExportar" 
             aria-haspopup="true" 
             aria-controls="exportar_menu"
@@ -127,7 +130,7 @@ const irABitacora = () => {
             :icon="verSoloAlertas ? 'pi pi-check' : 'pi pi-exclamation-triangle'" 
             :severity="verSoloAlertas ? 'success' : 'warning'"
             :outlined="!verSoloAlertas"
-            class="mr-2 btn-alertas"
+            class="btn-alertas w-full sm:w-auto"
             @click="verSoloAlertas = !verSoloAlertas" 
         />
 
@@ -135,19 +138,21 @@ const irABitacora = () => {
             label="Actualizar Inventario" 
             icon="pi pi-sync" 
             severity="info"
-            class="mr-2 btn-actualizar"
+            class="btn-actualizar w-full sm:w-auto"
             @click="irAMovimientos" 
         />
 
         <Button 
             label="Bitácora de Auditoría" 
             icon="pi pi-history" 
-            class="btn-bitacora"
+            class="btn-bitacora w-full sm:w-auto"
             @click="irABitacora" 
         />
-      </template>
-      <template #end>
-        <IconField iconPosition="left">
+      </div>
+
+      <!-- Buscador: 100% de ancho en móvil, ancho necesario en PC -->
+      <div class="w-full xl:w-auto">
+        <IconField iconPosition="left" class="w-full">
           <InputIcon class="pi pi-search" />
           <InputText 
               id="buscadorInventario"
@@ -155,12 +160,14 @@ const irABitacora = () => {
               aria-label="Buscar código o nombre"
               v-model="filtros['global'].value" 
               placeholder="Buscar código, nombre..." 
-              class="input-oscuro" 
+              class="input-oscuro w-full" 
+              autocomplete="off"
           />
         </IconField>
-      </template>
-    </Toolbar>
+      </div>
+    </div>
 
+    <!-- Componente de la tabla -->
     <TablaHerramientas
       ref="tablaRef"
       :herramientas="herramientasVisibles"
@@ -170,6 +177,7 @@ const irABitacora = () => {
       @doble-click="abrirDetalles"
     />
 
+    <!-- Componente de detalles -->
     <DetalleHerramienta
       v-model:visible="mostrarModalDetalle"
       :herramienta="herramientaActual"
@@ -184,7 +192,7 @@ const irABitacora = () => {
     color: #ffffff;
 }
 
-/* TOOLBAR OSCURA */
+/* CONTENEDOR DE BOTONES (Sustituto de Toolbar) */
 .toolbar-oscuro {
     background-color: #1e252d !important;
 }
@@ -216,7 +224,6 @@ const irABitacora = () => {
     background-color: #0284c7 !important;
 }
 
-/* <-- ESTILOS PARA EL NUEVO BOTÓN DE BITÁCORA --> */
 .btn-bitacora {
     background-color: #4b5563 !important; 
     border: none !important;
@@ -267,4 +274,11 @@ const irABitacora = () => {
 :deep(.menu-oscuro .p-menuitem-icon) {
     color: #217346 !important; /* Verde Excel para los iconos del menú */
 }
+
+/* =========================================================
+   SCROLLBAR INVISIBLE/ESTILIZADO PARA LA TABLA EN MÓVILES
+   ========================================================= */
+:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 </style>

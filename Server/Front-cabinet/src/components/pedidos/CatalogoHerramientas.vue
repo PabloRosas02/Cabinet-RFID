@@ -1,13 +1,11 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag'; 
-
-// Importaciones para el buscador de PrimeVue
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 
@@ -20,14 +18,27 @@ const props = defineProps({
 
 const emit = defineEmits(['agregar']);
 
+// =========================================================
+// LÓGICA RESPONSIVA DINÁMICA
+// =========================================================
+const esMovil = ref(window.innerWidth <= 992);
+
+const actualizarVista = () => {
+    esMovil.value = window.innerWidth <= 992;
+};
+
+onMounted(() => window.addEventListener('resize', actualizarVista));
+onUnmounted(() => window.removeEventListener('resize', actualizarVista));
+
 const busqueda = ref('');
 
 // --- Lógica del Modal de Detalles ---
 const mostrarDetalles = ref(false);
 const herramientaActual = ref({});
 
-const onRowDoubleClick = (event) => {
-    herramientaActual.value = event.data;
+// Para usuarios de PC (doble clic) y celulares (botón de ojito)
+const abrirDetalles = (data) => {
+    herramientaActual.value = data;
     mostrarDetalles.value = true;
 };
 
@@ -63,8 +74,8 @@ const obtenerTextoStock = (h) => {
 </script>
 
 <template>
-    <div class="panel-inventario p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo">Herramientas Disponibles</h3>
+    <div class="panel-inventario p-3 md:p-4 border-round-xl shadow-1">
+        <h3 class="subtitulo text-xl md:text-2xl font-bold">Herramientas Disponibles</h3>
         
         <!-- Buscador -->
         <div class="buscador-container mb-4">
@@ -77,6 +88,7 @@ const obtenerTextoStock = (h) => {
                     v-model="busqueda" 
                     placeholder="Buscar por código o nombre..." 
                     class="w-full input-oscuro" 
+                    autocomplete="off"
                 />
             </IconField>
         </div>
@@ -89,21 +101,33 @@ const obtenerTextoStock = (h) => {
             dataKey="id"
             class="tabla-oscura"
             emptyMessage="No se encontraron herramientas."
-            @row-dblclick="onRowDoubleClick" 
-            selectionMode="single" 
+            @row-dblclick="(e) => abrirDetalles(e.data)" 
+            selectionMode="single"
+            :scrollable="esMovil" 
         >
-            <Column field="codigo" header="Código" style="width: 20%"></Column>
-            <Column field="nombre" header="Nombre" style="width: 40%"></Column>
-            <Column field="cantidadDisponible" header="Stock" style="width: 20%"></Column>
-            <Column header="Acción" style="width: 20%">
+            <Column field="codigo" header="Código" :style="esMovil ? { minWidth: '120px' } : { width: '20%' }"></Column>
+            <Column field="nombre" header="Nombre" :style="esMovil ? { minWidth: '200px' } : { width: '40%' }"></Column>
+            <Column field="cantidadDisponible" header="Stock" :style="esMovil ? { minWidth: '90px' } : { width: '20%' }"></Column>
+            
+            <Column header="Acción" :style="esMovil ? { minWidth: '120px' } : { width: '20%' }">
                 <template #body="slotProps">
-                    <Button 
-                        icon="pi pi-plus" 
-                        class="p-button-rounded p-button-success p-button-sm" 
-                        @click="emitirAgregar(slotProps.data)" 
-                        :disabled="slotProps.data.cantidadDisponible <= 0"
-                        tooltip="Agregar al pedido"
-                    />
+                    <div class="flex gap-2">
+                        <Button 
+                            v-if="esMovil"
+                            icon="pi pi-eye" 
+                            class="p-button-rounded p-button-info p-button-sm btn-ojito" 
+                            @click="abrirDetalles(slotProps.data)" 
+                            aria-label="Ver detalles"
+                        />
+                        
+                        <Button 
+                            icon="pi pi-plus" 
+                            class="p-button-rounded p-button-success p-button-sm" 
+                            @click="emitirAgregar(slotProps.data)" 
+                            :disabled="slotProps.data.cantidadDisponible <= 0"
+                            aria-label="Agregar al pedido"
+                        />
+                    </div>
                 </template>
             </Column>
         </DataTable>
@@ -112,27 +136,30 @@ const obtenerTextoStock = (h) => {
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
+            :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
             header="Detalles de la Herramienta" 
             :modal="true"
             dismissableMask
             class="modal-oscuro-primeflex"
         >
-            <div v-if="herramientaActual" class="p-4">
+            <!-- Padding adaptativo -->
+            <div v-if="herramientaActual" class="p-2 md:p-4">
                 
                 <!-- Imagen y Badge dinámicos -->
                 <div class="flex flex-column align-items-center mb-5">
                     <img 
                         v-if="herramientaActual.imagen" 
                         :src="herramientaActual.imagen" 
+                        @error="$event.target.src='https://via.placeholder.com/250x150/1e252d/ffffff?text=Error'"
                         class="shadow-3 border-round" 
                         style="max-width: 100%; max-height: 300px; object-fit: contain;" 
                     />
-                    <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 200px; height: 200px;">
+                    <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 100%; max-width: 200px; height: 200px;">
                         <i class="pi pi-image text-7xl text-400"></i>
                     </div>
                     
                     <div class="mt-4">
-                        <Tag class="text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramientaActual)" :value="obtenerTextoStock(herramientaActual)" />
+                        <Tag class="text-lg md:text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramientaActual)" :value="obtenerTextoStock(herramientaActual)" />
                     </div>
                 </div>
 
@@ -167,26 +194,25 @@ const obtenerTextoStock = (h) => {
                     
                     <div class="col-12 mb-3">
                         <span class="text-500 block mb-1">Descripción y Notas</span>
-                        <div class="surface-100 p-3 border-round text-lg line-height-3 text-300">
+                        <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
                             {{ herramientaActual.descripcion || 'Sin descripción disponible.' }}
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Footer con Botones -->
+
             <template #footer>
-                <div class="flex justify-content-end gap-3 mt-3">
+                <div class="flex flex-column-reverse sm:flex-row justify-content-end gap-2 mt-2 md:mt-3">
                     <Button 
                         label="Cerrar" 
                         icon="pi pi-times" 
-                        class="p-button-text text-500 hover:text-white" 
+                        class="p-button-text text-500 hover:text-white w-full sm:w-auto" 
                         @click="mostrarDetalles = false" 
                     />
                     <Button 
                         label="Añadir al Pedido" 
                         icon="pi pi-plus" 
-                        class="boton-anadir-verde" 
+                        class="boton-anadir-verde w-full sm:w-auto" 
                         @click="() => { emitirAgregar(herramientaActual); mostrarDetalles = false; }" 
                         :disabled="!herramientaActual || herramientaActual.cantidadDisponible <= 0"
                         autofocus 
@@ -199,7 +225,7 @@ const obtenerTextoStock = (h) => {
 
 <style scoped>
 .panel-inventario { background-color: #2a323d; height: 100%; }
-.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; font-size: 1.25rem; }
+.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; }
 
 :deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 :deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
@@ -271,9 +297,25 @@ const obtenerTextoStock = (h) => {
     background-color: #1e252d !important;
     color: #ffffff !important;
     border: none;
+    padding-left: 1rem !important; 
+    padding-right: 1rem !important;
 }
+
+@media (min-width: 768px) {
+    :deep(.modal-oscuro-primeflex .p-dialog-header),
+    :deep(.modal-oscuro-primeflex .p-dialog-content),
+    :deep(.modal-oscuro-primeflex .p-dialog-footer) {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
 :deep(.modal-oscuro-primeflex .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
 :deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
+
+/* Efecto hover en el ícono de cerrar modal (X) */
+:deep(.modal-oscuro-primeflex .p-dialog-header-icon) { color: #94a3b8 !important; }
+:deep(.modal-oscuro-primeflex .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
 
 .boton-anadir-verde {
     background-color: #34d399 !important; 
@@ -290,4 +332,18 @@ const obtenerTextoStock = (h) => {
     color: #94a3b8 !important;
     cursor: not-allowed !important;
 }
+
+/* Color azul para el ojito */
+:deep(.btn-ojito) {
+    background-color: #3b82f6 !important; 
+    border: none !important;
+}
+:deep(.btn-ojito:hover) {
+    background-color: #2563eb !important;
+}
+
+/* Scroll horizontal responsivo para la tabla */
+:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 </style>

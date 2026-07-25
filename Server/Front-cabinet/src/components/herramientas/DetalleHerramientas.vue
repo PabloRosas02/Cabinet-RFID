@@ -31,15 +31,17 @@ const obtenerTextoStock = (h) => {
   <Dialog 
     :visible="visible" 
     @update:visible="(val) => emit('update:visible', val)"
-    :style="{width: '700px'}" 
+    :style="{ width: '700px' }" 
+    :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }" 
     header="Detalles de la Herramienta" 
     :modal="true"
     dismissableMask
     class="modal-oscuro-primeflex"
   >
-    <div v-if="herramienta" class="p-4">
+    <!-- Padding responsivo: p-3 en móvil, p-4 a partir de tablet -->
+    <div v-if="herramienta" class="p-3 md:p-4">
       
-      <!-- 1. Imagen y Badge -->
+      <!-- Imagen y Badge -->
       <div class="flex flex-column align-items-center mb-5">
           <!-- Binding dinámico para la imagen con fallback en caso de error -->
           <img 
@@ -50,16 +52,16 @@ const obtenerTextoStock = (h) => {
             style="max-width: 100%; max-height: 300px; object-fit: contain;" 
           />
           <!-- Icono por defecto si la base de datos no manda imagen -->
-          <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 200px; height: 200px;">
+          <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 100%; max-width: 200px; height: 200px;">
               <i class="pi pi-image text-7xl text-400"></i>
           </div>
           
           <div class="mt-4">
-              <Tag class="text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramienta)" :value="obtenerTextoStock(herramienta)" />
+              <Tag class="text-lg md:text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramienta)" :value="obtenerTextoStock(herramienta)" />
           </div>
       </div>
 
-      <!-- 2. Grid de Datos -->
+      <!-- Grid de Datos -->
       <div class="grid">
           <div class="col-12 md:col-6 mb-3">
               <span class="text-500 block mb-1">Código</span>
@@ -90,16 +92,16 @@ const obtenerTextoStock = (h) => {
           
           <div class="col-12 mb-3">
               <span class="text-500 block mb-1">Descripción y Notas</span>
-              <div class="surface-100 p-3 border-round text-lg line-height-3 text-300">
+              <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
                   {{ herramienta.descripcion || 'Sin descripción o notas adicionales para esta herramienta.' }}
               </div>
           </div>
       </div>
     </div>
     
-    <!-- 3. Footer solo con botón de Cerrar -->
+    <!-- Footer solo con botón de Cerrar -->
     <template #footer>
-      <div class="flex justify-content-end mt-3">
+      <div class="flex justify-content-end mt-2 md:mt-3">
           <Button 
             label="Cerrar" 
             icon="pi pi-times" 
@@ -135,7 +137,19 @@ const obtenerTextoStock = (h) => {
     background-color: #1e252d !important;
     color: #ffffff !important;
     border: none;
+    padding-left: 1rem !important; /* Ligeramente menos padding lateral en móvil */
+    padding-right: 1rem !important;
 }
+
+@media (min-width: 768px) {
+    :deep(.modal-oscuro-primeflex .p-dialog-header),
+    :deep(.modal-oscuro-primeflex .p-dialog-content),
+    :deep(.modal-oscuro-primeflex .p-dialog-footer) {
+        padding-left: 1.5rem !important;
+        padding-right: 1.5rem !important;
+    }
+}
+
 :deep(.modal-oscuro-primeflex .p-dialog-header) {
     border-bottom: 1px solid #2a323d !important;
 }
@@ -143,7 +157,7 @@ const obtenerTextoStock = (h) => {
     border-top: 1px solid #2a323d !important;
 }
 
-/* Ajustes adicionales para el icono de la ventana (la 'X' de arriba a la derecha) */
+/* Ajustes adicionales para el icono de la ventana */
 :deep(.modal-oscuro-primeflex .p-dialog-header-icon) {
     color: #94a3b8 !important;
 }

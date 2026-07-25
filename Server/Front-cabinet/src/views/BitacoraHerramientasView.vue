@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { FilterMatchMode } from '@primevue/core/api';
 import axios from 'axios'; 
@@ -7,7 +7,6 @@ import axios from 'axios';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
-import Toolbar from 'primevue/toolbar';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
@@ -78,27 +77,53 @@ const exportarDatos = (formato) => {
 </script>
 
 <template>
-  <div class="panel-bitacora p-4 border-round-xl shadow-1">
+
+  <div class="panel-bitacora p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
-      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Bitácora de Auditoría - Herramientas</h2>
+      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Bitácora de Auditoría</h2>
     </div>
 
-    <Toolbar class="mb-4 border-none toolbar-oscuro p-3">
-      <template #start>
-        <Button label="Volver" icon="pi pi-arrow-left" class="mr-3 p-button-secondary p-button-outlined btn-volver" @click="router.back()" />
+    <div class="flex flex-column md:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
+
+      <div class="flex flex-column sm:flex-row gap-2 w-full md:w-auto">
+        <Button 
+            label="Volver" 
+            icon="pi pi-arrow-left" 
+            class="p-button-secondary p-button-outlined btn-volver w-full sm:w-auto" 
+            @click="router.back()" 
+        />
         
-        <Button type="button" label="Exportar Bitácora" icon="pi pi-angle-down" iconPos="right" class="btn-exportar" @click="$refs.menuExportar.toggle($event)" aria-haspopup="true" aria-controls="exportar_menu" />
+        <Button 
+            type="button" 
+            label="Exportar Bitácora" 
+            icon="pi pi-angle-down" 
+            iconPos="right" 
+            class="btn-exportar w-full sm:w-auto" 
+            @click="$refs.menuExportar.toggle($event)" 
+            aria-haspopup="true" 
+            aria-controls="exportar_menu" 
+        />
         <Menu ref="menuExportar" id="exportar_menu" :model="opcionesExportar" :popup="true" class="menu-oscuro" />
-      </template>
-      <template #end>
-        <IconField iconPosition="left">
+      </div>
+      
+      <!-- Buscador -->
+      <div class="w-full md:w-auto">
+        <IconField iconPosition="left" class="w-full">
           <InputIcon class="pi pi-search" />
-          <InputText id="buscador-bitacora" name="buscador-bitacora" v-model="filtros['global'].value" placeholder="Buscar herramienta, usuario..." class="input-oscuro" autocomplete="off" />
+          <InputText 
+            id="buscador-bitacora" 
+            name="buscador-bitacora" 
+            v-model="filtros['global'].value" 
+            placeholder="Buscar herramienta, usuario..." 
+            class="input-oscuro w-full" 
+            autocomplete="off" 
+          />
         </IconField>
-      </template>
-    </Toolbar>
+      </div>
+    </div>
 
     <div class="tabla-contenedor p-3 border-round shadow-1 mt-4">
+
         <DataTable 
             :value="bitacora" 
             :paginator="true" 
@@ -108,22 +133,24 @@ const exportarDatos = (formato) => {
             dataKey="id"
             class="tabla-oscura w-full"
             emptyMessage="No hay registros en la bitácora."
+            scrollable
         >
-            <Column header="Fecha / Hora" style="width: 15%">
+
+            <Column header="Fecha / Hora" style="min-width: 160px; width: 15%">
                 <template #body="{ data }">{{ formatearFecha(data.fecha) }}</template>
             </Column>
-            <Column header="Acción" style="width: 15%">
+            <Column header="Acción" style="min-width: 140px; width: 15%">
                 <template #body="{ data }">
                     <span :class="['badge-accion', getBadgeClase(data.accion)]">{{ data.accion }}</span>
                 </template>
             </Column>
-            <Column header="Herramienta" style="width: 35%">
+            <Column header="Herramienta" style="min-width: 250px; width: 35%">
                 <template #body="{ data }">
                     <div class="font-bold text-blue-300">{{ data.herramienta?.codigo || 'N/A' }}</div>
                     <div class="text-sm text-gray-400">{{ data.herramienta?.nombre || 'Herramienta eliminada' }}</div>
                 </template>
             </Column>
-            <Column header="Usuario Responsable" style="width: 35%">
+            <Column header="Usuario Responsable" style="min-width: 200px; width: 35%">
                 <template #body="{ data }">
                     <div class="font-bold"><i class="pi pi-user mr-2 text-gray-400"></i>{{ data.usuario?.nombre || 'Sistema' }}</div>
                     <div class="text-sm text-gray-400">{{ data.usuario?.rol || 'N/A' }}</div>
@@ -160,6 +187,11 @@ const exportarDatos = (formato) => {
 :deep(.p-paginator) { background-color: transparent !important; border: none !important; }
 :deep(.p-paginator .p-paginator-page) { color: #94a3b8 !important; }
 :deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
+
+/* SCROLL HORIZONTAL RESPONSIVO */
+:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 
 /* Etiquetas de Acción (Badges) */
 .badge-accion { padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 800; display: inline-block; font-size: 0.85rem; }

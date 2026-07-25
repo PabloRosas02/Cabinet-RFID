@@ -3,27 +3,40 @@ import { ref } from 'vue';
 import { useRoute } from 'vue-router';
 import MenuLateral from './layouts/MenuLateral.vue';
 
-
-console.log("HOLA")
 const route = useRoute();
-const menuAbierto = ref(true);
+
+// MEJORA UX: Si la pantalla es de celular/tablet (< 992px), empieza cerrado. 
+// Si es monitor de PC, empieza abierto.
+const menuAbierto = ref(window.innerWidth > 992);
+
+// Opcional: Si el usuario voltea el celular o redimensiona la ventana en PC, lo ajustamos automáticamente
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 992) {
+        menuAbierto.value = true;
+    } else {
+        menuAbierto.value = false;
+    }
+});
 </script>
 
 <template>
   <div class="layout-global">
-    <!-- El menú solo se renderiza si no es Login o Usuarios -->
-    <MenuLateral v-if="!route.meta.hideLayout" :menuAbierto="menuAbierto" />
+    <MenuLateral 
+        v-if="!route.meta.hideLayout" 
+        :menuAbierto="menuAbierto" 
+        @toggle="menuAbierto = false" 
+    />
     
     <div class="contenedor-derecho">
-      <!-- Barra superior, oculta en Login/Usuarios -->
+      <!-- Barra superior -->
       <div v-if="!route.meta.hideLayout" class="topbar">
+        <!-- El botón de hamburguesa alterna entre abierto y cerrado -->
         <button class="btn-hamburguesa" @click="menuAbierto = !menuAbierto">
           <i class="pi pi-bars"></i>
         </button>
       </div>
 
       <!-- Aquí se cargan todas las vistas -->
-      <!-- CLAVE: Se agrega una clase dinámica que detecta si debe ocultar el layout -->
       <main :class="['vista-contenido', { 'pantalla-completa': route.meta.hideLayout }]">
         <router-view />
       </main>
@@ -70,7 +83,14 @@ html, body {
     overflow-y: auto; /* Aquí sí queremos scroll si hay muchos datos */
 }
 
-/* NUEVO: Quita el padding y scroll para el Login */
+/* Para pantallas móviles, reducimos el padding para aprovechar el espacio */
+@media (max-width: 768px) {
+    .vista-contenido {
+        padding: 1rem;
+    }
+}
+
+/* Quita el padding y scroll para el Login */
 .pantalla-completa {
     padding: 0 !important;
     overflow: hidden !important;

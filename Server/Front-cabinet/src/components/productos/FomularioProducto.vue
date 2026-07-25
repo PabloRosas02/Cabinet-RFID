@@ -22,13 +22,45 @@ const formularioBasico = {
 
 const herramienta = ref({ ...formularioBasico });
 
+// =====================================================================
+// Procesamiento y Optimización de Imagen (WebP para móviles)
+// =====================================================================
 const procesarImagen = (evento) => {
     const archivo = evento.target.files[0];
-    if (archivo) {
-        const lector = new FileReader();
-        lector.onload = (e) => herramienta.value.imagen = e.target.result;
-        lector.readAsDataURL(archivo);
+    if (!archivo) return;
+
+    if (!archivo.type.startsWith('image/')) {
+        emit('error', 'Por favor, selecciona un archivo de imagen válido.');
+        return;
     }
+
+    const lector = new FileReader();
+    lector.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Redimensionar inteligentemente (Evita que fotos de celular pesen demasiado)
+            const MAX_WIDTH = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Dibujamos y exportamos a WebP (80% calidad)
+            ctx.drawImage(img, 0, 0, width, height);
+            herramienta.value.imagen = canvas.toDataURL('image/webp', 0.8);
+        };
+        img.src = e.target.result;
+    };
+    lector.readAsDataURL(archivo);
 };
 
 const limpiar = () => {
@@ -52,28 +84,29 @@ defineExpose({ limpiar });
 </script>
 
 <template>
-    <div class="p-4 border-round">
+    <div class="p-3 md:p-4 border-round">
         <div class="grid formgrid p-fluid">
+            
             <!-- Columna Izquierda: Datos Principales -->
-            <div class="col-12 md:col-8 grid">
+            <div class="col-12 lg:col-8 grid m-0 p-0">
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="codigoProducto" class="font-bold label-oscura">Código *</label>
-                    <InputText id="codigoProducto" name="codigoProducto" v-model="herramienta.codigo" required placeholder="Código único del producto" />
+                    <InputText id="codigoProducto" name="codigoProducto" v-model="herramienta.codigo" required placeholder="Código único del producto" autocomplete="off" />
                 </div>
                 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="nombreProducto" class="font-bold label-oscura">Nombre *</label>
-                    <InputText id="nombreProducto" name="nombreProducto" v-model="herramienta.nombre" required placeholder="Nombre del producto" />
+                    <InputText id="nombreProducto" name="nombreProducto" v-model="herramienta.nombre" required placeholder="Nombre del producto" autocomplete="off" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="tipoProducto" class="font-bold label-oscura">Tipo / Categoría</label>
-                    <InputText id="tipoProducto" name="tipoProducto" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" />
+                    <InputText id="tipoProducto" name="tipoProducto" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" autocomplete="off" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
                     <label for="marcaProducto" class="font-bold label-oscura">Marca / Proveedor</label>
-                    <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" placeholder="Ej. Truper" />
+                    <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" placeholder="Ej. Truper" autocomplete="off" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
@@ -88,19 +121,19 @@ defineExpose({ limpiar });
 
                 <div class="col-12 mb-3 flex flex-column gap-2">
                     <label for="ubicacionFisica" class="font-bold label-oscura">Ubicación Física</label>
-                    <InputText id="ubicacionFisica" name="ubicacionFisica" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" />
+                    <InputText id="ubicacionFisica" name="ubicacionFisica" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" autocomplete="off" />
                 </div>
             </div>
 
             <!-- Columna Derecha: Fotografía -->
-            <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
+            <div class="col-12 lg:col-4 mb-3 flex flex-column gap-2">
                 <label for="inputFileImagen" class="font-bold label-oscura">Fotografía</label>
-                <div class="area-imagen flex flex-column align-items-center justify-content-center p-3 border-round shadow-1 w-full h-full" style="min-height: 300px;">
+                <div class="area-imagen flex flex-column align-items-center justify-content-center p-3 border-round shadow-1 w-full h-full" style="min-height: 250px;">
                     
                     <img v-if="herramienta.imagen" 
                          :src="herramienta.imagen" 
                          class="shadow-2 border-round mb-3" 
-                         style="width: 100%; height: 240px; object-fit: contain; background-color: #121820;" />
+                         style="width: 100%; max-height: 240px; object-fit: contain; background-color: #121820;" />
                     
                     <div v-else class="placeholder-imagen flex align-items-center justify-content-center border-round mb-3" style="width: 100%; height: 240px;">
                         <i class="pi pi-image text-6xl" style="color: #4a5568;"></i>
@@ -111,6 +144,7 @@ defineExpose({ limpiar });
                         name="inputFileImagen"
                         type="file" 
                         accept="image/*" 
+                        capture="environment"
                         @change="procesarImagen" 
                         class="p-inputtext p-component p-2 w-full text-sm mt-auto input-file-oscuro" 
                     />
@@ -123,10 +157,10 @@ defineExpose({ limpiar });
                 <Textarea id="descripcionProducto" name="descripcionProducto" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones adicionales..." />
             </div>
             
-            <!-- Botones de Acción -->
-            <div class="col-12 flex gap-3 mt-2">
-                <Button label="Registrar Producto" icon="pi pi-check" @click="intentarGuardar" :loading="cargando" class="btn-registrar" />
-                <Button label="Limpiar" icon="pi pi-eraser" severity="secondary" @click="limpiar" class="btn-limpiar" />
+            <!-- Botones de Acción (Apilados en móvil, horizontales en PC) -->
+            <div class="col-12 flex flex-column sm:flex-row gap-3 mt-2">
+                <Button label="Registrar Producto" icon="pi pi-check" @click="intentarGuardar" :loading="cargando" class="btn-registrar w-full sm:w-auto" />
+                <Button label="Limpiar" icon="pi pi-eraser" severity="secondary" @click="limpiar" class="btn-limpiar w-full sm:w-auto" />
             </div>
         </div>
     </div>

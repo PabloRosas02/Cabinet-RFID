@@ -184,35 +184,36 @@ const realizarExportacion = (formato) => {
 </script>
 
 <template>
-  <div class="panel-principal p-4 border-round-xl shadow-1 mt-4">
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <Toast />
 
     <div class="flex justify-content-between align-items-center mb-4">
         <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Historial y Reportes</h2>
     </div>
 
-    <!-- Barra de Controles -->
-    <div class="flex flex-column md:flex-row justify-content-between mb-4 gap-3 align-items-start md:align-items-center">
-        <div class="flex gap-2 flex-wrap">
-            <!-- BOTÓN CON MENÚ DESPLEGABLE -->
+    <div class="flex flex-column xl:flex-row justify-content-between mb-4 gap-3">
+        
+        <!-- Grupo de Botones (Izquierda) -->
+        <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
             <Button 
                 type="button" 
                 label="Exportar Historial" 
                 icon="pi pi-angle-down" 
                 iconPos="right"
-                class="btn-exportar"
+                class="btn-exportar w-full sm:w-auto"
                 @click="toggleExportar" 
                 aria-haspopup="true" 
                 aria-controls="exportar_menu"
             />
             <Menu ref="menuExportar" id="exportar_menu" :model="opcionesExportar" :popup="true" class="menu-oscuro" />
             
-            <Button label="Pendientes" icon="pi pi-exclamation-triangle" :outlined="filtroEstado !== 'PENDIENTE'" severity="danger" @click="toggleFiltroEstado('PENDIENTE')" />
-            <Button label="Devueltos" icon="pi pi-check-circle" :outlined="filtroEstado !== 'DEVUELTO'" severity="success" @click="toggleFiltroEstado('DEVUELTO')" />
+            <Button label="Pendientes" icon="pi pi-exclamation-triangle" class="w-full sm:w-auto" :outlined="filtroEstado !== 'PENDIENTE'" severity="danger" @click="toggleFiltroEstado('PENDIENTE')" />
+            <Button label="Devueltos" icon="pi pi-check-circle" class="w-full sm:w-auto" :outlined="filtroEstado !== 'DEVUELTO'" severity="success" @click="toggleFiltroEstado('DEVUELTO')" />
         </div>
 
-        <div class="flex flex-column sm:flex-row gap-3 w-full md:w-auto">
-            <IconField iconPosition="left" class="w-full sm:w-20rem">
+        <!-- Grupo de Búsqueda y Filtros (Derecha) -->
+        <div class="flex flex-column sm:flex-row gap-3 w-full xl:w-auto">
+            <IconField iconPosition="left" class="w-full xl:w-20rem">
                 <InputIcon class="pi pi-search" />
                 <InputText 
                     id="buscadorHistorial"
@@ -221,6 +222,7 @@ const realizarExportacion = (formato) => {
                     v-model="filtros['global'].value" 
                     placeholder="Buscar por empleado o prestador..." 
                     class="w-full input-oscuro" 
+                    autocomplete="off"
                 />
             </IconField>
             <Select 
@@ -248,7 +250,13 @@ const realizarExportacion = (formato) => {
 </template>
 
 <style scoped>
-.panel-principal { background-color: #2a323d !important; color: #ffffff; border: 1px solid #4a5568 !important; }
+.panel-principal { 
+    background-color: #2a323d !important; 
+    color: #ffffff; 
+    border: 1px solid #4a5568 !important; 
+    overflow-x: hidden; /* Garantiza que ningún elemento interno rompa el contenedor */
+}
+
 .btn-exportar { background-color: #16a34a !important; border: none !important; color: white !important; font-weight: bold; }
 .btn-exportar:hover { background-color: #15803d !important; }
 
@@ -274,7 +282,7 @@ const realizarExportacion = (formato) => {
     background-color: #36464d !important;
 }
 :deep(.menu-oscuro .p-menuitem-icon) {
-    color: #16a34a !important; /* Verde Excel para los iconos del menú */
+    color: #16a34a !important; 
 }
 </style>
 

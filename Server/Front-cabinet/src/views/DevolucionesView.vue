@@ -3,11 +3,9 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Message from 'primevue/message';
 
-// IMPORTAMOS LOS COMPONENTES
 import TablaPedidos from '@/components/devoluciones/TablaPedidos.vue';
 import ModalDevolucion from '@/components/devoluciones/ModalDevolucion.vue';
 
-// ESTADOS REACTIVOS
 const pedidosPendientes = ref([]);
 const cargando = ref(false);
 
@@ -47,7 +45,6 @@ const revisarDevolucion = (pedido) => {
     mostrarModal.value = true;
 };
 
-// Confirmar (Activado por el componente hijo ModalDevolucion)
 const confirmarDevolucion = async (pedidoModificado) => {
     procesandoDevolucion.value = true;
     try {
@@ -59,7 +56,6 @@ const confirmarDevolucion = async (pedidoModificado) => {
 
         const payload = {
             receptorId: usuarioSesion.id, 
-            // DOBLE CANDADO: Filtramos para enviar SOLO las herramientas con cantidad > 0
             herramientasDevueltas: pedidoModificado.herramientas
                 .filter(h => h.cantidadARegresar > 0)
                 .map(h => ({
@@ -97,9 +93,10 @@ const confirmarDevolucion = async (pedidoModificado) => {
 </script>
 
 <template>
-  <div class="panel-principal p-4 border-round-xl shadow-1 mt-4">
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
-        <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Devolución de Herramientas</h2>
+        <!-- Título con tamaño adaptable -->
+        <h2 class="text-xl md:text-2xl font-bold m-0" style="color: #5ab1ce;">Devolución de Herramientas</h2>
     </div>
 
     <!-- Mensaje de éxito/error -->
@@ -107,14 +104,12 @@ const confirmarDevolucion = async (pedidoModificado) => {
         {{ mensajeFeedback.texto }}
     </Message>
 
-    <!-- INYECTAMOS LA TABLA -->
     <TablaPedidos 
         :pedidos="pedidosPendientes" 
         :cargando="cargando"
         @revisar="revisarDevolucion" 
     />
 
-    <!-- INYECTAMOS EL MODAL -->
     <ModalDevolucion 
         :mostrar="mostrarModal"
         :pedido="pedidoSeleccionado"
@@ -129,5 +124,6 @@ const confirmarDevolucion = async (pedidoModificado) => {
 .panel-principal {
     background-color: #2a323d !important;
     color: #ffffff;
+    overflow-x: hidden; 
 }
 </style>

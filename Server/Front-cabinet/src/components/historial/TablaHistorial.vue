@@ -1,8 +1,9 @@
 <script setup>
+import { ref, onMounted, onUnmounted } from 'vue';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
-import { defineProps, defineEmits } from 'vue';
+import Button from 'primevue/button'; 
 
 // Recibimos los datos ya filtrados desde el padre
 const props = defineProps({
@@ -20,16 +21,34 @@ const props = defineProps({
     }
 });
 
-// Definimos el evento que vamos a emitir al hacer doble clic
 const emit = defineEmits(['doble-click']);
 
-// Función que captura el evento de PrimeVue y emite solo la data del pedido seleccionado
+// =========================================================
+// LÓGICA RESPONSIVA DINÁMICA
+// =========================================================
+const esMovil = ref(window.innerWidth <= 992);
+
+const actualizarVista = () => {
+    esMovil.value = window.innerWidth <= 992;
+};
+
+// Escuchamos si el usuario redimensiona la ventana
+onMounted(() => window.addEventListener('resize', actualizarVista));
+onUnmounted(() => window.removeEventListener('resize', actualizarVista));
+
+// =========================================================
+// EVENTOS
+// =========================================================
 const onRowDblClick = (event) => {
     emit('doble-click', event.data);
 };
 
+const verDetalles = (data) => {
+    emit('doble-click', data);
+};
+
 const formatearFecha = (fechaString) => {
-    if (!fechaString) return '--'; // Si no hay fecha (Pendiente), mostramos unos guiones
+    if (!fechaString) return '--'; 
     return new Date(fechaString).toLocaleDateString('es-MX', { 
         year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
     });
@@ -37,7 +56,6 @@ const formatearFecha = (fechaString) => {
 </script>
 
 <template>
-    <!-- Agregamos selectionMode y el evento @row-dblclick a la DataTable -->
     <DataTable 
       :value="historial" 
       :paginator="true" 
@@ -50,31 +68,31 @@ const formatearFecha = (fechaString) => {
       emptyMessage="No hay registros en el historial para esta búsqueda."
       selectionMode="single"
       @row-dblclick="onRowDblClick"
+      :scrollable="esMovil" 
     >
-      <Column field="id" header="Folio" style="width: 8%">
+      <Column field="id" header="Folio" :style="esMovil ? { minWidth: '100px' } : { width: '8%' }">
           <template #body="{ data }"><span class="font-bold text-400">#{{ data.id }}</span></template>
       </Column>
       
-      <Column field="prestadorNombre" header="Prestó (Almacenista)" style="width: 15%"></Column>
+      <Column field="prestadorNombre" header="Prestó (Almacenista)" :style="esMovil ? { minWidth: '180px' } : { width: '15%' }"></Column>
       
-      <Column header="Recibió / Devolución" style="width: 15%">
+      <Column header="Recibió / Devolución" :style="esMovil ? { minWidth: '180px' } : { width: '15%' }">
           <template #body="{ data }">
               <span class="text-blue-400 font-medium">{{ data.receptorNombre || 'Pendiente' }}</span>
           </template>
       </Column>
 
-      <Column header="Solicitó (Empleado)" style="width: 16%">
+      <Column header="Solicitó (Empleado)" :style="esMovil ? { minWidth: '220px' } : { width: '16%' }">
           <template #body="{ data }">
               {{ data.trabajadorNumero }} - {{ data.trabajadorNombre }}
           </template>
       </Column>
 
-      <Column header="Fecha Préstamo" style="width: 12%">
+      <Column header="Fecha Préstamo" :style="esMovil ? { minWidth: '160px' } : { width: '12%' }">
           <template #body="{ data }">{{ formatearFecha(data.fechaPedido) }}</template>
       </Column>
 
-      <!-- NUEVA COLUMNA: FECHA DE DEVOLUCIÓN -->
-      <Column header="Fecha Devolución" style="width: 12%">
+      <Column header="Fecha Devolución" :style="esMovil ? { minWidth: '160px' } : { width: '12%' }">
           <template #body="{ data }">
               <span :class="{'text-400': !data.fechaDevolucion}">
                   {{ formatearFecha(data.fechaDevolucion) }}
@@ -82,7 +100,7 @@ const formatearFecha = (fechaString) => {
           </template>
       </Column>
 
-      <Column header="Herramientas" style="width: 14%">
+      <Column header="Herramientas" :style="esMovil ? { minWidth: '250px' } : { width: '14%' }">
           <template #body="{ data }">
               <div class="text-sm">
                   <div v-for="(h, idx) in data.herramientas" :key="idx" class="mb-1 text-400">
@@ -95,7 +113,7 @@ const formatearFecha = (fechaString) => {
           </template>
       </Column>
 
-      <Column field="estado" header="Estado" style="width: 8%">
+      <Column field="estado" header="Estado" :style="esMovil ? { minWidth: '120px' } : { width: '8%' }">
           <template #body="{ data }">
               <Tag 
                 :severity="data.estado === 'DEVUELTO' ? 'success' : 'danger'" 
@@ -104,6 +122,17 @@ const formatearFecha = (fechaString) => {
               />
           </template>
       </Column>
+
+      <Column v-if="esMovil" style="min-width: 70px;">
+        <template #body="{ data }">
+            <Button 
+                icon="pi pi-eye" 
+                class="p-button-rounded p-button-text p-button-info btn-ver" 
+                @click="verDetalles(data)" 
+                aria-label="Ver detalles"
+            />
+        </template>
+      </Column>
     </DataTable>
 </template>
 
@@ -111,20 +140,16 @@ const formatearFecha = (fechaString) => {
 /* =========================================================
    BLINDAJE DE LA TABLA (CONSISTENCIA CON ADMINISTRACIÓN)
    ========================================================= */
-
-/* Hacemos que el puntero cambie a una "manita" para indicar que se le puede dar clic */
 .cursor-pointer :deep(.p-datatable-tbody > tr) {
     cursor: pointer;
 }
 
-/* Fondo de la tabla y envolturas */
 :deep(.p-datatable),
 :deep(.p-datatable-wrapper),
 :deep(.p-datatable-table) {
     background-color: transparent !important;
 }
 
-/* Cabeceras (thead y th) -> TRANSPARENTES para igualar a la vista principal */
 :deep(.p-datatable-thead),
 :deep(.p-datatable-thead > tr),
 :deep(.p-datatable-thead > tr > th) {
@@ -135,7 +160,6 @@ const formatearFecha = (fechaString) => {
     padding: 1.2rem 1rem !important;
 }
 
-/* Filas y Celdas del cuerpo (tbody, tr, td) */
 :deep(.p-datatable-tbody),
 :deep(.p-datatable-tbody > tr),
 :deep(.p-datatable-tbody > tr > td) {
@@ -145,7 +169,6 @@ const formatearFecha = (fechaString) => {
     border-bottom: 1px solid #1e252d !important; 
 }
 
-/* Hover de la fila y fila vacía */
 :deep(.p-datatable-tbody > tr:hover > td) { 
     background-color: #1e252d !important; 
 }
@@ -191,5 +214,22 @@ const formatearFecha = (fechaString) => {
 :deep(.p-tag.p-tag-danger) {
     background-color: rgba(239, 68, 68, 0.15) !important; 
     color: #f87171 !important; 
+}
+
+/* =========================================================
+   SCROLL HORIZONTAL RESPONSIVO & BOTÓN DE ACCIÓN
+   ========================================================= */
+:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
+
+:deep(.btn-ver) {
+    color: #38bdf8 !important;
+    background-color: rgba(56, 189, 248, 0.1) !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+}
+:deep(.btn-ver:hover) {
+    background-color: rgba(56, 189, 248, 0.25) !important;
 }
 </style>

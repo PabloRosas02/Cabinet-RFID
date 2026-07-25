@@ -21,7 +21,7 @@ const menuDescarga = ref(null);
 const { generarDescarga, generarDescargaExcel } = useExportarCSV();
 
 // =====================================================================
-// Opciones del Menú Desplegable
+// Opciones del Menu Desplegable
 // =====================================================================
 const opcionesDescarga = ref([
     {
@@ -221,18 +221,18 @@ const procesarArchivo = async (evento) => {
 <template>
   <Toast /> 
   
-  <div class="panel-nuevo-producto p-4 border-round-xl shadow-1 max-w-70rem mx-auto mt-4">
+  <div class="panel-nuevo-producto p-3 md:p-4 border-round-xl shadow-1 max-w-70rem mx-auto mt-4">
     
-    <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 gap-3">
+    <div class="flex flex-column lg:flex-row justify-content-between align-items-start lg:align-items-center mb-4 gap-4">
         <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Registrar Nuevo Producto</h2>
         
-        <div class="flex gap-2">
+        <div class="flex flex-column sm:flex-row gap-2 w-full lg:w-auto">
             <Button 
                 type="button" 
                 label="Descargar Plantilla" 
                 icon="pi pi-angle-down" 
                 iconPos="right"
-                class="p-button-outlined text-white border-white hover:bg-white-alpha-10" 
+                class="p-button-outlined text-white border-white hover:bg-white-alpha-10 w-full sm:w-auto" 
                 @click="toggleMenu" 
                 aria-haspopup="true" 
                 aria-controls="overlay_menu"
@@ -255,12 +255,12 @@ const procesarArchivo = async (evento) => {
                 icon="pi pi-upload" 
                 severity="success" 
                 :loading="cargandoImportacion"
+                class="w-full sm:w-auto"
                 @click="$refs.fileInput.click()" 
             />
         </div>
     </div>
 
-    <!-- EL FORMULARIO MANUAL YA NO NECESITA LOS EVENTOS DE ERROR/MENSAJE EXTERNOS -->
     <FormularioProducto 
         ref="formRef"
         :cargando="cargando"

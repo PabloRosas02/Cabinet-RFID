@@ -5,7 +5,6 @@ import { FilterMatchMode } from '@primevue/core/api';
 import { useHerramientas } from '@/composables/useHerramientas';
 
 import Button from 'primevue/button';
-import Toolbar from 'primevue/toolbar';
 import InputText from 'primevue/inputtext';
 
 import IconField from 'primevue/iconfield';
@@ -49,19 +48,19 @@ const volverAInventario = () => {
 </script>
 
 <template>
-  <div class="panel-movimientos p-4 border-round-xl shadow-1">
+  <!-- Padding responsivo: p-3 en celular, p-4 en tablet/PC -->
+  <div class="panel-movimientos p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Administración y Movimientos</h2>
     </div>
 
-    <!-- Toolbar oscura integrada -->
-    <Toolbar class="mb-4 border-none toolbar-oscuro p-3">
-      <template #start>
-        <!-- NUEVO BOTÓN: Volver al Inventario -->
+    <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
+
+      <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
         <Button 
             icon="pi pi-arrow-left" 
             label="Volver" 
-            class="mr-4 btn-volver" 
+            class="btn-volver w-full sm:w-auto" 
             outlined 
             @click="volverAInventario" 
         />
@@ -70,35 +69,35 @@ const volverAInventario = () => {
             label="Editar Seleccionado" 
             icon="pi pi-pencil" 
             severity="info" 
-            class="mr-2 font-bold btn-editar" 
+            class="font-bold btn-editar w-full sm:w-auto" 
             :disabled="!herramientaSeleccionada" 
             @click="prepararEdicionSeleccionada" 
         />
         
         <Button 
-            label="Dar de Baja (Eliminar)" 
+            label="Dar de Baja" 
             icon="pi pi-trash" 
             severity="danger" 
-            class="font-bold btn-eliminar" 
+            class="font-bold btn-eliminar w-full sm:w-auto" 
             :disabled="!herramientaSeleccionada" 
             @click="eliminarSeleccionada" 
         />
-      </template>
-      <template #end>
-        <!-- Buscador CORREGIDO con id y name -->
-        <IconField iconPosition="left">
+      </div>
+      
+      <div class="w-full xl:w-auto">
+        <IconField iconPosition="left" class="w-full">
           <InputIcon class="pi pi-search" />
           <InputText 
             id="buscador-movimientos" 
             name="buscador-movimientos" 
             v-model="filtros['global'].value" 
             placeholder="Buscar para editar..." 
-            class="input-oscuro" 
+            class="input-oscuro w-full" 
             autocomplete="off" 
           />
         </IconField>
-      </template>
-    </Toolbar>
+      </div>
+    </div>
 
     <TablaHerramientas
       :herramientas="herramientas"
@@ -123,7 +122,7 @@ const volverAInventario = () => {
     color: #ffffff;
 }
 
-/* Toolbar oscura */
+/* Contenedor oscuro estilo toolbar */
 .toolbar-oscuro {
     background-color: #1e252d !important;
 }

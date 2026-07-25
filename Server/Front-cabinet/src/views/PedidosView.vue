@@ -92,7 +92,7 @@ const procesarPedido = async () => {
 
         await axios.post('/api/pedidos', payload);
 
-        // REEMPLAZAMOS EL ALERT POR UN TOAST DE ÉXITO
+        // TOAST DE ÉXITO
         toast.add({ 
             severity: 'success', 
             summary: '¡Éxito!', 
@@ -108,7 +108,7 @@ const procesarPedido = async () => {
     } catch (error) {
         console.error("Error al guardar el pedido:", error);
         
-        // REEMPLAZAMOS EL ALERT POR UN TOAST DE ERROR
+        // TOAST DE ERROR
         toast.add({ 
             severity: 'error', 
             summary: 'Error al registrar', 
@@ -120,24 +120,27 @@ const procesarPedido = async () => {
 </script>
 
 <template>
-  <div class="pedidos-contenedor">
-    <!-- INYECTAMOS EL COMPONENTE TOAST AQUÍ PARA QUE FLOTE EN LA VISTA -->
+  <!-- Padding responsivo y color de texto base -->
+  <div class="p-3 md:p-4 text-gray-200 overflow-x-hidden">
+    
     <Toast />
 
-    <h2 class="titulo-seccion">Registro de Préstamos</h2>
+    <!-- Título adaptable -->
+    <h2 class="text-xl md:text-2xl font-bold m-0 mb-4" style="color: #5ab1ce;">Registro de Préstamos</h2>
 
-    <div class="layout-dos-columnas mt-4">
+    <!-- GRID INTELIGENTE: flex-column en móvil, flex-row en Desktop (lg) -->
+    <div class="flex flex-column lg:flex-row gap-4">
       
-      <!-- Panel Izquierdo: Catálogo -->
-      <div class="columna-inventario">
+      <!-- Panel Izquierdo: Catálogo (100% en móvil, ~65% en PC) -->
+      <div class="w-full lg:w-7 xl:w-8">
           <CatalogoHerramientas 
             :inventario="inventario" 
             @agregar="manejarAgregar" 
           />
       </div>
 
-      <!-- Panel Derecho: Detalle del Pedido -->
-      <div class="columna-pedido">
+      <!-- Panel Derecho: Detalle del Pedido (100% en móvil, ~35% en PC) -->
+      <div class="w-full lg:w-5 xl:w-4">
           <DetallePedido 
             :pedido="pedidoActual" 
             :trabajador="trabajador" 
@@ -150,16 +153,3 @@ const procesarPedido = async () => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.pedidos-contenedor { padding: 1rem; color: #e2e8f0; }
-.titulo-seccion { color: #5ab1ce; margin-bottom: 1.5rem; font-weight: bold; }
-.layout-dos-columnas { display: flex; gap: 1.5rem; align-items: stretch; }
-.columna-inventario { flex: 2; min-width: 0; }
-.columna-pedido { flex: 1.2; min-width: 350px; }
-
-@media (max-width: 992px) {
-    .layout-dos-columnas { flex-direction: column; }
-    .columna-inventario, .columna-pedido { width: 100%; flex: none; }
-}
-</style>
