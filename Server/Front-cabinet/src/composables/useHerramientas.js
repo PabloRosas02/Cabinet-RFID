@@ -1,8 +1,10 @@
 import { ref, onMounted } from 'vue';
-import axios from 'axios'; // 👈 Importamos axios para usar el interceptor global con el Token
+import axios from 'axios'; 
+import { useToast } from 'primevue/usetoast'; 
 
 export function useHerramientas() {
     const API_URL = '/api/herramientas';
+    const toast = useToast(); 
 
     // ESTADO
     const herramientas = ref([]);
@@ -20,7 +22,7 @@ export function useHerramientas() {
             herramientas.value = respuesta.data;
         } catch (error) {
             console.error("Error al cargar herramientas:", error);
-            alert("No se pudo cargar el inventario."); 
+            toast.add({ severity: 'error', summary: 'Error de Conexión', detail: 'No se pudo cargar el inventario.', life: 4000 });
         } finally {
             cargando.value = false;
         }
@@ -82,15 +84,20 @@ export function useHerramientas() {
                 if (index !== -1) {
                     herramientas.value.splice(index, 1, herramientaGuardada);
                 }
+                // TOAST DE EDICIÓN
+                toast.add({ severity: 'success', summary: 'Herramienta Actualizada', detail: `La herramienta ${herramientaGuardada.codigo} fue modificada con éxito.`, life: 3000 });
             } else {
                 herramientas.value = [...herramientas.value, herramientaGuardada];
+                // TOAST DE CREACIÓN
+                toast.add({ severity: 'success', summary: 'Herramienta Creada', detail: `La herramienta ${herramientaGuardada.codigo} se registró exitosamente.`, life: 3000 });
             }
 
             mostrarModal.value = false;
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            alert(`Error: ${mensajeError}`);
+            // TOAST DE ERROR
+            toast.add({ severity: 'error', summary: 'Error al guardar', detail: mensajeError, life: 4000 });
         }
     };
 
@@ -106,10 +113,14 @@ export function useHerramientas() {
             // Actualizamos la lista local eliminando la herramienta dada de baja
             herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
             
+            // TOAST DE ELIMINACIÓN
+            toast.add({ severity: 'success', summary: 'Baja Exitosa', detail: `La herramienta ${herramienta.codigo} fue dada de baja.`, life: 3000 });
+
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            alert(`Hubo un problema al intentar dar de baja la herramienta: ${mensajeError}`);
+            // TOAST DE ERROR
+            toast.add({ severity: 'error', summary: 'Error al dar de baja', detail: mensajeError, life: 4000 });
         }
     };
 

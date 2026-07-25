@@ -1,18 +1,18 @@
 <script setup>
 import { ref } from 'vue';
-import Message from 'primevue/message';
 import Button from 'primevue/button'; 
 import Menu from 'primevue/menu'; 
+import Toast from 'primevue/toast';
 import ExcelJS from 'exceljs';
-import axios from 'axios'; 
+import axios from 'axios';
+import { useToast } from 'primevue/usetoast';
 
 import FormularioProducto from '@/components/productos/FomularioProducto.vue'; 
 import { useExportarCSV } from '@/composables/useExportarCSV.js'; 
 
 const cargando = ref(false);
 const cargandoImportacion = ref(false); 
-const mensajeExito = ref(''); 
-const mensajeError = ref('');
+const toast = useToast(); 
 
 const formRef = ref(null);
 const fileInput = ref(null); 
@@ -40,44 +40,33 @@ const toggleMenu = (event) => {
     menuDescarga.value.toggle(event);
 };
 
-const limpiarMensajes = () => {
-    mensajeExito.value = '';
-    mensajeError.value = '';
-};
-
-const mostrarError = (errorMsg) => {
-    mensajeError.value = errorMsg;
-    mensajeExito.value = '';
-};
-
 // =====================================================================
-// Guardar Producto Manualmente (Actualizado a Axios)
+// Guardar Producto Manualmente
 // =====================================================================
 const guardarProducto = async (herramientaData) => {
-    limpiarMensajes();
     cargando.value = true;
     
     try {
-        // Axios envía el Token automáticamente y el backend ya sabe quién es el usuario
         await axios.post('/api/herramientas', herramientaData);
 
-        mensajeExito.value = 'Producto registrado correctamente.';
+        //TOAST DE ÉXITO
+        toast.add({ severity: 'success', summary: 'Producto Registrado', detail: 'El nuevo producto se guardó correctamente en el inventario.', life: 4000 });
         
         setTimeout(() => {
             if (formRef.value) formRef.value.limpiar();
         }, 500);
 
     } catch (error) {
-        // Extraemos el error limpio que nos manda el backend
         const errorMsg = error.response?.data?.error || error.message;
-        mostrarError(errorMsg);
+        //TOAST DE ERROR
+        toast.add({ severity: 'error', summary: 'Error al guardar', detail: errorMsg, life: 5000 });
     } finally {
         cargando.value = false;
     }
 };
 
 // =====================================================================
-// Descargar Plantilla (Ahora soporta CSV y XLSX)
+// Descargar Plantilla 
 // =====================================================================
 const descargarPlantilla = (formato) => {
     if (formato === 'csv') {
@@ -100,14 +89,16 @@ const descargarPlantilla = (formato) => {
 };
 
 // =====================================================================
-// Procesar y Subir Archivo (.csv o .xlsx) (Actualizado a Axios)
+// Procesar y Subir Archivo (.csv o .xlsx)
 // =====================================================================
 const procesarArchivo = async (evento) => {
     const archivo = evento.target.files[0];
     if (!archivo) return;
 
-    limpiarMensajes();
     cargandoImportacion.value = true;
+    
+    // TOAST DE INFORMACIÓN (Cargando)
+    toast.add({ severity: 'info', summary: 'Procesando archivo', detail: 'Analizando el documento, por favor espera...', life: 3000 });
 
     try {
         let herramientas = [];
@@ -202,18 +193,24 @@ const procesarArchivo = async (evento) => {
             throw new Error("No se encontraron registros válidos. Asegúrate de incluir 'Codigo' y 'Nombre'.");
         }
 
-        // Ya no necesitamos sacar el usuarioId manualmente
         const respuesta = await axios.post('/api/herramientas/importar', { 
             herramientas: herramientas 
         });
 
         const dataResponse = respuesta.data;
-        mensajeExito.value = `Importación exitosa: ${dataResponse.creados} herramientas creadas y ${dataResponse.actualizados} actualizadas.`;
+        
+        // TOAST DE ÉXITO (EXCEL)
+        toast.add({ 
+            severity: 'success', 
+            summary: 'Importación Exitosa', 
+            detail: `${dataResponse.creados} herramientas creadas y ${dataResponse.actualizados} actualizadas.`, 
+            life: 6000 
+        });
         
     } catch (error) {
-        // Interceptamos errores de validación de Axios o de código manual
         const errorMsg = error.response?.data?.error || error.message;
-        mostrarError(errorMsg);
+        // TOAST DE ERROR (EXCEL)
+        toast.add({ severity: 'error', summary: 'Error de Importación', detail: errorMsg, life: 6000 });
     } finally {
         evento.target.value = ''; 
         cargandoImportacion.value = false;
@@ -222,6 +219,8 @@ const procesarArchivo = async (evento) => {
 </script>
 
 <template>
+  <Toast /> 
+  
   <div class="panel-nuevo-producto p-4 border-round-xl shadow-1 max-w-70rem mx-auto mt-4">
     
     <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center mb-4 gap-3">
@@ -260,19 +259,12 @@ const procesarArchivo = async (evento) => {
             />
         </div>
     </div>
-    
-    <div class="mb-4" v-if="mensajeExito || mensajeError">
-        <Message v-if="mensajeExito" severity="success" :closable="false">{{ mensajeExito }}</Message>
-        <Message v-if="mensajeError" severity="error" :closable="false">{{ mensajeError }}</Message>
-    </div>
 
-    <!-- INYECTAMOS EL FORMULARIO MANUAL -->
+    <!-- EL FORMULARIO MANUAL YA NO NECESITA LOS EVENTOS DE ERROR/MENSAJE EXTERNOS -->
     <FormularioProducto 
         ref="formRef"
         :cargando="cargando"
         @guardar="guardarProducto"
-        @error="mostrarError"
-        @limpiar-mensajes="limpiarMensajes"
     />
   </div>
 </template>

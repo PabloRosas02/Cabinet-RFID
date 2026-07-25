@@ -16,15 +16,54 @@ const emit = defineEmits(['update:visible', 'guardar']);
 const cerrar = () => emit('update:visible', false);
 const guardar = () => emit('guardar');
 
+// =====================================================================
+// Procesamiento y Optimización de Imagen (WebP)
+// =====================================================================
 const procesarImagen = (evento) => {
     const archivo = evento.target.files[0];
-    if (archivo) {
-        const lector = new FileReader();
-        lector.onload = (e) => {
-            props.herramienta.imagen = e.target.result;
-        };
-        lector.readAsDataURL(archivo);
+    if (!archivo) return;
+
+    // Validar que realmente sea una imagen
+    if (!archivo.type.startsWith('image/')) {
+        return;
     }
+
+    const lector = new FileReader();
+    lector.onload = (e) => {
+        // Creamos un objeto de imagen nativo en memoria
+        const img = new Image();
+        img.onload = () => {
+            // Creamos un canvas virtual
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Redimensionar de forma inteligente (máximo 800px de ancho)
+            const MAX_WIDTH = 800;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            // Dibujamos la imagen original en el canvas
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Exportamos el canvas a formato WebP con 80% de calidad (0.8)
+            const webpBase64 = canvas.toDataURL('image/webp', 0.8);
+
+            // Asignamos la cadena optimizada a la herramienta
+            props.herramienta.imagen = webpBase64;
+        };
+        
+        // Disparamos la carga de la imagen
+        img.src = e.target.result;
+    };
+    lector.readAsDataURL(archivo);
 };
 </script>
 
@@ -81,7 +120,6 @@ const procesarImagen = (evento) => {
     <div class="formgrid grid mb-4">
       <div class="col flex flex-column gap-2">
         <label for="cantidadMinima" class="font-bold">Stock Mínimo</label>
-        <!-- SOLUCIÓN 2: Usar inputId en lugar de id para InputNumber de PrimeVue -->
         <InputNumber inputId="cantidadMinima" name="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly />
       </div>
       <div class="col flex flex-column gap-2">
