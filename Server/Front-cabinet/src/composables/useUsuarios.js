@@ -1,9 +1,11 @@
 import { ref, onMounted } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import axios from 'axios';
+import { useToast } from 'primevue/usetoast';
 
 export function useUsuarios() {
     const API_URL = '/api/usuarios';
+    const toast = useToast();
 
     const usuarios = ref([]);
     const cargando = ref(false); 
@@ -16,7 +18,7 @@ export function useUsuarios() {
     const usuarioActual = ref({});
     const esEdicion = ref(false);
 
-    // Obtener datos al cargar la página (Ahora con Axios)
+    // Obtener datos al cargar la página
     const cargarUsuarios = async () => {
         cargando.value = true;
         try {
@@ -24,7 +26,7 @@ export function useUsuarios() {
             usuarios.value = respuesta.data;
         } catch (error) {
             console.error("Error al cargar usuarios:", error);
-            alert("No se pudo conectar con la base de datos o sesión expirada.");
+            toast.add({ severity: 'error', summary: 'Error de conexión', detail: 'No se pudo conectar con la base de datos o sesión expirada.', life: 4000 });
         } finally {
             cargando.value = false;
         }
@@ -65,21 +67,23 @@ export function useUsuarios() {
 
             const usuarioGuardado = respuesta.data;
 
-            // Actualizar la tabla localmente
+            // Actualizar la tabla localmente y mostrar Toast
             if (esActEdicion) {
                 const index = usuarios.value.findIndex(u => u.id === usuarioActual.value.id);
                 if (index !== -1) {
                     usuarios.value.splice(index, 1, usuarioGuardado);
                 }
+                toast.add({ severity: 'success', summary: 'Usuario Actualizado', detail: `El empleado ${usuarioGuardado.nombre} ha sido modificado.`, life: 3000 });
             } else {
                 usuarios.value = [...usuarios.value, usuarioGuardado];
+                toast.add({ severity: 'success', summary: 'Usuario Creado', detail: `El empleado ${usuarioGuardado.nombre} fue registrado exitosamente.`, life: 3000 });
             }
 
             mostrarModal.value = false;
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            alert(`Error: ${mensajeError}`);
+            toast.add({ severity: 'error', summary: 'Error al guardar', detail: mensajeError, life: 4000 });
         }
     };
 
@@ -93,10 +97,12 @@ export function useUsuarios() {
 
             // Quitar de la tabla localmente
             usuarios.value = usuarios.value.filter(u => u.id !== usuario.id);
+            
+            toast.add({ severity: 'success', summary: 'Baja Exitosa', detail: `El trabajador ${usuario.numTrabajador} fue dado de baja.`, life: 3000 });
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            alert(`Hubo un problema al intentar eliminar el usuario: ${mensajeError}`);
+            toast.add({ severity: 'error', summary: 'Error al eliminar', detail: mensajeError, life: 4000 });
         }
     };
 

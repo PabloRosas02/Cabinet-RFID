@@ -37,55 +37,56 @@ const procesarImagen = (evento) => {
     :modal="true" 
   >
     <div class="flex flex-column gap-2 mb-4">
-      <label class="font-bold">Fotografía</label>
+      <label for="foto-herramienta" class="font-bold">Fotografía</label>
       <div class="flex align-items-center gap-4">
           <img v-if="herramienta.imagen" :src="herramienta.imagen" class="shadow-2 border-round" style="width: 80px; height: 80px; object-fit: cover;" />
           <div v-else class="flex align-items-center justify-content-center surface-200 border-round" style="width: 80px; height: 80px;">
               <i class="pi pi-image text-4xl text-500"></i>
           </div>
-          <input type="file" accept="image/*" @change="procesarImagen" class="p-inputtext p-component p-2 w-full" />
+          <input id="foto-herramienta" name="foto-herramienta" type="file" accept="image/*" @change="procesarImagen" class="p-inputtext p-component p-2 w-full" />
       </div>
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
       <label for="codigo" class="font-bold">Código</label>
-      <InputText id="codigo" v-model="herramienta.codigo" required autofocus placeholder="Ej. TL-001" />
+      <InputText id="codigo" name="codigo" v-model="herramienta.codigo" required autofocus placeholder="Ej. TL-001" autocomplete="off" />
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
       <label for="nombre" class="font-bold">Nombre</label>
-      <InputText id="nombre" v-model="herramienta.nombre" required placeholder="Ej. Taladro Percutor 20V" />
+      <InputText id="nombre" name="nombre" v-model="herramienta.nombre" required placeholder="Ej. Taladro Percutor 20V" autocomplete="off" />
     </div>
 
     <div class="formgrid grid mb-3">
       <div class="col flex flex-column gap-2">
         <label for="tipo" class="font-bold">Tipo / Categoría</label>
-        <InputText id="tipo" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" />
+        <InputText id="tipo" name="tipo" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" autocomplete="off" />
       </div>
       <div class="col flex flex-column gap-2">
         <label for="ubicacion" class="font-bold">Ubicación</label>
-        <InputText id="ubicacion" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" />
+        <InputText id="ubicacion" name="ubicacion" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" autocomplete="off" />
       </div>
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
       <label for="marca" class="font-bold">Marca / Proveedor</label>
-      <InputText id="marca" v-model="herramienta.marca" placeholder="Ej. DeWalt, Truper..." />
+      <InputText id="marca" name="marca" v-model="herramienta.marca" placeholder="Ej. DeWalt, Truper..." autocomplete="off" />
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
       <label for="descripcion" class="font-bold">Descripción / Detalles</label>
-      <Textarea id="descripcion" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones, notas, cuidados especiales..." />
+      <Textarea id="descripcion" name="descripcion" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones, notas, cuidados especiales..." />
     </div>
 
     <div class="formgrid grid mb-4">
       <div class="col flex flex-column gap-2">
         <label for="cantidadMinima" class="font-bold">Stock Mínimo</label>
-        <InputNumber id="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly />
+        <!-- SOLUCIÓN 2: Usar inputId en lugar de id para InputNumber de PrimeVue -->
+        <InputNumber inputId="cantidadMinima" name="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly />
       </div>
       <div class="col flex flex-column gap-2">
         <label for="cantidadDisponible" class="font-bold">Stock Físico</label>
-        <InputNumber id="cantidadDisponible" v-model="herramienta.cantidadDisponible" integeronly />
+        <InputNumber inputId="cantidadDisponible" name="cantidadDisponible" v-model="herramienta.cantidadDisponible" integeronly />
       </div>
     </div>
 

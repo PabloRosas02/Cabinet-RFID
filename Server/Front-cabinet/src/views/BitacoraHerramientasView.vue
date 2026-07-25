@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { FilterMatchMode } from '@primevue/core/api';
+import axios from 'axios'; 
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -24,11 +25,10 @@ const { generarDescarga, generarDescargaExcel } = useExportarCSV();
 const cargarBitacora = async () => {
     cargando.value = true;
     try {
-        const respuesta = await fetch('/api/herramientas/bitacora');
-        if (!respuesta.ok) throw new Error('Error al cargar la bitácora');
-        bitacora.value = await respuesta.json();
+        const respuesta = await axios.get('/api/herramientas/bitacora');
+        bitacora.value = respuesta.data;
     } catch (error) {
-        console.error(error);
+        console.error("Error al cargar la bitácora:", error);
     } finally {
         cargando.value = false;
     }
@@ -50,9 +50,6 @@ const getBadgeClase = (accion) => {
     return 'badge-default';
 };
 
-// =====================================================================
-// Lógica de Exportación
-// =====================================================================
 const opcionesExportar = ref([
     { label: 'Exportar a CSV', icon: 'pi pi-file', command: () => exportarDatos('csv') },
     { label: 'Exportar a Excel', icon: 'pi pi-file-excel', command: () => exportarDatos('xlsx') }
@@ -96,7 +93,7 @@ const exportarDatos = (formato) => {
       <template #end>
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search" />
-          <InputText v-model="filtros['global'].value" placeholder="Buscar herramienta, usuario..." class="input-oscuro" />
+          <InputText id="buscador-bitacora" name="buscador-bitacora" v-model="filtros['global'].value" placeholder="Buscar herramienta, usuario..." class="input-oscuro" autocomplete="off" />
         </IconField>
       </template>
     </Toolbar>

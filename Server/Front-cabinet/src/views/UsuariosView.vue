@@ -11,6 +11,7 @@ import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import Tag from 'primevue/tag';
 import Dialog from 'primevue/dialog';
+import Toast from 'primevue/toast'; 
 
 import { useUsuarios } from '../composables/useUsuarios';
 
@@ -38,6 +39,7 @@ const getSeverityRol = (rol) => {
 </script>
 
 <template>
+    <Toast /> 
     <!-- Contenedor Principal Oscuro unificado (estilo Historial) -->
     <div class="panel-principal p-4 border-round-xl shadow-1 mt-4">
         

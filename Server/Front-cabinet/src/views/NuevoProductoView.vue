@@ -4,6 +4,7 @@ import Message from 'primevue/message';
 import Button from 'primevue/button'; 
 import Menu from 'primevue/menu'; 
 import ExcelJS from 'exceljs';
+import axios from 'axios'; 
 
 import FormularioProducto from '@/components/productos/FomularioProducto.vue'; 
 import { useExportarCSV } from '@/composables/useExportarCSV.js'; 
@@ -50,23 +51,15 @@ const mostrarError = (errorMsg) => {
 };
 
 // =====================================================================
-// Guardar Producto Manualmente
+// Guardar Producto Manualmente (Actualizado a Axios)
 // =====================================================================
 const guardarProducto = async (herramientaData) => {
     limpiarMensajes();
     cargando.value = true;
     
     try {
-        const respuesta = await fetch('/api/herramientas', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(herramientaData)
-        });
-
-        if (!respuesta.ok) {
-            const errorData = await respuesta.json();
-            throw new Error(errorData.error || 'Error al guardar');
-        }
+        // Axios envía el Token automáticamente y el backend ya sabe quién es el usuario
+        await axios.post('/api/herramientas', herramientaData);
 
         mensajeExito.value = 'Producto registrado correctamente.';
         
@@ -75,7 +68,9 @@ const guardarProducto = async (herramientaData) => {
         }, 500);
 
     } catch (error) {
-        mostrarError(error.message);
+        // Extraemos el error limpio que nos manda el backend
+        const errorMsg = error.response?.data?.error || error.message;
+        mostrarError(errorMsg);
     } finally {
         cargando.value = false;
     }
@@ -105,7 +100,7 @@ const descargarPlantilla = (formato) => {
 };
 
 // =====================================================================
-// Procesar y Subir Archivo (.csv o .xlsx)
+// Procesar y Subir Archivo (.csv o .xlsx) (Actualizado a Axios)
 // =====================================================================
 const procesarArchivo = async (evento) => {
     const archivo = evento.target.files[0];
@@ -207,21 +202,18 @@ const procesarArchivo = async (evento) => {
             throw new Error("No se encontraron registros válidos. Asegúrate de incluir 'Codigo' y 'Nombre'.");
         }
 
-        const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
-
-        const respuesta = await fetch('/api/herramientas/importar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ herramientas, usuarioId: usuarioSesion?.id })
+        // Ya no necesitamos sacar el usuarioId manualmente
+        const respuesta = await axios.post('/api/herramientas/importar', { 
+            herramientas: herramientas 
         });
 
-        const dataResponse = await respuesta.json();
-        if (!respuesta.ok) throw new Error(dataResponse.error || 'Error al importar archivo');
-
+        const dataResponse = respuesta.data;
         mensajeExito.value = `Importación exitosa: ${dataResponse.creados} herramientas creadas y ${dataResponse.actualizados} actualizadas.`;
         
     } catch (error) {
-        mostrarError(error.message);
+        // Interceptamos errores de validación de Axios o de código manual
+        const errorMsg = error.response?.data?.error || error.message;
+        mostrarError(errorMsg);
     } finally {
         evento.target.value = ''; 
         cargandoImportacion.value = false;

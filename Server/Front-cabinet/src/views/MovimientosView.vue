@@ -85,10 +85,17 @@ const volverAInventario = () => {
         />
       </template>
       <template #end>
-        <!-- Buscador -->
+        <!-- Buscador CORREGIDO con id y name -->
         <IconField iconPosition="left">
           <InputIcon class="pi pi-search" />
-          <InputText v-model="filtros['global'].value" placeholder="Buscar para editar..." class="input-oscuro" />
+          <InputText 
+            id="buscador-movimientos" 
+            name="buscador-movimientos" 
+            v-model="filtros['global'].value" 
+            placeholder="Buscar para editar..." 
+            class="input-oscuro" 
+            autocomplete="off" 
+          />
         </IconField>
       </template>
     </Toolbar>
