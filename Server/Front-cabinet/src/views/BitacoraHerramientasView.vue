@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { FilterMatchMode } from '@primevue/core/api';
-import axios from 'axios'; 
 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -10,8 +9,10 @@ import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
-import { useExportarCSV } from '@/composables/useExportarCSV.js';
 import Menu from 'primevue/menu';
+
+import { HerramientasService } from '@/services/herramientasService';
+import { useGestorArchivos } from '@/composables/useGestordeArchivos';
 
 const router = useRouter();
 const bitacora = ref([]);
@@ -19,13 +20,13 @@ const cargando = ref(false);
 const filtros = ref({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
 const menuExportar = ref(null);
 
-const { generarDescarga, generarDescargaExcel } = useExportarCSV();
+// Solo importamos la función experta
+const { exportarBitacora } = useGestorArchivos();
 
 const cargarBitacora = async () => {
     cargando.value = true;
     try {
-        const respuesta = await axios.get('/api/herramientas/bitacora');
-        bitacora.value = respuesta.data;
+        bitacora.value = await HerramientasService.obtenerBitacora();
     } catch (error) {
         console.error("Error al cargar la bitácora:", error);
     } finally {
@@ -49,35 +50,14 @@ const getBadgeClase = (accion) => {
     return 'badge-default';
 };
 
+// Las opciones llaman directamente al servicio con el arreglo de datos
 const opcionesExportar = ref([
-    { label: 'Exportar a CSV', icon: 'pi pi-file', command: () => exportarDatos('csv') },
-    { label: 'Exportar a Excel', icon: 'pi pi-file-excel', command: () => exportarDatos('xlsx') }
+    { label: 'Exportar a CSV', icon: 'pi pi-file', command: () => exportarBitacora(bitacora.value, 'csv') },
+    { label: 'Exportar a Excel', icon: 'pi pi-file-excel', command: () => exportarBitacora(bitacora.value, 'xlsx') }
 ]);
-
-const exportarDatos = (formato) => {
-    if (!bitacora.value.length) return;
-    const nombreArchivo = `Bitacora_Auditoria_${new Date().toISOString().split('T')[0]}`;
-    
-    if (formato === 'csv') {
-        const cabeceras = ['Fecha', 'Acción', 'Código Herramienta', 'Nombre Herramienta', 'Usuario', 'Rol'];
-        const filas = bitacora.value.map(b => `"${formatearFecha(b.fecha)}","${b.accion}","${b.herramienta?.codigo || 'N/A'}","${b.herramienta?.nombre || 'N/A'}","${b.usuario?.nombre || 'N/A'}","${b.usuario?.rol || 'N/A'}"`);
-        generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
-    } else {
-        const datosExcel = bitacora.value.map(b => ({
-            'Fecha': formatearFecha(b.fecha),
-            'Acción': b.accion,
-            'Código Herramienta': b.herramienta?.codigo || 'N/A',
-            'Nombre Herramienta': b.herramienta?.nombre || 'Desconocida',
-            'Usuario (Autor)': b.usuario?.nombre || 'N/A',
-            'Rol': b.usuario?.rol || 'N/A'
-        }));
-        generarDescargaExcel(`${nombreArchivo}.xlsx`, datosExcel);
-    }
-};
 </script>
 
 <template>
-
   <div class="panel-bitacora p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Bitácora de Auditoría</h2>
@@ -123,7 +103,6 @@ const exportarDatos = (formato) => {
     </div>
 
     <div class="tabla-contenedor p-3 border-round shadow-1 mt-4">
-
         <DataTable 
             :value="bitacora" 
             :paginator="true" 
@@ -135,7 +114,6 @@ const exportarDatos = (formato) => {
             emptyMessage="No hay registros en la bitácora."
             scrollable
         >
-
             <Column header="Fecha / Hora" style="min-width: 160px; width: 15%">
                 <template #body="{ data }">{{ formatearFecha(data.fecha) }}</template>
             </Column>

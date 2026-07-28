@@ -14,7 +14,7 @@ import Toast from 'primevue/toast';
 
 import TablaHistorial from '@/components/historial/TablaHistorial.vue'; 
 import ModalDetallesPedido from '@/components/historial/ModalDetallesPedido.vue';
-import { useExportarCSV } from '@/composables/useExportarCSV.js';
+import { useGestorArchivos } from '@/composables/useGestordeArchivos'; 
 
 const toast = useToast();
 
@@ -29,7 +29,7 @@ const mostrarModal = ref(false);
 const pedidoSeleccionado = ref(null);
 const menuExportar = ref(null);
 
-const { generarDescarga, generarDescargaExcel } = useExportarCSV();
+const { exportarHistorialPedidos } = useGestorArchivos();
 
 const cargarHistorial = async () => {
     cargando.value = true;
@@ -75,11 +75,6 @@ const historialFiltrado = computed(() => {
     });
 });
 
-const formatearFecha = (fechaString) => {
-    if (!fechaString) return 'Pendiente';
-    return new Date(fechaString).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-};
-
 const abrirDetalles = (pedido) => {
     pedidoSeleccionado.value = pedido;
     mostrarModal.value = true;
@@ -105,81 +100,14 @@ const toggleExportar = (event) => {
     menuExportar.value.toggle(event);
 };
 
-// =====================================================================
-// Lógica de Exportación Dual
-// =====================================================================
 const realizarExportacion = (formato) => {
-    if (!historialFiltrado.value || historialFiltrado.value.length === 0) {
-        toast.add({ 
-            severity: 'warn', 
-            summary: 'Sin datos', 
-            detail: 'No hay registros para exportar con los filtros actuales.', 
-            life: 3000 
-        });
-        return;
+    try {
+        // Le mandamos los datos y la lógica pesada se ejecuta allá
+        exportarHistorialPedidos(historialFiltrado.value, filtroTiempo.value, formato);
+        toast.add({ severity: 'success', summary: 'Exportación Exitosa', detail: 'El archivo se ha generado correctamente.', life: 3000 });
+    } catch (error) {
+        toast.add({ severity: 'warn', summary: 'Sin datos', detail: error.message, life: 3000 });
     }
-
-    const hoy = new Date();
-    const sufijoFecha = filtroTiempo.value === 'Hoy' || filtroTiempo.value === 'Todos' ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString('es-MX', { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
-                        filtroTiempo.value === 'Este Mes' ? `${hoy.toLocaleString('es-MX', { month: 'long' })}_${hoy.getFullYear()}` : 
-                        filtroTiempo.value === 'Este Año' ? `${hoy.getFullYear()}` : `Semana_${hoy.getDate()}`; 
-    const nombreArchivo = `Reporte_Historial_${sufijoFecha}`; 
-    
-    if (formato === 'csv') {
-        const cabeceras = ['Folio', 'Autorizó (Prestador)', 'Solicitó (Empleado)', 'Fecha Préstamo', 'Fecha Devolución General', 'Resumen de Herramientas', 'Observaciones (Rastreo Parcial)', 'Estado'];
-
-        const filas = historialFiltrado.value.map(pedido => {
-            const folio = `#${pedido.id}`;
-            const autorizo = pedido.prestadorNombre || 'N/A';
-            const solicito = `${pedido.trabajadorNumero} - ${pedido.trabajadorNombre}`;
-            const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (Regresó: ${h.cantidadRegresada})` : '')).join(' | ');
-
-            const observaciones = pedido.herramientas.map(h => {
-                if (h.historialDevoluciones?.length > 0) {
-                    const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
-                    if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x recibidas por ${dev.receptorNombre} (${formatearFecha(dev.fecha)})`).join('; ');
-                }
-                return null;
-            }).filter(Boolean).join(' || ') || 'Sin recepciones registradas';
-
-            return [`"${folio}"`, `"${autorizo}"`, `"${solicito}"`, `"${formatearFecha(pedido.fechaPedido)}"`, `"${formatearFecha(pedido.fechaDevolucion)}"`, `"${herramientas}"`, `"${observaciones}"`, `"${pedido.estado}"`].join(',');
-        });
-
-        generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
-    } 
-    else if (formato === 'xlsx') {
-        const datosParaExcel = historialFiltrado.value.map(pedido => {
-            const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (Regresó: ${h.cantidadRegresada})` : '')).join(' | ');
-            
-            const observaciones = pedido.herramientas.map(h => {
-                if (h.historialDevoluciones?.length > 0) {
-                    const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
-                    if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x recibidas por ${dev.receptorNombre} (${formatearFecha(dev.fecha)})`).join('; ');
-                }
-                return null;
-            }).filter(Boolean).join(' || ') || 'Sin recepciones registradas';
-
-            return {
-                'Folio': `#${pedido.id}`,
-                'Autorizó (Prestador)': pedido.prestadorNombre || 'N/A',
-                'Solicitó (Empleado)': `${pedido.trabajadorNumero} - ${pedido.trabajadorNombre}`,
-                'Fecha Préstamo': formatearFecha(pedido.fechaPedido),
-                'Fecha Devolución General': formatearFecha(pedido.fechaDevolucion),
-                'Resumen de Herramientas': herramientas,
-                'Observaciones (Rastreo Parcial)': observaciones,
-                'Estado': pedido.estado
-            };
-        });
-
-        generarDescargaExcel(`${nombreArchivo}.xlsx`, datosParaExcel);
-    }
-
-    toast.add({ 
-        severity: 'success', 
-        summary: 'Exportación Exitosa', 
-        detail: `El archivo se ha generado correctamente.`, 
-        life: 3000 
-    });
 };
 </script>
 
@@ -254,7 +182,7 @@ const realizarExportacion = (formato) => {
     background-color: #2a323d !important; 
     color: #ffffff; 
     border: 1px solid #4a5568 !important; 
-    overflow-x: hidden; /* Garantiza que ningún elemento interno rompa el contenedor */
+    overflow-x: hidden;
 }
 
 .btn-exportar { background-color: #16a34a !important; border: none !important; color: white !important; font-weight: bold; }

@@ -1,9 +1,9 @@
 import { ref, onMounted } from 'vue';
-import axios from 'axios'; 
 import { useToast } from 'primevue/usetoast'; 
+import { HerramientasService } from '@/services/herramientasService'; 
+import { comprimirImagenWebP } from '@/utils/imageHelper'; // <-- 1. Importamos nuestro ayudante
 
 export function useHerramientas() {
-    const API_URL = '/api/herramientas';
     const toast = useToast(); 
 
     // ESTADO
@@ -18,8 +18,7 @@ export function useHerramientas() {
     const cargarHerramientas = async () => {
         cargando.value = true;
         try {
-            const respuesta = await axios.get(API_URL);
-            herramientas.value = respuesta.data;
+            herramientas.value = await HerramientasService.obtenerTodas();
         } catch (error) {
             console.error("Error al cargar herramientas:", error);
             toast.add({ severity: 'error', summary: 'Error de Conexión', detail: 'No se pudo cargar el inventario.', life: 4000 });
@@ -52,43 +51,41 @@ export function useHerramientas() {
         mostrarModal.value = true;
     };
 
-    // PROCESAR FOTOGRAFÍA (Base64)
-    const procesarImagen = (evento) => {
+    // PROCESAR FOTOGRAFÍA 
+    const procesarImagen = async (evento) => {
         const archivo = evento.target.files[0];
-        if (archivo) {
-            const lector = new FileReader();
-            lector.onload = (e) => {
-                herramientaActual.value.imagen = e.target.result; 
-            };
-            lector.readAsDataURL(archivo);
+        if (!archivo) return;
+
+        try {
+            // Le pasamos el archivo al helper 
+            herramientaActual.value.imagen = await comprimirImagenWebP(archivo);
+        } catch (mensajeError) {
+            // Si el helper rechaza la imagen (por peso o formato), mostramos el error aquí
+            toast.add({ severity: 'error', summary: 'Error de Imagen', detail: mensajeError, life: 5000 });
+            evento.target.value = ''; 
         }
     };
 
-    // GUARDAR (Crear o Actualizar con Axios)
+    // GUARDAR (Crear o Actualizar usando el Servicio)
     const guardarHerramienta = async () => {
         try {
             const esActEdicion = esEdicion.value;
-            const url = esActEdicion ? `${API_URL}/${herramientaActual.value.id}` : API_URL;
+            let herramientaGuardada;
 
-            let respuesta;
             if (esActEdicion) {
-                respuesta = await axios.put(url, herramientaActual.value);
+                herramientaGuardada = await HerramientasService.actualizar(herramientaActual.value.id, herramientaActual.value);
             } else {
-                respuesta = await axios.post(url, herramientaActual.value);
+                herramientaGuardada = await HerramientasService.crear(herramientaActual.value);
             }
-
-            const herramientaGuardada = respuesta.data;
 
             if (esActEdicion) {
                 const index = herramientas.value.findIndex(h => h.id === herramientaActual.value.id);
                 if (index !== -1) {
                     herramientas.value.splice(index, 1, herramientaGuardada);
                 }
-                // TOAST DE EDICIÓN
                 toast.add({ severity: 'success', summary: 'Herramienta Actualizada', detail: `La herramienta ${herramientaGuardada.codigo} fue modificada con éxito.`, life: 3000 });
             } else {
                 herramientas.value = [...herramientas.value, herramientaGuardada];
-                // TOAST DE CREACIÓN
                 toast.add({ severity: 'success', summary: 'Herramienta Creada', detail: `La herramienta ${herramientaGuardada.codigo} se registró exitosamente.`, life: 3000 });
             }
 
@@ -96,30 +93,23 @@ export function useHerramientas() {
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            // TOAST DE ERROR
             toast.add({ severity: 'error', summary: 'Error al guardar', detail: mensajeError, life: 4000 });
         }
     };
 
-    // ELIMINAR (Soft Delete con Axios)
+    // ELIMINAR (Soft Delete usando el Servicio)
     const eliminarHerramienta = async (herramienta) => {
         const confirmado = confirm(`¿Estás seguro de dar de baja la herramienta ${herramienta.codigo} - ${herramienta.nombre}?`);
         if (!confirmado) return;
 
         try {
-            // El token viaja automáticamente, el backend sabrá qué usuario realizó la baja
-            await axios.delete(`${API_URL}/${herramienta.id}`);
-
-            // Actualizamos la lista local eliminando la herramienta dada de baja
+            await HerramientasService.eliminar(herramienta.id);
             herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
-            
-            // TOAST DE ELIMINACIÓN
             toast.add({ severity: 'success', summary: 'Baja Exitosa', detail: `La herramienta ${herramienta.codigo} fue dada de baja.`, life: 3000 });
 
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            // TOAST DE ERROR
             toast.add({ severity: 'error', summary: 'Error al dar de baja', detail: mensajeError, life: 4000 });
         }
     };

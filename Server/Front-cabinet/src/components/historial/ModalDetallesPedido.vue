@@ -2,6 +2,7 @@
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
+import { formatearFecha } from '@/utils/dateHelper';
 
 defineProps({
     mostrar: Boolean,
@@ -9,14 +10,6 @@ defineProps({
 });
 
 const emit = defineEmits(['cerrar']);
-
-// Reutilizamos la función de fecha solo para el modal
-const formatearFecha = (fechaString) => {
-    if (!fechaString) return 'Pendiente';
-    return new Date(fechaString).toLocaleDateString('es-MX', { 
-        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-    });
-};
 </script>
 
 <template>
@@ -88,7 +81,6 @@ const formatearFecha = (fechaString) => {
                             <span class="text-xs text-400 font-bold uppercase mb-2 block tracking-wide">Rastreo de Recepciones Parciales:</span>
                             
                             <template v-for="(dev, i) in h.historialDevoluciones" :key="i">
-                                <!-- En móviles, la fecha de devolución y quién lo recibió se apilarán -->
                                 <div v-if="dev.cantidad > 0" class="text-sm text-300 flex flex-column sm:flex-row justify-content-between py-2 border-bottom-1 border-gray-700 last-border-none align-items-start sm:align-items-center gap-1 sm:gap-0">
                                     <span>
                                         <i class="pi pi-check-circle text-green-500 mr-2" style="font-size: 0.9rem;"></i>
@@ -113,7 +105,6 @@ const formatearFecha = (fechaString) => {
 </template>
 
 <style scoped>
-/* Paddings adaptables para el modal completo */
 :deep(.modal-oscuro .p-dialog-header),
 :deep(.modal-oscuro .p-dialog-content),
 :deep(.modal-oscuro .p-dialog-footer) {
@@ -136,7 +127,6 @@ const formatearFecha = (fechaString) => {
 :deep(.modal-oscuro .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
 :deep(.modal-oscuro .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
 
-/* Efecto hover en el ícono de cerrar modal */
 :deep(.modal-oscuro .p-dialog-header-icon) { color: #94a3b8 !important; }
 :deep(.modal-oscuro .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
 

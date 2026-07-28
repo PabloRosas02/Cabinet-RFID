@@ -130,8 +130,7 @@ const procesarPedido = async () => {
 
     <!-- GRID INTELIGENTE: flex-column en móvil, flex-row en Desktop (lg) -->
     <div class="flex flex-column lg:flex-row gap-4">
-      
-      <!-- Panel Izquierdo: Catálogo (100% en móvil, ~65% en PC) -->
+
       <div class="w-full lg:w-7 xl:w-8">
           <CatalogoHerramientas 
             :inventario="inventario" 
@@ -139,7 +138,6 @@ const procesarPedido = async () => {
           />
       </div>
 
-      <!-- Panel Derecho: Detalle del Pedido (100% en móvil, ~35% en PC) -->
       <div class="w-full lg:w-5 xl:w-4">
           <DetallePedido 
             :pedido="pedidoActual" 

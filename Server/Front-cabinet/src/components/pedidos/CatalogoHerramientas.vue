@@ -98,6 +98,7 @@ const obtenerTextoStock = (h) => {
             :value="herramientasDisponibles" 
             :paginator="true" 
             :rows="5" 
+            :pageLinkSize="esMovil ? 3 : 5" 
             dataKey="id"
             class="tabla-oscura"
             emptyMessage="No se encontraron herramientas."

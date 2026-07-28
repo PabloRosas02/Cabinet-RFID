@@ -4,6 +4,7 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button'; 
+import { formatearFecha } from '@/utils/dateHelper';
 
 // Recibimos los datos ya filtrados desde el padre
 const props = defineProps({
@@ -45,13 +46,6 @@ const onRowDblClick = (event) => {
 
 const verDetalles = (data) => {
     emit('doble-click', data);
-};
-
-const formatearFecha = (fechaString) => {
-    if (!fechaString) return '--'; 
-    return new Date(fechaString).toLocaleDateString('es-MX', { 
-        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-    });
 };
 </script>
 
