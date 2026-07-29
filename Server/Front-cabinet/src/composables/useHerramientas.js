@@ -1,10 +1,10 @@
-import { ref, onMounted } from 'vue';
-import { useToast } from 'primevue/usetoast'; 
+import { ref } from 'vue';
 import { HerramientasService } from '@/services/herramientasService'; 
-import { comprimirImagenWebP } from '@/utils/imageHelper'; // <-- 1. Importamos nuestro ayudante
+import { comprimirImagenWebP } from '@/utils/imageHelper';
+import { useToast } from 'primevue/usetoast';
 
 export function useHerramientas() {
-    const toast = useToast(); 
+    const toast = useToast();
 
     // ESTADO
     const herramientas = ref([]);
@@ -21,7 +21,7 @@ export function useHerramientas() {
             herramientas.value = await HerramientasService.obtenerTodas();
         } catch (error) {
             console.error("Error al cargar herramientas:", error);
-            toast.add({ severity: 'error', summary: 'Error de Conexión', detail: 'No se pudo cargar el inventario.', life: 4000 });
+            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las herramientas.', life: 4000 });
         } finally {
             cargando.value = false;
         }
@@ -57,12 +57,10 @@ export function useHerramientas() {
         if (!archivo) return;
 
         try {
-            // Le pasamos el archivo al helper 
             herramientaActual.value.imagen = await comprimirImagenWebP(archivo);
         } catch (mensajeError) {
-            // Si el helper rechaza la imagen (por peso o formato), mostramos el error aquí
-            toast.add({ severity: 'error', summary: 'Error de Imagen', detail: mensajeError, life: 5000 });
             evento.target.value = ''; 
+            toast.add({ severity: 'error', summary: 'Error de imagen', detail: mensajeError, life: 4000 });
         }
     };
 
@@ -83,40 +81,49 @@ export function useHerramientas() {
                 if (index !== -1) {
                     herramientas.value.splice(index, 1, herramientaGuardada);
                 }
-                toast.add({ severity: 'success', summary: 'Herramienta Actualizada', detail: `La herramienta ${herramientaGuardada.codigo} fue modificada con éxito.`, life: 3000 });
             } else {
                 herramientas.value = [...herramientas.value, herramientaGuardada];
-                toast.add({ severity: 'success', summary: 'Herramienta Creada', detail: `La herramienta ${herramientaGuardada.codigo} se registró exitosamente.`, life: 3000 });
             }
 
             mostrarModal.value = false;
+            
+            const mensajeExito = esActEdicion 
+                ? `Herramienta "${herramientaGuardada.nombre}" actualizada exitosamente.` 
+                : `Herramienta "${herramientaGuardada.nombre}" registrada con éxito.`;
+            
+            toast.add({ severity: 'success', summary: '¡Éxito!', detail: mensajeExito, life: 3000 });
+
+            return herramientaGuardada;
         } catch (error) {
-            console.error(error);
-            const mensajeError = error.response?.data?.error || error.message;
-            toast.add({ severity: 'error', summary: 'Error al guardar', detail: mensajeError, life: 4000 });
+            console.error("Fallo al guardar herramienta:", error);
+            const mensajeError = error.response?.data?.error || error.message || "Error desconocido al contactar al servidor.";
+            toast.add({ severity: 'error', summary: 'No se pudo guardar', detail: mensajeError, life: 4000 });
         }
     };
 
-    // ELIMINAR (Soft Delete usando el Servicio)
+    // ELIMINAR (Soft Delete con Toast dinámico)
     const eliminarHerramienta = async (herramienta) => {
-        const confirmado = confirm(`¿Estás seguro de dar de baja la herramienta ${herramienta.codigo} - ${herramienta.nombre}?`);
-        if (!confirmado) return;
+        const confirmado = confirm(`¿Estás seguro de dar de baja la herramienta [${herramienta.codigo}] - ${herramienta.nombre}?`);
+        if (!confirmado) return false;
 
         try {
             await HerramientasService.eliminar(herramienta.id);
             herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
-            toast.add({ severity: 'success', summary: 'Baja Exitosa', detail: `La herramienta ${herramienta.codigo} fue dada de baja.`, life: 3000 });
-
+            
+            toast.add({ 
+                severity: 'warn', 
+                summary: 'Herramienta dada de baja', 
+                detail: `[${herramienta.codigo}] ${herramienta.nombre}`, 
+                life: 4000 
+            });
+            
+            return true;
         } catch (error) {
-            console.error(error);
-            const mensajeError = error.response?.data?.error || error.message;
-            toast.add({ severity: 'error', summary: 'Error al dar de baja', detail: mensajeError, life: 4000 });
+            console.error("Error al eliminar:", error);
+            const mensajeError = error.response?.data?.error || error.message || "Error desconocido";
+            toast.add({ severity: 'error', summary: 'No se pudo eliminar', detail: mensajeError, life: 4000 });
         }
     };
-
-    onMounted(() => {
-        cargarHerramientas();
-    });
 
     return {
         herramientas,
@@ -124,6 +131,7 @@ export function useHerramientas() {
         mostrarModal,
         herramientaActual,
         esEdicion,
+        cargarHerramientas,
         prepararNuevaHerramienta,
         prepararEdicion,
         procesarImagen,

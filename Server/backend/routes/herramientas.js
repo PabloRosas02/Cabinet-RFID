@@ -5,6 +5,18 @@ import { verificarToken } from '../middlewares/auth.js';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Función auxiliar robusta para extraer el ID desde req.user
+const obtenerUsuarioId = (req) => {
+    const payload = req.user || req.usuario;
+    if (!payload) return null;
+    
+    // Si el payload es un objeto, intentamos extraer su ID principal
+    if (typeof payload === 'object') {
+        return payload.id || payload.userId || payload.numTrabajador;
+    }
+    return payload; // Si es un string/número directo
+};
+
 // =====================================================================
 // 1. GET /api/herramientas -> Obtener herramientas 
 // =====================================================================
@@ -50,7 +62,15 @@ router.post('/', verificarToken, async (req, res) => {
             descripcion, cantidadMinima, cantidadDisponible, cantidad, imagen
         } = req.body;
 
-        const usuarioId = req.usuario.id;
+        const usuarioId = obtenerUsuarioId(req);
+        if (!usuarioId) {
+            return res.status(401).json({ error: "Error de autenticación. No se detectó el ID del usuario." });
+        }
+        
+        const parsedUsuarioId = parseInt(usuarioId, 10);
+        if (isNaN(parsedUsuarioId)) {
+            return res.status(400).json({ error: "El token de usuario es inválido." });
+        }
 
         const cantDisponibleNum = parseInt(cantidadDisponible, 10) || 0;
         const cantTotalNum = parseInt(cantidad, 10) || cantDisponibleNum;
@@ -68,7 +88,8 @@ router.post('/', verificarToken, async (req, res) => {
                     imagen: imagen || null,
                     cantidadMinima: cantMinimaNum,
                     cantidadDisponible: cantDisponibleNum,
-                    cantidad: cantTotalNum
+                    cantidad: cantTotalNum,
+                    actualizadoEn: new Date() 
                 }
             });
 
@@ -76,7 +97,8 @@ router.post('/', verificarToken, async (req, res) => {
                 data: {
                     accion: 'CREACION',
                     herramientaId: herramienta.id,
-                    usuarioId: parseInt(usuarioId, 10)
+                    usuarioId: parsedUsuarioId,
+                    detalle: 'Registro inicial de la herramienta en el sistema.' // <-- Corregido
                 }
             });
 
@@ -88,39 +110,84 @@ router.post('/', verificarToken, async (req, res) => {
         if (error.code === 'P2002' && error.meta?.target?.includes('codigo')) {
             return res.status(400).json({ error: "El código ingresado ya existe. Por favor, utiliza un código diferente." });
         }
+        if (error.code === 'P2000') {
+            return res.status(400).json({ error: "La imagen es demasiado grande para la base de datos." });
+        }
         console.error("Error al crear herramienta:", error);
         res.status(500).json({ error: "Error al guardar la herramienta en la base de datos." });
     }
 });
 
 // =====================================================================
-// 3. PUT /api/herramientas/:id -> Actualizar herramienta 
+// 3. PUT /api/herramientas/:id -> Actualizar herramienta y rastrear cambios
 // =====================================================================
 router.put('/:id', verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { 
             codigo, nombre, tipo, ubicacion, marca, 
-            descripcion, cantidadMinima, cantidadDisponible, cantidad, imagen
+            descripcion, cantidadMinima, cantidad, imagen
         } = req.body;
 
-        const usuarioId = req.usuario.id;
+        const usuarioId = obtenerUsuarioId(req);
+        if (!usuarioId) {
+            return res.status(401).json({ error: "Error de autenticación. No se detectó el ID del usuario." });
+        }
+        
+        const parsedUsuarioId = parseInt(usuarioId, 10);
+        if (isNaN(parsedUsuarioId)) {
+            return res.status(400).json({ error: "El token de usuario es inválido." });
+        }
 
         const herramientaId = parseInt(id, 10);
-        const cantDisponibleNum = parseInt(cantidadDisponible, 10) || 0;
-        const cantMinimaNum = parseInt(cantidadMinima, 10) || 0;
 
         const herramientaActualizada = await prisma.$transaction(async (tx) => {
+            const herramientaVieja = await tx.herramienta.findUnique({ where: { id: herramientaId } });
+            if (!herramientaVieja) throw new Error("Herramienta no encontrada.");
+
             const dataToUpdate = {
-                codigo, nombre, tipo: tipo || null, ubicacion: ubicacion || null,
-                marca: marca || null, descripcion: descripcion || null,
-                imagen: imagen || null, cantidadMinima: cantMinimaNum,
-                cantidadDisponible: cantDisponibleNum
+                codigo, nombre, 
+                tipo: tipo || null, 
+                ubicacion: ubicacion || null,
+                marca: marca || null, 
+                descripcion: descripcion || null,
+                cantidadMinima: cantidadMinima !== undefined ? parseInt(cantidadMinima, 10) : herramientaVieja.cantidadMinima
             };
 
-            if (cantidad !== undefined) {
-                dataToUpdate.cantidad = parseInt(cantidad, 10) || 0;
+            if (imagen !== undefined) {
+                dataToUpdate.imagen = imagen || null;
             }
+
+            if (cantidad !== undefined) {
+                const nuevaCantidad = parseInt(cantidad, 10) || 0;
+                const diferencia = nuevaCantidad - herramientaVieja.cantidad; 
+                
+                dataToUpdate.cantidad = nuevaCantidad;
+                dataToUpdate.cantidadDisponible = herramientaVieja.cantidadDisponible + diferencia;
+            }
+
+            let detallesCambio = [];
+            const camposAComparar = [
+                { key: 'codigo', label: 'Código' },
+                { key: 'nombre', label: 'Nombre' },
+                { key: 'tipo', label: 'Tipo / Categoría' },
+                { key: 'ubicacion', label: 'Ubicación' },
+                { key: 'marca', label: 'Marca' },
+                { key: 'cantidadMinima', label: 'Stock Mínimo' },
+                { key: 'cantidad', label: 'Stock Físico (Total)' }
+            ];
+
+            const normalizar = (val) => (val === null || val === undefined || val === '') ? 'N/A' : String(val).trim();
+
+            camposAComparar.forEach(campo => {
+                if (dataToUpdate[campo.key] !== undefined) {
+                    const valorViejo = normalizar(herramientaVieja[campo.key]);
+                    const valorNuevo = normalizar(dataToUpdate[campo.key]);
+                    if (valorViejo !== valorNuevo) {
+                        detallesCambio.push(`${campo.label}: ${valorViejo} ➔ ${valorNuevo}`);
+                    }
+                }
+            });
 
             const herramienta = await tx.herramienta.update({
                 where: { id: herramientaId },
@@ -131,7 +198,8 @@ router.put('/:id', verificarToken, async (req, res) => {
                 data: {
                     accion: 'MODIFICACION',
                     herramientaId: herramienta.id,
-                    usuarioId: parseInt(usuarioId, 10)
+                    usuarioId: parsedUsuarioId,
+                    detalle: detallesCambio.length > 0 ? detallesCambio.join('\n') : 'Actualización de imagen / descripción.' // <-- Corregido
                 }
             });
 
@@ -144,7 +212,7 @@ router.put('/:id', verificarToken, async (req, res) => {
             return res.status(400).json({ error: "El código ingresado ya pertenece a otra herramienta." });
         }
         console.error("Error al actualizar herramienta:", error);
-        res.status(500).json({ error: "Error al actualizar la herramienta." });
+        res.status(500).json({ error: "Error interno al actualizar la herramienta." });
     }
 });
 
@@ -154,7 +222,17 @@ router.put('/:id', verificarToken, async (req, res) => {
 router.delete('/:id', verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
-        const usuarioId = req.usuario.id; 
+        const usuarioId = obtenerUsuarioId(req);
+        
+        if (!usuarioId) {
+            return res.status(401).json({ error: "Error de autenticación." });
+        }
+        
+        const parsedUsuarioId = parseInt(usuarioId, 10);
+        if (isNaN(parsedUsuarioId)) {
+            return res.status(400).json({ error: "El token de usuario es inválido." });
+        }
+
         const herramientaId = parseInt(id, 10);
 
         await prisma.$transaction(async (tx) => {
@@ -167,7 +245,8 @@ router.delete('/:id', verificarToken, async (req, res) => {
                 data: {
                     accion: 'ELIMINACION',
                     herramientaId: herramientaId,
-                    usuarioId: parseInt(usuarioId, 10)
+                    usuarioId: parsedUsuarioId,
+                    detalle: 'Baja lógica del inventario.' // <-- Corregido
                 }
             });
         });
@@ -184,7 +263,16 @@ router.delete('/:id', verificarToken, async (req, res) => {
 // =====================================================================
 router.post('/importar', verificarToken, async (req, res) => {
     const { herramientas } = req.body;
-    const usuarioId = req.usuario.id;
+    const usuarioId = obtenerUsuarioId(req);
+
+    if (!usuarioId) {
+        return res.status(401).json({ error: "Error de autenticación." });
+    }
+    
+    const parsedUsuarioId = parseInt(usuarioId, 10);
+    if (isNaN(parsedUsuarioId)) {
+        return res.status(400).json({ error: "El token de usuario es inválido." });
+    }
 
     if (!herramientas || !Array.isArray(herramientas) || herramientas.length === 0) {
         return res.status(400).json({ error: 'No se enviaron datos válidos para importar.' });
@@ -205,6 +293,9 @@ router.post('/importar', verificarToken, async (req, res) => {
                 });
 
                 if (herramientaExistente) {
+                    const cantVieja = herramientaExistente.cantidad;
+                    const dispVieja = herramientaExistente.cantidadDisponible;
+
                     await tx.herramienta.update({
                         where: { codigo: item.codigo },
                         data: {
@@ -217,7 +308,8 @@ router.post('/importar', verificarToken, async (req, res) => {
                         data: {
                             accion: 'MODIFICACION',
                             herramientaId: herramientaExistente.id,
-                            usuarioId: parseInt(usuarioId, 10)
+                            usuarioId: parsedUsuarioId,
+                            detalle: `Stock Físico (Total): ${cantVieja} ➔ ${cantVieja + cantidadAAgregar}\nStock Disponible: ${dispVieja} ➔ ${dispVieja + cantidadAAgregar}` // <-- Corregido
                         }
                     });
                     
@@ -244,7 +336,8 @@ router.post('/importar', verificarToken, async (req, res) => {
                         data: {
                             accion: 'CREACION',
                             herramientaId: nuevaHerramienta.id,
-                            usuarioId: parseInt(usuarioId, 10)
+                            usuarioId: parsedUsuarioId,
+                            detalle: `Registro mediante Importación Masiva. Stock Físico inicial: ${cantidadAAgregar}` // <-- Corregido
                         }
                     });
                     

@@ -54,11 +54,13 @@ router.post('/', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 2. GET /api/pedidos/pendientes 
+// 2. GET /api/pedidos/pendientes (BLINDADO CONTRA ERROR 500)
 // =====================================================================
 router.get('/pendientes', verificarToken, async (req, res) => {
     try {
-        const { rol, numTrabajador } = req.usuario; 
+        const usuario = req.user || req.usuario;
+        const rol = usuario?.rol;
+        const numTrabajador = usuario?.numTrabajador;
 
         let filtrosConsulta = {
             estado: {
@@ -95,8 +97,8 @@ router.get('/pendientes', verificarToken, async (req, res) => {
             herramientas: pedido.detalles.map(detalle => ({
                 detalleId: detalle.id,
                 herramientaId: detalle.herramientaId,
-                codigo: detalle.herramienta.codigo,
-                nombre: detalle.herramienta.nombre,
+                codigo: detalle.herramienta?.codigo || 'N/A',
+                nombre: detalle.herramienta?.nombre || 'Herramienta no disponible / Eliminada',
                 cantidadPrestada: detalle.cantidadPrestada,
                 cantidadRegresada: detalle.cantidadRegresada
             }))
@@ -105,7 +107,7 @@ router.get('/pendientes', verificarToken, async (req, res) => {
         res.json(respuestaFormateada);
     } catch (error) {
         console.error('Error al obtener pedidos pendientes:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        res.status(500).json({ error: 'Error interno del servidor al obtener devoluciones pendientes.' });
     }
 });
 
@@ -195,7 +197,9 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
 // =====================================================================
 router.get('/historial', verificarToken, async (req, res) => {
     try {
-        const { rol, numTrabajador } = req.usuario; 
+        const usuario = req.user || req.usuario;
+        const rol = usuario?.rol;
+        const numTrabajador = usuario?.numTrabajador;
 
         let filtrosConsulta = {};
 
@@ -233,12 +237,12 @@ router.get('/historial', verificarToken, async (req, res) => {
             fechaDevolucion: pedido.fechaDevolucion,
             estado: pedido.estado,
             herramientas: pedido.detalles.map(detalle => ({
-                codigo: detalle.herramienta.codigo,
-                nombre: detalle.herramienta.nombre,
+                codigo: detalle.herramienta?.codigo || 'N/A',
+                nombre: detalle.herramienta?.nombre || 'Herramienta eliminada',
                 cantidadPrestada: detalle.cantidadPrestada,
                 cantidadRegresada: detalle.cantidadRegresada,
                 historialDevoluciones: detalle.devoluciones.map(dev => ({
-                    receptorNombre: dev.receptor.nombre,
+                    receptorNombre: dev.receptor?.nombre || 'Desconocido',
                     cantidad: dev.cantidadDevuelta,
                     fecha: dev.fechaDevolucion
                 }))

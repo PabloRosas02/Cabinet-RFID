@@ -3,7 +3,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "windows", "linux-musl"]
+  binaryTargets = ["native", "windows", "debian-openssl-1.1.x"]
 }
 
 datasource db {
@@ -77,7 +77,7 @@ model Herramienta {
   cantidadDisponible Int               @default(0)
   cantidadMinima     Int               @default(0)
   
-  imagen             String?           
+  imagen             String?             
   estado             EstadoHerramienta @default(ACTIVA)
   
   creadoEn           DateTime          @default(now())
@@ -94,6 +94,8 @@ model HistorialHerramienta {
   id            Int          @id @default(autoincrement())
   accion        TipoAccion   
   fecha         DateTime     @default(now())
+  
+  detalle       String?     
   
   herramientaId Int?
   herramienta   Herramienta? @relation(fields: [herramientaId], references: [id])

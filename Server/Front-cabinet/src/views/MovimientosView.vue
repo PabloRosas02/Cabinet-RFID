@@ -1,22 +1,23 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue'; 
 import { useRouter } from 'vue-router'; 
 import { FilterMatchMode } from '@primevue/core/api';
 import { useHerramientas } from '@/composables/useHerramientas';
 
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
-
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import Toast from 'primevue/toast';
 
 import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import FormularioHerramienta from '@/components/herramientas/FormularioHerramientas.vue';
 
 const router = useRouter(); 
+
 const { 
     herramientas, cargando, mostrarModal, herramientaActual, esEdicion, 
-    prepararEdicion, guardarHerramienta, eliminarHerramienta 
+    prepararEdicion, guardarHerramienta, eliminarHerramienta, cargarHerramientas
 } = useHerramientas();
 
 const herramientaSeleccionada = ref(null);
@@ -41,15 +42,20 @@ const eliminarSeleccionada = async () => {
     }
 };
 
-// <-- FUNCIÓN PARA VOLVER AL INVENTARIO PRINCIPAL -->
 const volverAInventario = () => {
     router.push('/inventario');
 };
+
+onMounted(() => {
+    cargarHerramientas();
+});
 </script>
 
 <template>
-  <!-- Padding responsivo: p-3 en celular, p-4 en tablet/PC -->
   <div class="panel-movimientos p-3 md:p-4 border-round-xl shadow-1 mt-4">
+    
+    <Toast />
+
     <div class="flex justify-content-between align-items-center mb-4">
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Administración y Movimientos</h2>
     </div>

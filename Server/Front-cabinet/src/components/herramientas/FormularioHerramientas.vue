@@ -1,4 +1,5 @@
 <script setup>
+import { ref } from 'vue';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
@@ -13,8 +14,18 @@ const props = defineProps({
 
 const emit = defineEmits(['update:visible', 'guardar']);
 
+const fileInputRef = ref(null);
+
 const cerrar = () => emit('update:visible', false);
 const guardar = () => emit('guardar');
+
+// Función para eliminar la imagen actual
+const quitarImagen = () => {
+    props.herramienta.imagen = null;
+    if (fileInputRef.value) {
+        fileInputRef.value.value = ''; // Limpia el selector de archivos
+    }
+};
 
 // =====================================================================
 // Procesamiento y Optimización de Imagen (WebP)
@@ -23,21 +34,17 @@ const procesarImagen = (evento) => {
     const archivo = evento.target.files[0];
     if (!archivo) return;
 
-    // Validar que realmente sea una imagen
     if (!archivo.type.startsWith('image/')) {
         return;
     }
 
     const lector = new FileReader();
     lector.onload = (e) => {
-        // Creamos un objeto de imagen nativo en memoria
         const img = new Image();
         img.onload = () => {
-            // Creamos un canvas virtual
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
 
-            // Redimensionar de forma inteligente (máximo 800px de ancho)
             const MAX_WIDTH = 800;
             let width = img.width;
             let height = img.height;
@@ -50,17 +57,12 @@ const procesarImagen = (evento) => {
             canvas.width = width;
             canvas.height = height;
 
-            // Dibujamos la imagen original en el canvas
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Exportamos el canvas a formato WebP con 80% de calidad (0.8)
             const webpBase64 = canvas.toDataURL('image/webp', 0.8);
-
-            // Asignamos la cadena optimizada a la herramienta
             props.herramienta.imagen = webpBase64;
         };
         
-        // Disparamos la carga de la imagen
         img.src = e.target.result;
     };
     lector.readAsDataURL(archivo);
@@ -82,7 +84,30 @@ const procesarImagen = (evento) => {
           <div v-else class="flex align-items-center justify-content-center surface-200 border-round" style="width: 80px; height: 80px;">
               <i class="pi pi-image text-4xl text-500"></i>
           </div>
-          <input id="foto-herramienta" name="foto-herramienta" type="file" accept="image/*" @change="procesarImagen" class="p-inputtext p-component p-2 w-full" />
+          
+          <div class="flex flex-column gap-2 w-full">
+              <input 
+                  ref="fileInputRef" 
+                  id="foto-herramienta" 
+                  name="foto-herramienta" 
+                  type="file" 
+                  accept="image/*" 
+                  @change="procesarImagen" 
+                  class="p-inputtext p-component p-2 w-full" 
+              />
+              <!-- Botón para quitar la imagen si ya tiene una asignada -->
+              <Button 
+                  v-if="herramienta.imagen" 
+                  type="button" 
+                  label="Quitar imagen" 
+                  icon="pi pi-trash" 
+                  severity="danger" 
+                  size="small" 
+                  outlined 
+                  class="w-auto align-self-start py-1 px-2 text-xs"
+                  @click="quitarImagen" 
+              />
+          </div>
       </div>
     </div>
 

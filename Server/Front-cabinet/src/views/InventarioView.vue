@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed } from 'vue';
+// 1. IMPORTAMOS onMounted AQUÍ
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { FilterMatchMode } from '@primevue/core/api';
 import { useHerramientas } from '@/composables/useHerramientas';
@@ -15,7 +16,8 @@ import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import DetalleHerramienta from '@/components/herramientas/DetalleHerramientas.vue';
 
 const router = useRouter(); 
-const { herramientas, cargando, herramientaActual } = useHerramientas();
+
+const { herramientas, cargando, herramientaActual, cargarHerramientas } = useHerramientas();
 const { exportarInventario } = useGestorArchivos();
 
 const tablaRef = ref();
@@ -42,7 +44,6 @@ const abrirDetalles = (herramienta) => {
     mostrarModalDetalle.value = true;
 };
 
-// <-- OPCIONES DEL MENÚ DE EXPORTACIÓN -->
 const opcionesExportar = ref([
     {
         label: 'Exportar a CSV',
@@ -67,6 +68,10 @@ const irAMovimientos = () => {
 const irABitacora = () => {
     router.push('/bitacora');
 };
+
+onMounted(() => {
+    cargarHerramientas();
+});
 </script>
 
 <template>

@@ -12,10 +12,12 @@ import InputIcon from 'primevue/inputicon';
 import Tag from 'primevue/tag';
 import Dialog from 'primevue/dialog';
 import Toast from 'primevue/toast'; 
+import { useToast } from 'primevue/usetoast';
 
 import { useUsuarios } from '../composables/useUsuarios';
 
 const rolLogueado = ref('ADMINISTRADOR'); 
+const toast = useToast();
 
 // Extraemos las variables y funciones del composable
 const { 
@@ -34,6 +36,46 @@ const getSeverityRol = (rol) => {
         case 'ALMACENISTA': return 'info';
         case 'OPERADOR': return 'success';
         default: return 'secondary';
+    }
+};
+
+// Función de validación de campos obligatorios
+const validarYGuardar = async () => {
+    let camposFaltantes = [];
+
+    if (!usuarioActual.value.numTrabajador || usuarioActual.value.numTrabajador.toString().trim() === '') {
+        camposFaltantes.push('Número de Empleado');
+    }
+    if (!usuarioActual.value.nombre || usuarioActual.value.nombre.trim() === '') {
+        camposFaltantes.push('Nombre Completo');
+    }
+    // Si es un empleado nuevo, la contraseña es obligatoria. En edición es opcional.
+    if (!esEdicion.value && (!usuarioActual.value.contrasena || usuarioActual.value.contrasena.trim() === '')) {
+        camposFaltantes.push('Contraseña');
+    }
+    if (!usuarioActual.value.depart || usuarioActual.value.depart.toString().trim() === '') {
+        camposFaltantes.push('Departamento');
+    }
+    if (!usuarioActual.value.rol || usuarioActual.value.rol.toString().trim() === '') {
+        camposFaltantes.push('Nivel de Acceso (Rol)');
+    }
+
+    // Si falta algún campo obligatorio, se detiene el proceso y se notifica detalladamente
+    if (camposFaltantes.length > 0) {
+        toast.add({ 
+            severity: 'warn', 
+            summary: 'Campos obligatorios faltantes', 
+            detail: `Te falta completar: ${camposFaltantes.join(', ')}.`, 
+            life: 5000 
+        });
+        return;
+    }
+
+    // Si todo está correcto (el RFID es opcional), procedemos a guardar
+    try {
+        await guardarUsuario();
+    } catch (error) {
+        // Los errores del servidor ya se manejan dentro del composable, pero evitamos excepciones no capturadas
     }
 };
 </script>
@@ -135,7 +177,7 @@ const getSeverityRol = (rol) => {
             <div class="flex flex-column gap-2 pt-2">
 
                 <div class="field flex flex-column gap-1">
-                    <span class="label-blanco">Número de Empleado</span>
+                    <span class="label-blanco">Número de Empleado *</span>
                     <InputNumber 
                         name="numTrabajador"
                         aria-label="Número de Empleado"
@@ -147,7 +189,7 @@ const getSeverityRol = (rol) => {
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <span class="label-blanco">Nombre Completo</span>
+                    <span class="label-blanco">Nombre Completo *</span>
                     <InputText 
                         name="nombreCompleto"
                         aria-label="Nombre Completo"
@@ -173,12 +215,13 @@ const getSeverityRol = (rol) => {
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <span class="label-blanco">Departamento</span>
+                    <span class="label-blanco">Departamento *</span>
                     <Select 
                         name="departamento"
                         aria-label="Departamento"
                         v-model="usuarioActual.depart" 
                         :options="opcionesDepartamentos" 
+                        placeholder="Seleccione departamento"
                         class="w-full input-oscuro" 
                         overlayClass="menu-oscuro-global" 
                         panelClass="menu-oscuro-global" 
@@ -186,12 +229,13 @@ const getSeverityRol = (rol) => {
                 </div>
 
                 <div class="field flex flex-column gap-1">
-                    <span class="label-blanco">Nivel de Acceso (Rol)</span>
+                    <span class="label-blanco">Nivel de Acceso (Rol) *</span>
                     <Select 
                         name="rol"
                         aria-label="Nivel de Acceso"
                         v-model="usuarioActual.rol" 
                         :options="opcionesRoles" 
+                        placeholder="Seleccione rol"
                         class="w-full input-oscuro" 
                         overlayClass="menu-oscuro-global" 
                         panelClass="menu-oscuro-global" 
@@ -215,7 +259,7 @@ const getSeverityRol = (rol) => {
             <template #footer>
                 <div class="flex justify-content-end gap-2 mt-2">
                     <Button label="Cancelar" icon="pi pi-times" class="btn-cancelar" @click="mostrarModal = false" />
-                    <Button label="Guardar" icon="pi pi-check" class="btn-nuevo font-bold" @click="guardarUsuario" />
+                    <Button label="Guardar" icon="pi pi-check" class="btn-nuevo font-bold" @click="validarYGuardar" />
                 </div>
             </template>
         </Dialog>
