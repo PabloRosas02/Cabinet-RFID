@@ -44,8 +44,11 @@ const toggleMenu = (event) => {
 // Guardar Producto Manualmente
 // =====================================================================
 const guardarProducto = async (herramientaData) => {
+    // Limpiamos los toasts anteriores para evitar que se apilen (Spam)
+    toast.removeAllGroups();
+
     if (!herramientaData.codigo?.trim() || !herramientaData.nombre?.trim()) {
-        toast.add({ severity: 'warn', summary: 'Campos Obligatorios', detail: 'Por favor, ingresa el Código y el Nombre.', life: 4000 });
+        toast.add({ severity: 'warn', summary: 'Campos Obligatorios', detail: 'El Código y el Nombre son obligatorios para registrar el producto.', life: 4000 });
         return; 
     }
 
@@ -70,6 +73,9 @@ const procesarArchivo = async (evento) => {
     const archivo = evento.target.files[0];
     if (!archivo) return;
 
+    // Limpiamos los toasts anteriores para evitar que se apilen (Spam)
+    toast.removeAllGroups();
+
     cargandoImportacion.value = true;
     toast.add({ severity: 'info', summary: 'Procesando archivo', detail: 'Analizando el documento, por favor espera...', life: 3000 });
 
@@ -80,6 +86,7 @@ const procesarArchivo = async (evento) => {
         // Le pasamos el arreglo limpio al Servicio del backend
         const dataResponse = await HerramientasService.importar(herramientas);
         
+        toast.removeAllGroups(); // Limpiamos el aviso de "Procesando" para mostrar el éxito
         toast.add({ 
             severity: 'success', 
             summary: 'Importación Exitosa', 
@@ -88,6 +95,7 @@ const procesarArchivo = async (evento) => {
         });
         
     } catch (error) {
+        toast.removeAllGroups(); // Limpiamos el aviso de "Procesando" para mostrar el error
         const errorMsg = error.response?.data?.error || error.message;
         toast.add({ severity: 'error', summary: 'Error de Importación', detail: errorMsg, life: 6000 });
     } finally {

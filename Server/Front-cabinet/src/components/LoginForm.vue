@@ -65,7 +65,7 @@ const iniciarSesion = async () => {
 
 <template>
     <div class="form-wrapper">
-        <img src="/images/crissair_logo.webp" alt="Crissair Inc. Logo" class="logo" />
+        <!-- <img src="/images/crissair_logo.webp" alt="Crissair Inc. Logo" class="logo" /> -->
         
         <h1 class="title">Iniciar Sesión</h1>
         <p class="subtitle">Ingresa tus credenciales corporativas para acceder al sistema.</p>

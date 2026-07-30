@@ -173,13 +173,22 @@ export function useGestorArchivos() {
 
         return herramientas;
     };
-    // =======================================================
+   // =======================================================
     // 5. Exportar Bitácora de Auditoría
     // =======================================================
-    const exportarBitacora = (bitacoraDatos, formato) => {
-        if (!bitacoraDatos || bitacoraDatos.length === 0) return;
+    const exportarBitacora = (bitacoraDatos, filtroTiempo, formato) => {
+        if (!bitacoraDatos || bitacoraDatos.length === 0) {
+            alert("No hay registros para exportar con los filtros actuales.");
+            return;
+        }
         
-        const nombreArchivo = `Bitacora_Auditoria_${new Date().toISOString().split('T')[0]}`;
+        // Generación dinámica del nombre del archivo basada en el filtro de tiempo
+        const hoy = new Date();
+        const sufijoFecha = filtroTiempo === 'Hoy' || filtroTiempo === 'Todos' ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString('es-MX', { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
+                            filtroTiempo === 'Este Mes' ? `${hoy.toLocaleString('es-MX', { month: 'long' })}_${hoy.getFullYear()}` : 
+                            filtroTiempo === 'Este Año' ? `${hoy.getFullYear()}` : `Semana_${hoy.getDate()}`; 
+        
+        const nombreArchivo = `Reporte_Bitacora_${sufijoFecha}`;
         
         // Función interna para formatear la fecha solo para el reporte
         const formatearFechaReporte = (fechaString) => {

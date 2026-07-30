@@ -93,7 +93,7 @@ const obtenerTextoStock = (h) => {
             </IconField>
         </div>
 
-        <!-- Tabla de Inventario -->
+        <!-- Tabla de Inventario con Paginador Limpio -->
         <DataTable 
             :value="herramientasDisponibles" 
             :paginator="true" 
@@ -105,6 +105,7 @@ const obtenerTextoStock = (h) => {
             @row-dblclick="(e) => abrirDetalles(e.data)" 
             selectionMode="single"
             :scrollable="esMovil" 
+            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
         >
             <Column field="codigo" header="Código" :style="esMovil ? { minWidth: '120px' } : { width: '20%' }"></Column>
             <Column field="nombre" header="Nombre" :style="esMovil ? { minWidth: '200px' } : { width: '40%' }"></Column>
@@ -117,14 +118,14 @@ const obtenerTextoStock = (h) => {
                             v-if="esMovil"
                             icon="pi pi-eye" 
                             class="p-button-rounded p-button-info p-button-sm btn-ojito" 
-                            @click="abrirDetalles(slotProps.data)" 
+                            @click.stop="abrirDetalles(slotProps.data)" 
                             aria-label="Ver detalles"
                         />
                         
                         <Button 
                             icon="pi pi-plus" 
                             class="p-button-rounded p-button-success p-button-sm" 
-                            @click="emitirAgregar(slotProps.data)" 
+                            @click.stop="emitirAgregar(slotProps.data)" 
                             :disabled="slotProps.data.cantidadDisponible <= 0"
                             aria-label="Agregar al pedido"
                         />
@@ -267,23 +268,40 @@ const obtenerTextoStock = (h) => {
     border-bottom: 1px solid #3f4b5b !important;
 }
 
-/* Paginador y utilidades */
-:deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem; }
-:deep(.p-paginator .p-paginator-page) { color: #cbd5e1 !important; }
-:deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
-
-:deep(.p-paginator .p-paginator-first),
-:deep(.p-paginator .p-paginator-prev),
-:deep(.p-paginator .p-paginator-next),
-:deep(.p-paginator .p-paginator-last) {
-    color: #94a3b8 !important;
-    background-color: transparent !important;
+/* =========================================================
+   PAGINADOR SUTIL Y LIMPIO (Estandarizado)
+   ========================================================= */
+:deep(.p-paginator) { 
+    background-color: transparent !important; 
+    border: none !important; 
+    margin-top: 1rem; 
+    border-top: 1px solid #4a5568 !important; 
+    padding-top: 1rem !important; 
 }
+:deep(.p-paginator .p-paginator-page), 
+:deep(.p-paginator .p-paginator-first), 
+:deep(.p-paginator .p-paginator-prev), 
+:deep(.p-paginator .p-paginator-next), 
+:deep(.p-paginator .p-paginator-last) { 
+    color: #94a3b8 !important; 
+    background-color: transparent !important; 
+}
+
 :deep(.p-paginator .p-paginator-first:hover),
 :deep(.p-paginator .p-paginator-prev:hover),
 :deep(.p-paginator .p-paginator-next:hover),
 :deep(.p-paginator .p-paginator-last:hover) {
     background-color: #36464d !important;
+}
+
+/* Efecto translúcido sutil para el número de página activo */
+:deep(.p-paginator .p-paginator-page.p-highlight),
+:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]),
+:deep(.p-paginator .p-paginator-page-selected) { 
+    background-color: rgba(90, 177, 206, 0.2) !important; 
+    color: #5ab1ce !important; 
+    border-radius: 50% !important; 
+    font-weight: bold;
 }
 
 :deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }

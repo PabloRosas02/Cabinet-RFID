@@ -52,13 +52,13 @@ const obtenerClaseFila = (data) => {
       :rowClass="obtenerClaseFila" 
       scrollable
     >
-      <Column field="codigo" header="Código" style="min-width: 120px; width: 15%"></Column>
-      <Column field="nombre" header="Nombre" style="min-width: 200px; width: 25%"></Column>
-      <Column field="tipo" header="Tipo" style="min-width: 140px; width: 15%"></Column>
-      <Column field="ubicacion" header="Ubicación" style="min-width: 140px; width: 15%"></Column>
-      <Column field="cantidadMinima" header="Stock Mín." style="min-width: 120px; width: 10%"></Column>
+      <Column field="codigo" header="Código" sortable style="min-width: 120px; width: 15%"></Column>
+      <Column field="nombre" header="Nombre" sortable style="min-width: 200px; width: 25%"></Column>
+      <Column field="tipo" header="Tipo" sortable style="min-width: 140px; width: 15%"></Column>
+      <Column field="ubicacion" header="Ubicación" sortable style="min-width: 140px; width: 15%"></Column>
+      <Column field="cantidadMinima" header="Stock Mín." sortable style="min-width: 120px; width: 10%"></Column>
       
-      <Column header="Stock Físico" style="min-width: 130px; width: 15%">
+      <Column field="cantidadDisponible" header="Stock Físico" sortable style="min-width: 130px; width: 15%">
         <template #body="{ data }">
             <span :class="['badge-stock', getEstadoStock(data)]">
                 {{ data.cantidadDisponible }}
@@ -66,12 +66,13 @@ const obtenerClaseFila = (data) => {
         </template>
       </Column>
 
+      <!-- La columna de acciones NO lleva sortable -->
       <Column style="min-width: 70px; width: 5%">
         <template #body="{ data }">
             <Button 
                 icon="pi pi-eye" 
                 class="p-button-rounded p-button-text p-button-info btn-ver" 
-                @click="verDetalles(data)" 
+                @click.stop="verDetalles(data)" 
                 aria-label="Ver detalles"
             />
         </template>
@@ -89,13 +90,36 @@ const obtenerClaseFila = (data) => {
     width: 100%;
 }
 
-/* ENCABEZADOS */
+/* =========================================================
+   ENCABEZADOS Y FONDO BASE (Corrección Modo Light)
+   ========================================================= */
+:deep(.tabla-oscura) {
+    background-color: #2a323d !important;
+}
+
 :deep(.tabla-oscura .p-datatable-thead > tr > th) {
-    background-color: transparent !important; 
+    background-color: #2a323d !important; 
     color: #94a3b8 !important;
     border: none !important;
     border-bottom: 1px solid #4a5568 !important;
     padding: 1.2rem 1rem;
+}
+
+/* Efecto Hover al pasar el mouse por los encabezados ordenables */
+:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover) {
+    background-color: #1e252d !important;
+    color: #ffffff !important;
+}
+
+/* Color de las flechas de ordenamiento (↑↓) */
+:deep(.tabla-oscura .p-datatable-thead > tr > th .p-sortable-column-icon) {
+    color: #94a3b8 !important;
+}
+
+/* Color de las flechas al hacer Hover o estar activo */
+:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover .p-sortable-column-icon),
+:deep(.tabla-oscura .p-datatable-thead > tr > th.p-highlight .p-sortable-column-icon) {
+    color: #ffffff !important;
 }
 
 /* CELDAS Y FILAS - Normales (Ultra oscuro y sin contornos) */
@@ -137,13 +161,32 @@ const obtenerClaseFila = (data) => {
 .alerta { background-color: rgba(250, 204, 21, 0.15); color: #facc15; }
 .agotado { background-color: rgba(248, 113, 113, 0.15); color: #f87171; }
 
-/* PAGINADOR */
-:deep(.p-paginator) { background-color: transparent !important; border: none !important; }
-:deep(.p-paginator .p-paginator-page) { color: #94a3b8 !important; }
-:deep(.p-paginator .p-paginator-page.p-highlight) {
-    background-color: #5ab1ce !important;
-    color: #ffffff !important;
-    border-radius: 50%;
+/* =========================================================
+   PAGINADOR SUTIL Y LIMPIO (Igual que en Usuarios)
+   ========================================================= */
+:deep(.p-paginator) { 
+    background-color: transparent !important; 
+    border: none !important; 
+    margin-top: 1rem; 
+    border-top: 1px solid #4a5568 !important; 
+    padding-top: 1rem !important; 
+}
+:deep(.p-paginator .p-paginator-page), 
+:deep(.p-paginator .p-paginator-first), 
+:deep(.p-paginator .p-paginator-prev), 
+:deep(.p-paginator .p-paginator-next), 
+:deep(.p-paginator .p-paginator-last) { 
+    color: #94a3b8 !important; 
+    background-color: transparent !important; 
+}
+/* Efecto translúcido sutil para el número de página activo */
+:deep(.p-paginator .p-paginator-page.p-highlight),
+:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]),
+:deep(.p-paginator .p-paginator-page-selected) { 
+    background-color: rgba(90, 177, 206, 0.2) !important; 
+    color: #5ab1ce !important; 
+    border-radius: 50% !important; 
+    font-weight: bold;
 }
 
 /* SCROLL HORIZONTAL RESPONSIVO */

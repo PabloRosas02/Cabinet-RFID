@@ -12,6 +12,7 @@ import Toast from 'primevue/toast';
 
 import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import FormularioHerramienta from '@/components/herramientas/FormularioHerramientas.vue';
+import DetalleHerramientas from '@/components/herramientas/DetalleHerramientas.vue';
 
 const router = useRouter(); 
 
@@ -25,8 +26,18 @@ const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
 
+// 2. VARIABLES PARA CONTROLAR EL MODAL DEL OJITO
+const mostrarModalDetalles = ref(false);
+const herramientaViendo = ref(null);
+
 const manejarSeleccion = (seleccion) => {
     herramientaSeleccionada.value = seleccion;
+};
+
+// 3. FUNCIÓN QUE ABRE EL MODAL Y LE PASA LA HERRAMIENTA SELECCIONADA
+const abrirDetalles = (herramienta) => {
+    herramientaViendo.value = herramienta;
+    mostrarModalDetalles.value = true;
 };
 
 const prepararEdicionSeleccionada = () => {
@@ -97,7 +108,7 @@ onMounted(() => {
             id="buscador-movimientos" 
             name="buscador-movimientos" 
             v-model="filtros['global'].value" 
-            placeholder="Buscar para editar..." 
+            placeholder="Buscar para editar o ver..." 
             class="input-oscuro w-full" 
             autocomplete="off" 
           />
@@ -105,11 +116,13 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- 4. ESCUCHAMOS EL EVENTO @doble-click -->
     <TablaHerramientas
       :herramientas="herramientas"
       :cargando="cargando"
       :filtros="filtros"
       @seleccion="manejarSeleccion"
+      @doble-click="abrirDetalles"
     />
 
     <FormularioHerramienta
@@ -118,6 +131,13 @@ onMounted(() => {
       :esEdicion="true"
       @guardar="guardarHerramienta"
     />
+
+    <!-- 5. AGREGAMOS EL COMPONENTE DEL MODAL A LA VISTA -->
+    <DetalleHerramientas 
+      v-model:visible="mostrarModalDetalles" 
+      :herramienta="herramientaViendo" 
+    />
+
   </div>
 </template>
 

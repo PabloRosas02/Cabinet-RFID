@@ -62,6 +62,8 @@ const formatearFecha = (fechaString) => {
       class="tabla-oscura w-full"
       emptyMessage="No hay préstamos pendientes de devolución."
       :scrollable="esMovil"
+      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+      currentPageReportTemplate="{first} al {last} de {totalRecords} pedidos"
     >
       <template #header>
           <div class="flex justify-content-end">
@@ -166,7 +168,7 @@ const formatearFecha = (fechaString) => {
 }
 
 /* =========================================================
-   BUSCADOR Y PAGINADOR
+   BUSCADOR Y PAGINADOR ESTANDARIZADO
    ========================================================= */
 :deep(.input-oscuro) { 
     background-color: #121820 !important; 
@@ -182,7 +184,10 @@ const formatearFecha = (fechaString) => {
     background-color: transparent !important; 
     border: none !important; 
     margin-top: 1rem;
+    border-top: 1px solid #4a5568 !important; 
+    padding-top: 1rem !important; 
 }
+
 :deep(.p-paginator .p-paginator-page),
 :deep(.p-paginator .p-paginator-first),
 :deep(.p-paginator .p-paginator-prev),
@@ -191,10 +196,29 @@ const formatearFecha = (fechaString) => {
     color: #94a3b8 !important; 
     background-color: transparent !important;
 }
-:deep(.p-paginator .p-paginator-page.p-highlight) { 
-    background-color: #5ab1ce !important; 
-    color: #ffffff !important; 
-    border-radius: 50%; 
+
+/* Efecto hover en botones de navegación del paginador */
+:deep(.p-paginator .p-paginator-first:hover),
+:deep(.p-paginator .p-paginator-prev:hover),
+:deep(.p-paginator .p-paginator-next:hover),
+:deep(.p-paginator .p-paginator-last:hover) {
+    background-color: #36464d !important;
+}
+
+/* Efecto translúcido sutil para el número de página activo */
+:deep(.p-paginator .p-paginator-page.p-highlight),
+:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]),
+:deep(.p-paginator .p-paginator-page-selected) { 
+    background-color: rgba(90, 177, 206, 0.2) !important; 
+    color: #5ab1ce !important; 
+    border-radius: 50% !important; 
+    font-weight: bold;
+}
+
+/* Estilo para el texto "1 al 10 de X pedidos" */
+:deep(.p-paginator .p-paginator-current) { 
+    color: #94a3b8 !important; 
+    font-size: 0.85rem; 
 }
 
 /* =========================================================

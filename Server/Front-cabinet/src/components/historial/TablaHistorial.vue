@@ -63,6 +63,8 @@ const verDetalles = (data) => {
       selectionMode="single"
       @row-dblclick="onRowDblClick"
       :scrollable="esMovil" 
+      
+
     >
       <Column field="id" header="Folio" :style="esMovil ? { minWidth: '100px' } : { width: '8%' }">
           <template #body="{ data }"><span class="font-bold text-400">#{{ data.id }}</span></template>
@@ -122,7 +124,7 @@ const verDetalles = (data) => {
             <Button 
                 icon="pi pi-eye" 
                 class="p-button-rounded p-button-text p-button-info btn-ver" 
-                @click="verDetalles(data)" 
+                @click.stop="verDetalles(data)" 
                 aria-label="Ver detalles"
             />
         </template>
@@ -147,7 +149,7 @@ const verDetalles = (data) => {
 :deep(.p-datatable-thead),
 :deep(.p-datatable-thead > tr),
 :deep(.p-datatable-thead > tr > th) {
-    background-color: transparent !important; 
+    background-color: #121820 !important; /* Fix fondo blanco en light mode */
     color: #94a3b8 !important; 
     border: none !important; 
     border-bottom: 1px solid #4a5568 !important; 
@@ -175,7 +177,7 @@ const verDetalles = (data) => {
 }
 
 /* =========================================================
-   PAGINADOR
+   PAGINADOR SUTIL Y LIMPIO (Estandarizado)
    ========================================================= */
 :deep(.p-paginator) { 
     background-color: transparent !important; 
@@ -184,6 +186,7 @@ const verDetalles = (data) => {
     border-top: 1px solid #4a5568 !important; 
     padding-top: 1rem !important;
 }
+
 :deep(.p-paginator .p-paginator-page),
 :deep(.p-paginator .p-paginator-first),
 :deep(.p-paginator .p-paginator-prev),
@@ -192,10 +195,29 @@ const verDetalles = (data) => {
     color: #94a3b8 !important; 
     background-color: transparent !important;
 }
-:deep(.p-paginator .p-paginator-page.p-highlight) { 
-    background-color: #5ab1ce !important; 
-    color: #ffffff !important; 
-    border-radius: 50%; 
+
+/* Efecto hover en botones de navegación del paginador */
+:deep(.p-paginator .p-paginator-first:hover),
+:deep(.p-paginator .p-paginator-prev:hover),
+:deep(.p-paginator .p-paginator-next:hover),
+:deep(.p-paginator .p-paginator-last:hover) {
+    background-color: #36464d !important;
+}
+
+/* Efecto translúcido sutil para el número de página activo */
+:deep(.p-paginator .p-paginator-page.p-highlight),
+:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]),
+:deep(.p-paginator .p-paginator-page-selected) { 
+    background-color: rgba(90, 177, 206, 0.2) !important; 
+    color: #5ab1ce !important; 
+    border-radius: 50% !important; 
+    font-weight: bold;
+}
+
+/* Estilo para el texto del reporte (ej. "1 al 10 de 50 registros") */
+:deep(.p-paginator .p-paginator-current) { 
+    color: #94a3b8 !important; 
+    font-size: 0.85rem; 
 }
 
 /* =========================================================

@@ -89,12 +89,12 @@ const menuFiltrado = computed(() => {
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">{{ item.titulo }}</span>
       </li>
       
-      <li class="nav-item mt-auto" @click.stop="cerrarMenuMovil">
+      <!-- <li class="nav-item mt-auto" @click.stop="cerrarMenuMovil">
         <i class="pi pi-cog"></i>
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">Configuración</span>
-      </li>
+      </li> -->
 
-      <li @click.stop="cerrarSesion" class="nav-item btn-salir">
+      <li @click.stop="cerrarSesion" class="nav-item btn-salir mt-auto">
         <i class="pi pi-sign-out"></i>
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">Cerrar Sesión</span>
       </li>

@@ -83,7 +83,7 @@ const validarYGuardar = async () => {
 <template>
     <Toast /> 
     
-    <!-- Contenedor Principal Oscuro (padding ajustado para móvil) -->
+    <!-- Contenedor Principal Oscuro -->
     <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
         
         <!-- Encabezado de la vista -->
@@ -95,7 +95,6 @@ const validarYGuardar = async () => {
         <div class="flex flex-column md:flex-row justify-content-between mb-4 gap-3 align-items-start md:align-items-center">
             
             <div class="w-full md:w-auto">
-                <!-- Buscador 100% ancho en móvil, 20rem en escritorio -->
                 <IconField iconPosition="left" class="w-full md:w-20rem">
                     <InputIcon class="pi pi-search" />
                     <InputText 
@@ -119,7 +118,7 @@ const validarYGuardar = async () => {
             </div>
         </div>
 
-        <!-- Tabla de Usuarios (Con scroll horizontal responsivo) -->
+        <!-- Tabla de Usuarios con Paginador Limpio -->
         <DataTable 
             :value="usuarios" 
             paginator 
@@ -131,7 +130,6 @@ const validarYGuardar = async () => {
             class="tabla-oscura w-full"
             scrollable
         >
-            <!-- A cada columna se le asigna un min-width para garantizar su legibilidad en móvil -->
             <Column field="numTrabajador" header="No. Empleado" sortable style="min-width: 140px; width: 15%;">
                 <template #body="{ data }"><span class="font-bold text-400">{{ data.numTrabajador }}</span></template>
             </Column>
@@ -275,46 +273,71 @@ const validarYGuardar = async () => {
     background-color: #2a323d !important; 
     color: #ffffff; 
     border: 1px solid #4a5568 !important; 
-    overflow-x: hidden; /* Evitar scroll a nivel del panel */
+    overflow-x: hidden; 
 }
 .label-blanco { color: #cbd5e1; font-weight: 500; font-size: 0.95rem; }
 
 /* Botón Nuevo / Guardar (Azul brillante) */
-.btn-nuevo {
-    background-color: #3b82f6 !important; 
-    border: none !important;
-    color: white !important;
-}
+.btn-nuevo { background-color: #3b82f6 !important; border: none !important; color: white !important; }
 .btn-nuevo:hover { background-color: #2563eb !important; }
 
-/* Botones de acción en la tabla (Translúcidos) */
+/* Botones de acción en la tabla */
 :deep(.btn-accion.p-button-info) { background-color: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; border: none !important; }
 :deep(.btn-accion.p-button-danger) { background-color: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; border: none !important; }
 :deep(.btn-accion:hover) { filter: brightness(1.3); }
 
 /* =========================================================
-   BLINDAJE DE LA TABLA (CONSISTENCIA GLOBAL Y RESPONSIVE)
+   BLINDAJE DE LA TABLA Y PAGINADOR IDÉNTICO A HERRAMIENTAS
    ========================================================= */
-:deep(.p-datatable), :deep(.p-datatable-wrapper), :deep(.p-datatable-table) { background-color: transparent !important; }
-:deep(.p-datatable-thead > tr > th) {
-    background-color: transparent !important; 
-    color: #94a3b8 !important; border: none !important; border-bottom: 1px solid #4a5568 !important; padding: 1.2rem 1rem !important;
-}
-:deep(.p-datatable-tbody > tr > td) {
-    background-color: #121820 !important; color: #94a3b8 !important; border: none !important; border-bottom: 1px solid #1e252d !important; 
-}
-:deep(.p-datatable-tbody > tr:hover > td) { background-color: #1e252d !important; }
-:deep(.p-datatable-empty-message > td) { background-color: #121820 !important; color: #94a3b8 !important; text-align: center !important; padding: 2rem !important; }
+:deep(.tabla-oscura) { background-color: #2a323d !important; }
 
-/* Scroll horizontal fino en dispositivos móviles (Oculta la barra fea) */
+:deep(.tabla-oscura .p-datatable-thead > tr > th) {
+    background-color: #2a323d !important; 
+    color: #94a3b8 !important; 
+    border: none !important; 
+    border-bottom: 1px solid #4a5568 !important; 
+    padding: 1.2rem 1rem !important;
+}
+:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover) { background-color: #1e252d !important; color: #ffffff !important; }
+:deep(.tabla-oscura .p-datatable-thead > tr > th .p-sortable-column-icon) { color: #94a3b8 !important; }
+:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover .p-sortable-column-icon),
+:deep(.tabla-oscura .p-datatable-thead > tr > th.p-highlight .p-sortable-column-icon) { color: #ffffff !important; }
+
+:deep(.tabla-oscura .p-datatable-tbody > tr > td) {
+    background-color: #121820 !important; color: #ffffff !important; border: none !important; border-bottom: 1px solid #1e252d !important; padding: 1rem !important;
+}
+:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { background-color: #1e252d !important; }
+:deep(.tabla-oscura .p-datatable-empty-message > td) { background-color: #121820 !important; color: #94a3b8 !important; text-align: center !important; padding: 2rem !important; }
+
 :deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
 :deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
 :deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 
-/* Paginador */
-:deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem; border-top: 1px solid #4a5568 !important; padding-top: 1rem !important; }
-:deep(.p-paginator .p-paginator-page), :deep(.p-paginator .p-paginator-first), :deep(.p-paginator .p-paginator-prev), :deep(.p-paginator .p-paginator-next), :deep(.p-paginator .p-paginator-last) { color: #94a3b8 !important; background-color: transparent !important; }
-:deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
+/* PAGINADOR SUTIL Y LIMPIO */
+:deep(.p-paginator) { 
+    background-color: transparent !important; 
+    border: none !important; 
+    margin-top: 1rem; 
+    border-top: 1px solid #4a5568 !important; 
+    padding-top: 1rem !important; 
+}
+:deep(.p-paginator .p-paginator-page), 
+:deep(.p-paginator .p-paginator-first), 
+:deep(.p-paginator .p-paginator-prev), 
+:deep(.p-paginator .p-paginator-next), 
+:deep(.p-paginator .p-paginator-last) { 
+    color: #94a3b8 !important; 
+    background-color: transparent !important; 
+}
+/* Efecto translúcido sutil para el número de página activo */
+:deep(.p-paginator .p-paginator-page.p-highlight),
+:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]),
+:deep(.p-paginator .p-paginator-page-selected) { 
+    background-color: rgba(90, 177, 206, 0.2) !important; 
+    color: #5ab1ce !important; 
+    border-radius: 50% !important; 
+    font-weight: bold;
+}
 
 /* =========================================================
    ETIQUETAS DE ROLES - TEMA OSCURO
@@ -328,72 +351,27 @@ const validarYGuardar = async () => {
 </style>
 
 <style>
-/* =========================================================
-   ESTILOS GLOBALES PARA INPUTS Y VENTANAS FLOTANTES (MODALS)
-   ========================================================= */
-/* Buscador e Inputs generales */
+/* Estilos globales Inputs y Modals omitidos para legibilidad (se mantienen igual que en tu archivo original) */
 input.input-oscuro, .p-iconfield input, .p-inputtext.input-oscuro, .p-inputnumber-input.input-oscuro { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 input.input-oscuro:focus, .p-iconfield input:focus, .p-inputtext.input-oscuro:focus { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
 input.input-oscuro::placeholder, .p-iconfield input::placeholder { color: #94a3b8 !important; }
 .p-iconfield .p-inputicon { color: #94a3b8 !important; }
-
-/* Menú Select */
 .input-oscuro.p-select { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 .input-oscuro.p-select:focus, .input-oscuro.p-select-focus { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
 .input-oscuro .p-select-label { color: #ffffff !important; }
-
-/* Overlay del Menú Select */
 .menu-oscuro-global { background-color: #1e252d !important; border: 1px solid #4a5568 !important; color: #ffffff !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;}
 .menu-oscuro-global .p-select-list { background-color: transparent !important; padding: 0 !important; }
 .menu-oscuro-global .p-select-option { color: #cbd5e1 !important; background-color: transparent !important; padding: 0.75rem 1rem !important; }
 .menu-oscuro-global .p-select-option:hover, .menu-oscuro-global .p-select-option.p-focus { background-color: #36464d !important; color: #ffffff !important; }
 .menu-oscuro-global .p-select-option.p-select-option-selected { background-color: #5ab1ce !important; color: #ffffff !important; }
-
-/* =========================================================
-   DISEÑO OSCURO PARA EL MODAL (NUEVO / EDITAR EMPLEADO)
-   ========================================================= */
-.modal-oscuro {
-    background-color: #1e252d !important;
-    border: 1px solid #4a5568 !important; 
-    border-radius: 8px !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
-}
-.modal-oscuro .p-dialog-header, 
-.modal-oscuro .p-dialog-content, 
-.modal-oscuro .p-dialog-footer {
-    background-color: #1e252d !important; 
-    color: #ffffff !important; 
-    border: none !important;
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
-}
-.modal-oscuro .p-dialog-header { 
-    border-bottom: 1px solid #2a323d !important; 
-    padding-top: 1.5rem !important;
-}
-.modal-oscuro .p-dialog-footer { 
-    border-top: 1px solid #2a323d !important; 
-    padding-bottom: 1.5rem !important;
-}
+.modal-oscuro { background-color: #1e252d !important; border: 1px solid #4a5568 !important; border-radius: 8px !important; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; }
+.modal-oscuro .p-dialog-header, .modal-oscuro .p-dialog-content, .modal-oscuro .p-dialog-footer { background-color: #1e252d !important; color: #ffffff !important; border: none !important; padding-left: 1.5rem !important; padding-right: 1.5rem !important; }
+.modal-oscuro .p-dialog-header { border-bottom: 1px solid #2a323d !important; padding-top: 1.5rem !important; }
+.modal-oscuro .p-dialog-footer { border-top: 1px solid #2a323d !important; padding-bottom: 1.5rem !important; }
 .modal-oscuro .p-dialog-header-icon { color: #94a3b8 !important; }
 .modal-oscuro .p-dialog-header-icon:hover { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
-
-/* Botón Cancelar blindado contra el modo claro */
-.btn-cancelar {
-    background-color: transparent !important;
-    color: #94a3b8 !important;
-    border: 1px solid transparent !important;
-}
-.btn-cancelar:hover {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
-}
-
-/* Color del ícono del ojito en el input de contraseña */
-.p-password .p-icon {
-    color: #94a3b8 !important;
-}
-.p-password .p-icon:hover {
-    color: #ffffff !important;
-}
+.btn-cancelar { background-color: transparent !important; color: #94a3b8 !important; border: 1px solid transparent !important; }
+.btn-cancelar:hover { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
+.p-password .p-icon { color: #94a3b8 !important; }
+.p-password .p-icon:hover { color: #ffffff !important; }
 </style>

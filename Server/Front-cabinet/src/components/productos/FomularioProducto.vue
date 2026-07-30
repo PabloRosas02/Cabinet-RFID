@@ -37,6 +37,7 @@ const procesarImagen = async (evento) => {
         // Le pasamos el archivo al helper y esperamos que nos devuelva el Base64 listo
         herramienta.value.imagen = await comprimirImagenWebP(archivo);
     } catch (mensajeError) {
+        toast.removeAllGroups(); // Evita acumulación de toasts en errores de imagen
         // Si la imagen es muy pesada o no es válida, el helper nos manda el error aquí
         toast.add({ severity: 'error', summary: 'Error de Imagen', detail: mensajeError, life: 5000 });
         evento.target.value = ''; // Limpiamos el input
@@ -50,6 +51,9 @@ const limpiar = () => {
 };
 
 const intentarGuardar = () => {
+    // Limpiamos los toasts anteriores para evitar que se apilen en cascada (Spam)
+    toast.removeAllGroups();
+
     emit('limpiar-mensajes');
     
     // VALIDACIÓN DIRECTA Y VISUAL

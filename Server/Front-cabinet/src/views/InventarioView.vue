@@ -1,5 +1,4 @@
 <script setup>
-// 1. IMPORTAMOS onMounted AQUÍ
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { FilterMatchMode } from '@primevue/core/api';
