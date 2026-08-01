@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
@@ -33,6 +33,22 @@ const seleccionarUsuario = (event) => {
         props.trabajador.nombre = usuario.nombre;
     }
 };
+
+const trabajadorValido = computed(() => {
+    // Si no hay datos o la lista está vacía, no es válido
+    if (!props.trabajador.numero || !props.trabajador.nombre || !props.listaUsuarios) return false;
+    
+    const numIngresado = props.trabajador.numero.toString().trim();
+    const nomIngresado = props.trabajador.nombre.toString().trim().toLowerCase();
+
+    // Verificamos que exista un usuario en la base de datos que coincida 
+    // Exactamente con el número y el nombre ingresados
+    return props.listaUsuarios.some(u => 
+        u.numTrabajador?.toString() === numIngresado && 
+        u.nombre?.toString().toLowerCase() === nomIngresado
+    );
+});
+// =====================================================================
 
 const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
@@ -150,14 +166,20 @@ const obtenerTextoStock = (h) => {
             </li>
         </ul>
 
-        <!-- Botón de Registro -->
-        <Button 
-            label="Registrar Pedido" 
-            icon="pi pi-check" 
-            class="w-full mt-4 boton-registrar" 
-            @click="emit('registrar')" 
-            :disabled="pedido.length === 0 || !trabajador.numero || !trabajador.nombre"
-        />
+        <div class="mt-4">
+            <div v-if="(trabajador.numero || trabajador.nombre) && !trabajadorValido" class="text-red-400 text-sm mb-3 flex align-items-center font-semibold">
+                <i class="pi pi-exclamation-triangle mr-2"></i> Selecciona un trabajador válido de la lista.
+            </div>
+            
+            <Button 
+                label="Registrar Pedido" 
+                icon="pi pi-check" 
+                class="w-full boton-registrar" 
+                @click="emit('registrar')" 
+                :disabled="pedido.length === 0 || !trabajadorValido"
+            />
+        </div>
+
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 

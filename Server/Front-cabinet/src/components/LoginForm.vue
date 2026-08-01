@@ -184,24 +184,24 @@ label { font-weight: 500; font-size: 0.9rem; color: #94a3b8; }
 /* Para teléfonos móviles y pantallas pequeñas (menores a 576px) */
 @media screen and (max-width: 576px) {
     .form-wrapper {
-        padding: 0.5rem; /* Menos relleno en los bordes */
+        padding: 0.5rem; 
     }
     .logo {
-        max-width: 200px; /* Logo más pequeño para que quepa bien */
+        max-width: 200px; 
         margin-bottom: 2rem;
     }
     .title {
-        font-size: 1.8rem; /* Título un poco más pequeño */
+        font-size: 1.8rem; 
     }
     .subtitle {
-        font-size: 0.85rem; /* Subtítulo ajustado */
+        font-size: 0.85rem;
         margin-bottom: 2rem;
     }
     :deep(.input-premium) {
-        padding: 0.75rem 1rem !important; /* Cuadros de texto un poco más compactos */
+        padding: 0.75rem 1rem !important; 
     }
     :deep(.btn-crissair) {
-        padding: 0.85rem !important; /* Botón ligeramente más delgado */
+        padding: 0.85rem !important; 
         font-size: 1rem !important;
     }
 }

@@ -55,15 +55,14 @@ import LoginForm from '@/components/LoginForm.vue';
     /* MEJORAS DE CALIDAD VISUAL */
     image-rendering: high-quality;
     -webkit-font-smoothing: antialiased;
-    filter: contrast(1.05) saturate(1.1); /* Resalta colores y sombras */
+    filter: contrast(1.05) saturate(1.1); 
 }
 
 .overlay { 
     position: absolute; 
     top: 0; left: 0; right: 0; bottom: 0; 
-    pointer-events: none; /* Asegura que el degradado no bloquee clics */
+    pointer-events: none; 
     
-    /* Degradado más suave para no ensuciar la imagen */
     background: linear-gradient(to right, 
         rgba(11, 26, 38, 1) 0%, 
         rgba(11, 26, 38, 0.6) 25%, 
@@ -76,17 +75,15 @@ import LoginForm from '@/components/LoginForm.vue';
    MEDIA QUERIES (RESPONSIVE)
    ========================================================= */
 
-/* Para Laptops pequeñas y Tablets en horizontal (hasta 992px) */
 @media (max-width: 992px) {
     .form-section {
-        flex: 1.2; /* Le damos un poco más de prioridad de espacio al formulario */
+        flex: 1.2; 
         max-width: 450px;
     }
     .image-section {
-        flex: 1; /* Reducimos la porción de la imagen */
+        flex: 1;
     }
     .overlay {
-        /* Degradado adaptado a un espacio más reducido */
         background: linear-gradient(to right, 
             rgba(11, 26, 38, 1) 0%, 
             rgba(11, 26, 38, 0.7) 40%, 
@@ -98,13 +95,13 @@ import LoginForm from '@/components/LoginForm.vue';
 
 @media (max-width: 768px) { 
     .image-section { 
-        display: none; /* Desaparecemos la imagen para limpiar la vista */
+        display: none; 
     } 
     .form-section { 
         flex: 1;
         max-width: 100%; 
         width: 100%;
-        padding: 1.5rem; /* Ajustamos el padding para pantallas angostas */
+        padding: 1.5rem;
         box-shadow: none; 
     }
 }

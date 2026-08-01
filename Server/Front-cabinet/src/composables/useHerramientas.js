@@ -36,7 +36,7 @@ export function useHerramientas() {
             marca: '',
             tipo: '', 
             ubicacion: '',
-            cantidad: 1,
+            cantidad: 1, 
             cantidadDisponible: 1,
             cantidadMinima: 1,
             imagen: null
@@ -75,21 +75,31 @@ export function useHerramientas() {
             } else {
                 herramientaGuardada = await HerramientasService.crear(herramientaActual.value);
             }
-
             if (esActEdicion) {
                 const index = herramientas.value.findIndex(h => h.id === herramientaActual.value.id);
                 if (index !== -1) {
-                    herramientas.value.splice(index, 1, herramientaGuardada);
+                    // Creamos una copia completamente nueva de la lista
+                    const nuevaLista = [...herramientas.value];
+                    
+                    // Combinamos los datos nuevos asegurando que PrimeVue detecte el cambio
+                    nuevaLista[index] = { 
+                        ...nuevaLista[index], 
+                        ...herramientaActual.value, 
+                        ...(herramientaGuardada || {}) 
+                    };
+                    
+                    // Reasignamos, forzando la actualización visual
+                    herramientas.value = nuevaLista;
                 }
             } else {
-                herramientas.value = [...herramientas.value, herramientaGuardada];
+                herramientas.value = [...herramientas.value, herramientaGuardada || herramientaActual.value];
             }
 
             mostrarModal.value = false;
             
             const mensajeExito = esActEdicion 
-                ? `Herramienta "${herramientaGuardada.nombre}" actualizada exitosamente.` 
-                : `Herramienta "${herramientaGuardada.nombre}" registrada con éxito.`;
+                ? `Herramienta "${herramientaGuardada?.nombre || herramientaActual.value.nombre}" actualizada exitosamente.` 
+                : `Herramienta "${herramientaGuardada?.nombre || herramientaActual.value.nombre}" registrada con éxito.`;
             
             toast.add({ severity: 'success', summary: '¡Éxito!', detail: mensajeExito, life: 3000 });
 
@@ -98,6 +108,7 @@ export function useHerramientas() {
             console.error("Fallo al guardar herramienta:", error);
             const mensajeError = error.response?.data?.error || error.message || "Error desconocido al contactar al servidor.";
             toast.add({ severity: 'error', summary: 'No se pudo guardar', detail: mensajeError, life: 4000 });
+            throw error;
         }
     };
 
@@ -122,6 +133,7 @@ export function useHerramientas() {
             console.error("Error al eliminar:", error);
             const mensajeError = error.response?.data?.error || error.message || "Error desconocido";
             toast.add({ severity: 'error', summary: 'No se pudo eliminar', detail: mensajeError, life: 4000 });
+            return false;
         }
     };
 

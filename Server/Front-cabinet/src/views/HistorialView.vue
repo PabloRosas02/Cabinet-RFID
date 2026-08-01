@@ -141,7 +141,7 @@ const realizarExportacion = (formato) => {
 
         <!-- Grupo de Búsqueda y Filtros (Derecha) -->
         <div class="flex flex-column sm:flex-row gap-3 w-full xl:w-auto">
-            <IconField iconPosition="left" class="w-full xl:w-20rem">
+            <IconField iconPosition="left" class="w-full xl:w-30rem">
                 <InputIcon class="pi pi-search" />
                 <InputText 
                     id="buscadorHistorial"
@@ -215,7 +215,6 @@ const realizarExportacion = (formato) => {
 </style>
 
 <style>
-/* Estilos Globales para Inputs y Selects oscuros se mantienen iguales */
 input.input-oscuro, .p-iconfield input, .p-inputtext.input-oscuro, .input-oscuro.p-select { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 input.input-oscuro:focus, .p-iconfield input:focus, .p-inputtext.input-oscuro:focus, .input-oscuro.p-select:focus, .input-oscuro.p-select-focus { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
 input.input-oscuro::placeholder, .p-iconfield input::placeholder, .p-iconfield .p-inputicon { color: #94a3b8 !important; }

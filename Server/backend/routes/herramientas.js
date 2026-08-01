@@ -72,9 +72,15 @@ router.post('/', verificarToken, async (req, res) => {
             return res.status(400).json({ error: "El token de usuario es inválido." });
         }
 
-        const cantDisponibleNum = parseInt(cantidadDisponible, 10) || 0;
-        const cantTotalNum = parseInt(cantidad, 10) || cantDisponibleNum;
         const cantMinimaNum = parseInt(cantidadMinima, 10) || 0;
+
+        let cantDisp = parseInt(cantidadDisponible, 10);
+        let cantTot = parseInt(cantidad, 10);
+        
+        if (isNaN(cantDisp)) cantDisp = 0;
+        if (isNaN(cantTot)) cantTot = 0;
+        
+        const stockInicial = (cantidadDisponible !== undefined) ? cantDisp : cantTot;
 
         const nuevaHerramienta = await prisma.$transaction(async (tx) => {
             const herramienta = await tx.herramienta.create({
@@ -87,8 +93,8 @@ router.post('/', verificarToken, async (req, res) => {
                     descripcion: descripcion || null,
                     imagen: imagen || null,
                     cantidadMinima: cantMinimaNum,
-                    cantidadDisponible: cantDisponibleNum,
-                    cantidad: cantTotalNum,
+                    cantidadDisponible: stockInicial,
+                    cantidad: stockInicial,
                     actualizadoEn: new Date() 
                 }
             });
@@ -98,7 +104,7 @@ router.post('/', verificarToken, async (req, res) => {
                     accion: 'CREACION',
                     herramientaId: herramienta.id,
                     usuarioId: parsedUsuarioId,
-                    detalle: 'Registro inicial de la herramienta en el sistema.' // <-- Corregido
+                    detalle: `Registro inicial de la herramienta. Stock inicial: ${stockInicial}`
                 }
             });
 
@@ -126,7 +132,7 @@ router.put('/:id', verificarToken, async (req, res) => {
         const { id } = req.params;
         const { 
             codigo, nombre, tipo, ubicacion, marca, 
-            descripcion, cantidadMinima, cantidad, imagen
+            descripcion, cantidadMinima, cantidad, cantidadDisponible, imagen 
         } = req.body;
 
         const usuarioId = obtenerUsuarioId(req);
@@ -158,11 +164,17 @@ router.put('/:id', verificarToken, async (req, res) => {
                 dataToUpdate.imagen = imagen || null;
             }
 
-            if (cantidad !== undefined) {
-                const nuevaCantidad = parseInt(cantidad, 10) || 0;
-                const diferencia = nuevaCantidad - herramientaVieja.cantidad; 
-                
-                dataToUpdate.cantidad = nuevaCantidad;
+            const nuevaDispRecibida = parseInt(cantidadDisponible, 10);
+            const nuevaCantRecibida = parseInt(cantidad, 10);
+
+            if (cantidadDisponible !== undefined && !isNaN(nuevaDispRecibida) && nuevaDispRecibida !== herramientaVieja.cantidadDisponible) {
+                const diferencia = nuevaDispRecibida - herramientaVieja.cantidadDisponible;
+                dataToUpdate.cantidadDisponible = nuevaDispRecibida;
+                dataToUpdate.cantidad = herramientaVieja.cantidad + diferencia;
+            } 
+            else if (cantidad !== undefined && !isNaN(nuevaCantRecibida) && nuevaCantRecibida !== herramientaVieja.cantidad) {
+                const diferencia = nuevaCantRecibida - herramientaVieja.cantidad;
+                dataToUpdate.cantidad = nuevaCantRecibida;
                 dataToUpdate.cantidadDisponible = herramientaVieja.cantidadDisponible + diferencia;
             }
 
@@ -174,7 +186,7 @@ router.put('/:id', verificarToken, async (req, res) => {
                 { key: 'ubicacion', label: 'Ubicación' },
                 { key: 'marca', label: 'Marca' },
                 { key: 'cantidadMinima', label: 'Stock Mínimo' },
-                { key: 'cantidad', label: 'Stock Físico (Total)' }
+                { key: 'cantidadDisponible', label: 'Stock Físico' } 
             ];
 
             const normalizar = (val) => (val === null || val === undefined || val === '') ? 'N/A' : String(val).trim();
@@ -199,7 +211,7 @@ router.put('/:id', verificarToken, async (req, res) => {
                     accion: 'MODIFICACION',
                     herramientaId: herramienta.id,
                     usuarioId: parsedUsuarioId,
-                    detalle: detallesCambio.length > 0 ? detallesCambio.join('\n') : 'Actualización de imagen / descripción.' // <-- Corregido
+                    detalle: detallesCambio.length > 0 ? detallesCambio.join('\n') : 'Actualización de datos generales.' 
                 }
             });
 
@@ -246,7 +258,7 @@ router.delete('/:id', verificarToken, async (req, res) => {
                     accion: 'ELIMINACION',
                     herramientaId: herramientaId,
                     usuarioId: parsedUsuarioId,
-                    detalle: 'Baja lógica del inventario.' // <-- Corregido
+                    detalle: 'Baja lógica del inventario.' 
                 }
             });
         });
@@ -309,7 +321,7 @@ router.post('/importar', verificarToken, async (req, res) => {
                             accion: 'MODIFICACION',
                             herramientaId: herramientaExistente.id,
                             usuarioId: parsedUsuarioId,
-                            detalle: `Stock Físico (Total): ${cantVieja} ➔ ${cantVieja + cantidadAAgregar}\nStock Disponible: ${dispVieja} ➔ ${dispVieja + cantidadAAgregar}` // <-- Corregido
+                            detalle: `Stock Físico (Total): ${cantVieja} ➔ ${cantVieja + cantidadAAgregar}\nStock Disponible: ${dispVieja} ➔ ${dispVieja + cantidadAAgregar}` 
                         }
                     });
                     
@@ -337,7 +349,7 @@ router.post('/importar', verificarToken, async (req, res) => {
                             accion: 'CREACION',
                             herramientaId: nuevaHerramienta.id,
                             usuarioId: parsedUsuarioId,
-                            detalle: `Registro mediante Importación Masiva. Stock Físico inicial: ${cantidadAAgregar}` // <-- Corregido
+                            detalle: `Registro mediante Importación Masiva. Stock Físico inicial: ${cantidadAAgregar}` 
                         }
                     });
                     

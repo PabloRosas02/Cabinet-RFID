@@ -10,7 +10,6 @@ defineProps({
 
 const emit = defineEmits(['cerrar']);
 
-// Funciones locales necesarias para el diseño del modal
 const getBadgeClase = (accion) => {
     if (accion === 'CREACION') return 'badge-creacion';
     if (accion === 'MODIFICACION') return 'badge-modificacion';

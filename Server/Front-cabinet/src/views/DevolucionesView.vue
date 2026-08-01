@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Message from 'primevue/message';
 
-import TablaPedidos from '@/components/devoluciones/TablaPedidos.vue';
+import TablaPedidos from '@/components/devoluciones/TablaDevoluciones.vue';
 import ModalDevolucion from '@/components/devoluciones/ModalDevolucion.vue';
 
 const pedidosPendientes = ref([]);
@@ -39,7 +39,6 @@ onMounted(() => {
     cargarPedidosPendientes();
 });
 
-// Abrir Modal (Activado por el componente hijo TablaPedidos)
 const revisarDevolucion = (pedido) => {
     pedidoSeleccionado.value = pedido;
     mostrarModal.value = true;
@@ -64,7 +63,6 @@ const confirmarDevolucion = async (pedidoModificado) => {
                 }))
         };
 
-        // Si por alguna razón el payload queda vacío (falla de seguridad en frontend), abortamos
         if (payload.herramientasDevueltas.length === 0) {
             throw new Error('Debes seleccionar al menos una herramienta válida para devolver.');
         }
@@ -95,7 +93,6 @@ const confirmarDevolucion = async (pedidoModificado) => {
 <template>
   <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
-        <!-- Título con tamaño adaptable -->
         <h2 class="text-xl md:text-2xl font-bold m-0" style="color: #5ab1ce;">Devolución de Herramientas</h2>
     </div>
 

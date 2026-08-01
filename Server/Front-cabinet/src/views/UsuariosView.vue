@@ -1,7 +1,5 @@
 <script setup>
 import { ref } from 'vue';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
@@ -9,35 +7,23 @@ import Password from 'primevue/password';
 import Select from 'primevue/select';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
-import Tag from 'primevue/tag';
 import Dialog from 'primevue/dialog';
 import Toast from 'primevue/toast'; 
 import { useToast } from 'primevue/usetoast';
 
-import { useUsuarios } from '../composables/useUsuarios';
+import { useUsuarios } from '@/composables/useUsuarios';
+import TablaUsuarios from '@/components/usuarios/TablaUsuarios.vue';
 
 const rolLogueado = ref('ADMINISTRADOR'); 
 const toast = useToast();
 
-// Extraemos las variables y funciones del composable
 const { 
     usuarios, filtros, mostrarModal, usuarioActual, esEdicion,
     prepararNuevoUsuario, prepararEdicion, guardarUsuario, eliminarUsuario 
 } = useUsuarios();
 
-// Opciones para los Selects del formulario
 const opcionesDepartamentos = ref(['INGENIERIA', 'MANTENIMIENTO', 'ADMINISTRACION']);
 const opcionesRoles = ref(['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA', 'OPERADOR']);
-
-const getSeverityRol = (rol) => {
-    switch (rol) {
-        case 'ADMINISTRADOR': return 'danger';
-        case 'SUPERVISOR_ALMACEN': return 'warn';
-        case 'ALMACENISTA': return 'info';
-        case 'OPERADOR': return 'success';
-        default: return 'secondary';
-    }
-};
 
 // Función de validación de campos obligatorios
 const validarYGuardar = async () => {
@@ -49,7 +35,6 @@ const validarYGuardar = async () => {
     if (!usuarioActual.value.nombre || usuarioActual.value.nombre.trim() === '') {
         camposFaltantes.push('Nombre Completo');
     }
-    // Si es un empleado nuevo, la contraseña es obligatoria. En edición es opcional.
     if (!esEdicion.value && (!usuarioActual.value.contrasena || usuarioActual.value.contrasena.trim() === '')) {
         camposFaltantes.push('Contraseña');
     }
@@ -60,7 +45,6 @@ const validarYGuardar = async () => {
         camposFaltantes.push('Nivel de Acceso (Rol)');
     }
 
-    // Si falta algún campo obligatorio, se detiene el proceso y se notifica detalladamente
     if (camposFaltantes.length > 0) {
         toast.add({ 
             severity: 'warn', 
@@ -71,37 +55,30 @@ const validarYGuardar = async () => {
         return;
     }
 
-    // Si todo está correcto (el RFID es opcional), procedemos a guardar
     try {
         await guardarUsuario();
-    } catch (error) {
-        // Los errores del servidor ya se manejan dentro del composable, pero evitamos excepciones no capturadas
-    }
+    } catch (error) { }
 };
 </script>
 
 <template>
     <Toast /> 
     
-    <!-- Contenedor Principal Oscuro -->
     <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
         
-        <!-- Encabezado de la vista -->
         <div class="flex justify-content-between align-items-center mb-4">
             <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Administración de Usuarios</h2>
         </div>
 
-        <!-- Barra de herramientas (Buscador y Botón Nuevo) -->
         <div class="flex flex-column md:flex-row justify-content-between mb-4 gap-3 align-items-start md:align-items-center">
-            
             <div class="w-full md:w-auto">
-                <IconField iconPosition="left" class="w-full md:w-20rem">
+                <IconField iconPosition="left" class="w-full md:w-30rem">
                     <InputIcon class="pi pi-search" />
                     <InputText 
                         name="buscadorGeneral" 
                         aria-label="Buscar empleado" 
                         v-model="filtros['global'].value" 
-                        placeholder="Buscar empleado..." 
+                        placeholder="Buscar empleado por número o nombre..." 
                         class="w-full input-oscuro" 
                     />
                 </IconField>
@@ -118,50 +95,16 @@ const validarYGuardar = async () => {
             </div>
         </div>
 
-        <!-- Tabla de Usuarios con Paginador Limpio -->
-        <DataTable 
-            :value="usuarios" 
-            paginator 
-            :rows="10" 
-            dataKey="id" 
-            v-model:filters="filtros"
-            :globalFilterFields="['nombre', 'numTrabajador', 'departamento']"
-            emptyMessage="No se encontraron usuarios en el sistema."
-            class="tabla-oscura w-full"
-            scrollable
-        >
-            <Column field="numTrabajador" header="No. Empleado" sortable style="min-width: 140px; width: 15%;">
-                <template #body="{ data }"><span class="font-bold text-400">{{ data.numTrabajador }}</span></template>
-            </Column>
-            <Column field="nombre" header="Nombre Completo" sortable style="min-width: 220px; width: 25%;">
-                <template #body="{ data }"><span class="text-white">{{ data.nombre }}</span></template>
-            </Column>
-            <Column field="depart" header="Departamento" sortable style="min-width: 160px; width: 15%;"></Column>
-            
-            <Column header="Rol (Acceso)" style="min-width: 200px; width: 15%;">
-                <template #body="slotProps">
-                    <Tag :value="slotProps.data.rol.replace('_', ' ')" :severity="getSeverityRol(slotProps.data.rol)" class="px-3 py-1 font-bold tag-rol" />
-                </template>
-            </Column>
-
-            <Column header="Tarjeta RFID" style="min-width: 160px; width: 15%;">
-                <template #body="slotProps">
-                    <span v-if="slotProps.data.tarjetaRfid" class="rfid-badge font-bold" style="color: #38bdf8;">
-                        <i class="pi pi-id-card mr-2"></i> {{ slotProps.data.tarjetaRfid }}
-                    </span>
-                    <Tag v-else value="Pendiente" severity="secondary" class="tag-rol" />
-                </template>
-            </Column>
-            
-            <Column v-if="rolLogueado === 'ADMINISTRADOR'" header="Acciones" style="min-width: 120px; width: 15%;">
-                <template #body="{ data }">
-                    <div class="action-buttons flex gap-2">
-                        <Button icon="pi pi-pencil" class="p-button-rounded btn-accion p-button-info" @click="prepararEdicion(data)" tooltip="Editar" tooltipOptions="{position: 'top'}" />
-                        <Button icon="pi pi-trash" class="p-button-rounded btn-accion p-button-danger" @click="eliminarUsuario(data)" tooltip="Eliminar" tooltipOptions="{position: 'top'}" />
-                    </div>
-                </template>
-            </Column>
-        </DataTable>
+        <!-- ========================================================= -->
+        <!-- LLAMADA A NUESTRO NUEVO COMPONENTE EXTRAÍDO -->
+        <!-- ========================================================= -->
+        <TablaUsuarios
+            :usuarios="usuarios"
+            :filtros="filtros"
+            :rolLogueado="rolLogueado"
+            @editar="prepararEdicion"
+            @eliminar="eliminarUsuario"
+        />
 
         <!-- VENTANA EMERGENTE (MODAL) PARA CREAR/EDITAR -->
         <Dialog 
@@ -173,7 +116,6 @@ const validarYGuardar = async () => {
             class="modal-oscuro"
         >
             <div class="flex flex-column gap-2 pt-2">
-
                 <div class="field flex flex-column gap-1">
                     <span class="label-blanco">Número de Empleado *</span>
                     <InputNumber 
@@ -239,19 +181,6 @@ const validarYGuardar = async () => {
                         panelClass="menu-oscuro-global" 
                     />
                 </div>
-
-                <div class="field flex flex-column gap-1">
-                    <span class="label-blanco">Código RFID (Opcional)</span>
-                    <InputNumber 
-                        name="rfid"
-                        aria-label="Código RFID"
-                        v-model="usuarioActual.tarjetaRfid" 
-                        :useGrouping="false" 
-                        placeholder="Asignar luego..." 
-                        class="w-full" 
-                        inputClass="w-full input-oscuro" 
-                    />
-                </div>
             </div>
 
             <template #footer>
@@ -266,9 +195,6 @@ const validarYGuardar = async () => {
 </template>
 
 <style scoped>
-/* =========================================================
-   ESTILOS LOCALES (SOLO PARA ESTE COMPONENTE)
-   ========================================================= */
 .panel-principal { 
     background-color: #2a323d !important; 
     color: #ffffff; 
@@ -277,81 +203,12 @@ const validarYGuardar = async () => {
 }
 .label-blanco { color: #cbd5e1; font-weight: 500; font-size: 0.95rem; }
 
-/* Botón Nuevo / Guardar (Azul brillante) */
 .btn-nuevo { background-color: #3b82f6 !important; border: none !important; color: white !important; }
 .btn-nuevo:hover { background-color: #2563eb !important; }
-
-/* Botones de acción en la tabla */
-:deep(.btn-accion.p-button-info) { background-color: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; border: none !important; }
-:deep(.btn-accion.p-button-danger) { background-color: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; border: none !important; }
-:deep(.btn-accion:hover) { filter: brightness(1.3); }
-
-/* =========================================================
-   BLINDAJE DE LA TABLA Y PAGINADOR IDÉNTICO A HERRAMIENTAS
-   ========================================================= */
-:deep(.tabla-oscura) { background-color: #2a323d !important; }
-
-:deep(.tabla-oscura .p-datatable-thead > tr > th) {
-    background-color: #2a323d !important; 
-    color: #94a3b8 !important; 
-    border: none !important; 
-    border-bottom: 1px solid #4a5568 !important; 
-    padding: 1.2rem 1rem !important;
-}
-:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover) { background-color: #1e252d !important; color: #ffffff !important; }
-:deep(.tabla-oscura .p-datatable-thead > tr > th .p-sortable-column-icon) { color: #94a3b8 !important; }
-:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover .p-sortable-column-icon),
-:deep(.tabla-oscura .p-datatable-thead > tr > th.p-highlight .p-sortable-column-icon) { color: #ffffff !important; }
-
-:deep(.tabla-oscura .p-datatable-tbody > tr > td) {
-    background-color: #121820 !important; color: #ffffff !important; border: none !important; border-bottom: 1px solid #1e252d !important; padding: 1rem !important;
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { background-color: #1e252d !important; }
-:deep(.tabla-oscura .p-datatable-empty-message > td) { background-color: #121820 !important; color: #94a3b8 !important; text-align: center !important; padding: 2rem !important; }
-
-:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
-
-/* PAGINADOR SUTIL Y LIMPIO */
-:deep(.p-paginator) { 
-    background-color: transparent !important; 
-    border: none !important; 
-    margin-top: 1rem; 
-    border-top: 1px solid #4a5568 !important; 
-    padding-top: 1rem !important; 
-}
-:deep(.p-paginator .p-paginator-page), 
-:deep(.p-paginator .p-paginator-first), 
-:deep(.p-paginator .p-paginator-prev), 
-:deep(.p-paginator .p-paginator-next), 
-:deep(.p-paginator .p-paginator-last) { 
-    color: #94a3b8 !important; 
-    background-color: transparent !important; 
-}
-/* Efecto translúcido sutil para el número de página activo */
-:deep(.p-paginator .p-paginator-page.p-highlight),
-:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]),
-:deep(.p-paginator .p-paginator-page-selected) { 
-    background-color: rgba(90, 177, 206, 0.2) !important; 
-    color: #5ab1ce !important; 
-    border-radius: 50% !important; 
-    font-weight: bold;
-}
-
-/* =========================================================
-   ETIQUETAS DE ROLES - TEMA OSCURO
-   ========================================================= */
-:deep(.tag-rol) { border-radius: 6px !important; }
-:deep(.p-tag.p-tag-danger) { background-color: rgba(239, 68, 68, 0.15) !important; color: #f87171 !important; }
-:deep(.p-tag.p-tag-warning), :deep(.p-tag.p-tag-warn) { background-color: rgba(245, 158, 11, 0.15) !important; color: #fbbf24 !important; }
-:deep(.p-tag.p-tag-info) { background-color: rgba(56, 189, 248, 0.15) !important; color: #38bdf8 !important; }
-:deep(.p-tag.p-tag-success) { background-color: rgba(34, 197, 94, 0.15) !important; color: #4ade80 !important; }
-:deep(.p-tag.p-tag-secondary) { background-color: rgba(148, 163, 184, 0.15) !important; color: #cbd5e1 !important; }
 </style>
 
 <style>
-/* Estilos globales Inputs y Modals omitidos para legibilidad (se mantienen igual que en tu archivo original) */
+/* Estilos globales Inputs y Modals */
 input.input-oscuro, .p-iconfield input, .p-inputtext.input-oscuro, .p-inputnumber-input.input-oscuro { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 input.input-oscuro:focus, .p-iconfield input:focus, .p-inputtext.input-oscuro:focus { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
 input.input-oscuro::placeholder, .p-iconfield input::placeholder { color: #94a3b8 !important; }

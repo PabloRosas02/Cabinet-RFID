@@ -12,10 +12,8 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'confirmar']);
 
-// Variable reactiva local para editar sin afectar la tabla original
 const pedidoLocal = ref(null);
 
-// Cuando 'pedido' cambia (al abrir el modal), preparamos la data
 watch(() => props.pedido, (nuevoPedido) => {
     if (nuevoPedido) {
         pedidoLocal.value = { 

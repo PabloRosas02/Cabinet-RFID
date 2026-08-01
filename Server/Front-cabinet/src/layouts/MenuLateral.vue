@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
-// Recibimos el estado de apertura desde App.vue
 const props = defineProps({
   menuAbierto: Boolean
 });
@@ -19,7 +18,7 @@ const cerrarMenuMovil = () => {
   // Solo forzamos el cierre si estamos en móvil/tablet
   if (window.innerWidth <= 992) {
     emit('toggle'); 
-    emit('update:menuAbierto', false); // Por si usas v-model en App.vue
+    emit('update:menuAbierto', false); 
   }
 };
 
@@ -164,14 +163,12 @@ const menuFiltrado = computed(() => {
    NUEVO ESTILO "FLOATING PANEL" PARA MÓVILES (Hasta 992px)
    ========================================================= */
 @media (max-width: 992px) {
-  
-  /* El menú se vuelve un panel flotante con bordes redondeados */
   .sidebar {
     position: fixed;
-    top: 1rem;        /* Separación superior */
-    left: 1rem;       /* Separación izquierda */
-    height: calc(100dvh - 2rem); /* Altura dinámica para celulares modernos */
-    border-radius: 16px; /* Bordes suaves estilo app */
+    top: 1rem;        
+    left: 1rem;      
+    height: calc(100dvh - 2rem); 
+    border-radius: 16px; 
   }
 
   .sidebar.abierto {
@@ -182,7 +179,7 @@ const menuFiltrado = computed(() => {
 
   .sidebar.cerrado {
     width: 260px; 
-    transform: translateX(-120%); /* Se esconde más allá del borde izquierdo */
+    transform: translateX(-120%); 
   }
 
   .sidebar-header {
@@ -190,14 +187,13 @@ const menuFiltrado = computed(() => {
     border-top-right-radius: 16px;
   }
 
-  /* Capa oscura que cubre toda la pantalla realzando el menú flotante */
   .menu-overlay {
     display: block;
     position: fixed;
     top: 0; left: 0; 
     width: 100vw; height: 100vh;
-    background-color: rgba(11, 26, 38, 0.6); /* Fondo azul muy oscuro y translúcido */
-    backdrop-filter: blur(3px); /* Efecto cristal borroso (iOS style) */
+    background-color: rgba(11, 26, 38, 0.6); 
+    backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
     z-index: 999;
     cursor: pointer; 

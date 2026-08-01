@@ -51,7 +51,6 @@ const obtenerTextoStock = (h) => {
             class="shadow-3 border-round" 
             style="max-width: 100%; max-height: 300px; object-fit: contain;" 
           />
-          <!-- Icono por defecto si la base de datos no manda imagen -->
           <div v-else class="flex align-items-center justify-content-center border-round shadow-1 fondo-imagen-vacia" style="width: 100%; max-width: 200px; height: 200px;">
               <i class="pi pi-image text-7xl icono-vacio"></i>
           </div>
@@ -116,7 +115,7 @@ const obtenerTextoStock = (h) => {
 
 <style>
 /* =========================================================
-   ESTILOS GLOBALES DEL MODAL (Sin 'scoped' por el Teleport)
+   ESTILOS GLOBALES DEL MODAL 
    ========================================================= */
 
 /* Contenedor Principal del Dialog */
@@ -158,7 +157,7 @@ const obtenerTextoStock = (h) => {
 }
 
 /* =========================================================
-   CLASES INTERNAS (Protegidas bajo la clase del modal)
+   CLASES INTERNAS 
    ========================================================= */
 .modal-oscuro-primeflex .label-gris {
     color: #94a3b8 !important;

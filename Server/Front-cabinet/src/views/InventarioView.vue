@@ -121,7 +121,7 @@ onMounted(() => {
       </div>
 
       <div class="w-full xl:w-auto">
-        <IconField iconPosition="left" class="w-full">
+        <IconField iconPosition="left" class="w-full xl:w-30rem">
           <InputIcon class="pi pi-search" />
           <InputText 
               id="buscadorInventario"
@@ -141,6 +141,7 @@ onMounted(() => {
       :herramientas="herramientasVisibles"
       :cargando="cargando"
       :filtros="filtros"
+      llaveMemoria="vista_inventario" 
       @seleccion="manejarSeleccion"
       @doble-click="abrirDetalles"
     />

@@ -2,12 +2,12 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag'; 
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import { FilterMatchMode } from '@primevue/core/api';
+import TablaGenerica from '@/components/TablaGenerica.vue';
 
 const props = defineProps({
     inventario: {
@@ -30,28 +30,29 @@ const actualizarVista = () => {
 onMounted(() => window.addEventListener('resize', actualizarVista));
 onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 
-const busqueda = ref('');
+// =====================================================
+// DEFINICIÓN DINÁMICA DE COLUMNAS
+// =====================================================
+const columnasCatalogo = computed(() => [
+    { field: 'codigo', header: 'Código', width: esMovil.value ? undefined : '20%', minWidth: '120px' },
+    { field: 'nombre', header: 'Nombre', width: esMovil.value ? undefined : '40%', minWidth: '200px' },
+    { field: 'cantidadDisponible', header: 'Stock', width: esMovil.value ? undefined : '20%', minWidth: '90px' },
+    { header: 'Acción', width: esMovil.value ? undefined : '20%', minWidth: '120px', slotName: 'accion' }
+]);
+
+// Filtros nativos en lugar del filtrado manual
+const filtros = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+});
 
 // --- Lógica del Modal de Detalles ---
 const mostrarDetalles = ref(false);
 const herramientaActual = ref({});
 
-// Para usuarios de PC (doble clic) y celulares (botón de ojito)
 const abrirDetalles = (data) => {
     herramientaActual.value = data;
     mostrarDetalles.value = true;
 };
-
-// --- Lógica de Filtrado (Buscador) ---
-const herramientasDisponibles = computed(() => {
-    if (!busqueda.value) return props.inventario;
-    
-    const termino = busqueda.value.toLowerCase();
-    return props.inventario.filter(h => 
-        h.nombre.toLowerCase().includes(termino) || 
-        h.codigo.toLowerCase().includes(termino)
-    );
-});
 
 const emitirAgregar = (herramienta) => {
     emit('agregar', herramienta);
@@ -75,7 +76,7 @@ const obtenerTextoStock = (h) => {
 
 <template>
     <div class="panel-inventario p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo text-xl md:text-2xl font-bold">Herramientas Disponibles</h3>
+        <h3 class="subtitulo text-xl md:text-2xl font-bold" style="color: #5ab1ce;">Herramientas Disponibles</h3>
         
         <!-- Buscador -->
         <div class="buscador-container mb-4">
@@ -85,54 +86,45 @@ const obtenerTextoStock = (h) => {
                     id="buscadorHerramientas"
                     name="buscadorHerramientas"
                     aria-label="Buscar herramienta"
-                    v-model="busqueda" 
+                    v-model="filtros['global'].value" 
                     placeholder="Buscar por código o nombre..." 
                     class="w-full input-oscuro" 
                     autocomplete="off"
                 />
             </IconField>
         </div>
-
-        <!-- Tabla de Inventario con Paginador Limpio -->
-        <DataTable 
-            :value="herramientasDisponibles" 
-            :paginator="true" 
-            :rows="5" 
-            :pageLinkSize="esMovil ? 3 : 5" 
+        <TablaGenerica
+            :datos="inventario"
+            :columnas="columnasCatalogo"
+            :filtros="filtros"
+            :globalFilterFields="['codigo', 'nombre']"
+            llaveMemoria="catalogo_herramientas"
             dataKey="id"
-            class="tabla-oscura"
-            emptyMessage="No se encontraron herramientas."
-            @row-dblclick="(e) => abrirDetalles(e.data)" 
-            selectionMode="single"
-            :scrollable="esMovil" 
-            paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink"
+            iconoVacio="pi-box"
+            mensajeVacio="No hay herramientas disponibles en el catálogo."
+            @doble-click="abrirDetalles"
         >
-            <Column field="codigo" header="Código" :style="esMovil ? { minWidth: '120px' } : { width: '20%' }"></Column>
-            <Column field="nombre" header="Nombre" :style="esMovil ? { minWidth: '200px' } : { width: '40%' }"></Column>
-            <Column field="cantidadDisponible" header="Stock" :style="esMovil ? { minWidth: '90px' } : { width: '20%' }"></Column>
-            
-            <Column header="Acción" :style="esMovil ? { minWidth: '120px' } : { width: '20%' }">
-                <template #body="slotProps">
-                    <div class="flex gap-2">
-                        <Button 
-                            v-if="esMovil"
-                            icon="pi pi-eye" 
-                            class="p-button-rounded p-button-info p-button-sm btn-ojito" 
-                            @click.stop="abrirDetalles(slotProps.data)" 
-                            aria-label="Ver detalles"
-                        />
-                        
-                        <Button 
-                            icon="pi pi-plus" 
-                            class="p-button-rounded p-button-success p-button-sm" 
-                            @click.stop="emitirAgregar(slotProps.data)" 
-                            :disabled="slotProps.data.cantidadDisponible <= 0"
-                            aria-label="Agregar al pedido"
-                        />
-                    </div>
-                </template>
-            </Column>
-        </DataTable>
+            <!-- Slot Personalizado: Acción -->
+            <template #accion="{ data }">
+                <div class="flex gap-2">
+                    <Button 
+                        v-if="esMovil"
+                        icon="pi pi-eye" 
+                        class="p-button-rounded p-button-info p-button-sm btn-ojito" 
+                        @click.stop="abrirDetalles(data)" 
+                        aria-label="Ver detalles"
+                    />
+                    
+                    <Button 
+                        icon="pi pi-plus" 
+                        class="p-button-rounded p-button-success p-button-sm" 
+                        @click.stop="emitirAgregar(data)" 
+                        :disabled="data.cantidadDisponible <= 0"
+                        aria-label="Agregar al pedido"
+                    />
+                </div>
+            </template>
+        </TablaGenerica>
 
         <!-- Modal de Detalles -->
         <Dialog 
@@ -226,83 +218,14 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
+/* =========================================================
+   ESTILOS LOCALES (Casi todo el CSS de tabla desapareció)
+   ========================================================= */
 .panel-inventario { background-color: #2a323d; height: 100%; }
 .subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; }
 
-:deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
+:deep(.input-oscuro) { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
 :deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
-
-/* Blindaje de la tabla PrimeVue (Modo Oscuro) */
-:deep(.tabla-oscura),
-:deep(.tabla-oscura .p-datatable-wrapper),
-:deep(.tabla-oscura .p-datatable-table) {
-    background-color: transparent !important;
-}
-
-:deep(.tabla-oscura .p-datatable-thead > tr > th) { 
-    background-color: transparent !important; 
-    color: #cbd5e1 !important; 
-    border-bottom: 1px solid #4a5568 !important; 
-}
-
-:deep(.tabla-oscura .p-datatable-tbody > tr),
-:deep(.tabla-oscura .p-datatable-tbody > tr > td) { 
-    background-color: #1e252d !important; 
-    color: #ffffff !important; 
-    border-bottom: 1px solid #3f4b5b !important; 
-    border-top: none !important;
-    border-left: none !important;
-    border-right: none !important;
-}
-
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover),
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { 
-    background-color: #36464d !important; 
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr) { cursor: pointer; }
-
-:deep(.tabla-oscura .p-datatable-tbody > tr.p-datatable-empty-message > td) {
-    background-color: #1e252d !important;
-    color: #94a3b8 !important;
-    text-align: center;
-    border-bottom: 1px solid #3f4b5b !important;
-}
-
-/* =========================================================
-   PAGINADOR SUTIL Y LIMPIO (Estandarizado)
-   ========================================================= */
-:deep(.p-paginator) { 
-    background-color: transparent !important; 
-    border: none !important; 
-    margin-top: 1rem; 
-    border-top: 1px solid #4a5568 !important; 
-    padding-top: 1rem !important; 
-}
-:deep(.p-paginator .p-paginator-page), 
-:deep(.p-paginator .p-paginator-first), 
-:deep(.p-paginator .p-paginator-prev), 
-:deep(.p-paginator .p-paginator-next), 
-:deep(.p-paginator .p-paginator-last) { 
-    color: #94a3b8 !important; 
-    background-color: transparent !important; 
-}
-
-:deep(.p-paginator .p-paginator-first:hover),
-:deep(.p-paginator .p-paginator-prev:hover),
-:deep(.p-paginator .p-paginator-next:hover),
-:deep(.p-paginator .p-paginator-last:hover) {
-    background-color: #36464d !important;
-}
-
-/* Efecto translúcido sutil para el número de página activo */
-:deep(.p-paginator .p-paginator-page.p-highlight),
-:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]),
-:deep(.p-paginator .p-paginator-page-selected) { 
-    background-color: rgba(90, 177, 206, 0.2) !important; 
-    color: #5ab1ce !important; 
-    border-radius: 50% !important; 
-    font-weight: bold;
-}
 
 :deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }
 :deep(.surface-200) { background-color: #1e252d !important; }
@@ -360,9 +283,4 @@ const obtenerTextoStock = (h) => {
 :deep(.btn-ojito:hover) {
     background-color: #2563eb !important;
 }
-
-/* Scroll horizontal responsivo para la tabla */
-:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 </style>

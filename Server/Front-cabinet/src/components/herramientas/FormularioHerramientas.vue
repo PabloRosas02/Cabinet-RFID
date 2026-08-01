@@ -98,7 +98,6 @@ const procesarImagen = (evento) => {
                   @change="procesarImagen" 
                   class="w-full input-archivo-oscuro" 
               />
-              <!-- Botón para quitar la imagen si ya tiene una asignada -->
               <Button 
                   v-if="herramienta.imagen" 
                   type="button" 

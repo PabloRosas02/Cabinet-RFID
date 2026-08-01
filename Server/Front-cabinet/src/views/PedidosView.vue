@@ -7,7 +7,6 @@ import Toast from 'primevue/toast';
 import CatalogoHerramientas from '../components/pedidos/CatalogoHerramientas.vue';
 import DetallePedido from '../components/pedidos/DetallePedido.vue';
 
-// Estados reactivos y utilidades
 const toast = useToast(); 
 
 const trabajador = ref({
@@ -55,6 +54,9 @@ const manejarAgregar = (herramienta) => {
         if (itemExistente.cantidadLlevada < herramienta.cantidadDisponible) {
             itemExistente.cantidadLlevada++;
         } else {
+            // Limpia los toasts anteriores antes de mostrar el nuevo
+            toast.removeAllGroups(); 
+            
             toast.add({ 
                 severity: 'warn', 
                 summary: 'Límite alcanzado', 
@@ -92,7 +94,8 @@ const procesarPedido = async () => {
 
         await axios.post('/api/pedidos', payload);
 
-        // TOAST DE ÉXITO
+        // TOAST DE ÉXITO (Aquí también podemos limpiar si hubiera errores previos atascados)
+        toast.removeAllGroups();
         toast.add({ 
             severity: 'success', 
             summary: '¡Éxito!', 
@@ -109,6 +112,7 @@ const procesarPedido = async () => {
         console.error("Error al guardar el pedido:", error);
         
         // TOAST DE ERROR
+        toast.removeAllGroups();
         toast.add({ 
             severity: 'error', 
             summary: 'Error al registrar', 
@@ -124,11 +128,6 @@ const procesarPedido = async () => {
   <div class="p-3 md:p-4 text-gray-200 overflow-x-hidden">
     
     <Toast />
-
-    <!-- Título adaptable -->
-    <h2 class="text-xl md:text-2xl font-bold m-0 mb-4" style="color: #5ab1ce;">Registro de Préstamos</h2>
-
-    <!-- GRID INTELIGENTE: flex-column en móvil, flex-row en Desktop (lg) -->
     <div class="flex flex-column lg:flex-row gap-4">
 
       <div class="w-full lg:w-7 xl:w-8">

@@ -26,7 +26,6 @@ const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
 
-// 2. VARIABLES PARA CONTROLAR EL MODAL DEL OJITO
 const mostrarModalDetalles = ref(false);
 const herramientaViendo = ref(null);
 
@@ -34,7 +33,6 @@ const manejarSeleccion = (seleccion) => {
     herramientaSeleccionada.value = seleccion;
 };
 
-// 3. FUNCIÓN QUE ABRE EL MODAL Y LE PASA LA HERRAMIENTA SELECCIONADA
 const abrirDetalles = (herramienta) => {
     herramientaViendo.value = herramienta;
     mostrarModalDetalles.value = true;
@@ -50,6 +48,23 @@ const eliminarSeleccionada = async () => {
     if (herramientaSeleccionada.value) {
         await eliminarHerramienta(herramientaSeleccionada.value);
         herramientaSeleccionada.value = null; 
+        
+        // Refrescamos por seguridad
+        await cargarHerramientas();
+    }
+};
+
+const manejarGuardado = async () => {
+    await guardarHerramienta();
+    
+    await cargarHerramientas();
+
+    if (herramientaSeleccionada.value) {
+        const idActual = herramientaSeleccionada.value.id;
+        const herramientaFresca = herramientas.value.find(h => h.id === idActual);
+        if (herramientaFresca) {
+            herramientaSeleccionada.value = herramientaFresca;
+        }
     }
 };
 
@@ -102,7 +117,7 @@ onMounted(() => {
       </div>
       
       <div class="w-full xl:w-auto">
-        <IconField iconPosition="left" class="w-full">
+        <IconField iconPosition="left" class="w-full xl:w-30rem">
           <InputIcon class="pi pi-search" />
           <InputText 
             id="buscador-movimientos" 
@@ -116,11 +131,11 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 4. ESCUCHAMOS EL EVENTO @doble-click -->
     <TablaHerramientas
       :herramientas="herramientas"
       :cargando="cargando"
       :filtros="filtros"
+      llaveMemoria="vista_movimientos"
       @seleccion="manejarSeleccion"
       @doble-click="abrirDetalles"
     />
@@ -129,10 +144,9 @@ onMounted(() => {
       v-model:visible="mostrarModal"
       :herramienta="herramientaActual"
       :esEdicion="true"
-      @guardar="guardarHerramienta"
+      @guardar="manejarGuardado"
     />
 
-    <!-- 5. AGREGAMOS EL COMPONENTE DEL MODAL A LA VISTA -->
     <DetalleHerramientas 
       v-model:visible="mostrarModalDetalles" 
       :herramienta="herramientaViendo" 
