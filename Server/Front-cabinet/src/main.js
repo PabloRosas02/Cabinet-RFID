@@ -8,6 +8,7 @@ import axios from 'axios'
 
 import 'primeicons/primeicons.css'
 import 'primeflex/primeflex.css'
+import './assets/main.css' 
 
 // =====================================================================
 // INTERCEPTORES GLOBALES DE AXIOS (SEGURIDAD JWT)

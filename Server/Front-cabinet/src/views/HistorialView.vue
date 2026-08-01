@@ -102,7 +102,6 @@ const toggleExportar = (event) => {
 
 const realizarExportacion = (formato) => {
     try {
-        // Le mandamos los datos y la lógica pesada se ejecuta allá
         exportarHistorialPedidos(historialFiltrado.value, filtroTiempo.value, formato);
         toast.add({ severity: 'success', summary: 'Exportación Exitosa', detail: 'El archivo se ha generado correctamente.', life: 3000 });
     } catch (error) {
@@ -178,16 +177,9 @@ const realizarExportacion = (formato) => {
 </template>
 
 <style scoped>
-.panel-principal { 
-    background-color: #2a323d !important; 
-    color: #ffffff; 
-    border: 1px solid #4a5568 !important; 
-    overflow-x: hidden;
-}
-
-.btn-exportar { background-color: #16a34a !important; border: none !important; color: white !important; font-weight: bold; }
-.btn-exportar:hover { background-color: #15803d !important; }
-
+/* =========================================================
+   BOTONES DE FILTRO (Pendientes / Devueltos)
+   ========================================================= */
 :deep(.p-button-danger.p-button-outlined) { color: #f87171 !important; border-color: rgba(239, 68, 68, 0.5) !important; background-color: transparent !important; }
 :deep(.p-button-danger.p-button-outlined:hover) { background-color: rgba(239, 68, 68, 0.1) !important; }
 :deep(.p-button-danger:not(.p-button-outlined)) { background-color: rgba(239, 68, 68, 0.2) !important; color: #f87171 !important; border: 1px solid #f87171 !important; }
@@ -195,33 +187,4 @@ const realizarExportacion = (formato) => {
 :deep(.p-button-success.p-button-outlined) { color: #4ade80 !important; border-color: rgba(34, 197, 94, 0.5) !important; background-color: transparent !important; }
 :deep(.p-button-success.p-button-outlined:hover) { background-color: rgba(34, 197, 94, 0.1) !important; }
 :deep(.p-button-success:not(.p-button-outlined)) { background-color: rgba(34, 197, 94, 0.2) !important; color: #4ade80 !important; border: 1px solid #4ade80 !important; }
-
-/* =========================================================
-   Estilos para el menú desplegable (Menú Oscuro)
-   ========================================================= */
-:deep(.menu-oscuro) {
-    background-color: #1e252d !important;
-    border: 1px solid #4a5568 !important;
-}
-:deep(.menu-oscuro .p-menuitem-link) {
-    color: #ffffff !important;
-}
-:deep(.menu-oscuro .p-menuitem-link:hover) {
-    background-color: #36464d !important;
-}
-:deep(.menu-oscuro .p-menuitem-icon) {
-    color: #16a34a !important; 
-}
-</style>
-
-<style>
-input.input-oscuro, .p-iconfield input, .p-inputtext.input-oscuro, .input-oscuro.p-select { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
-input.input-oscuro:focus, .p-iconfield input:focus, .p-inputtext.input-oscuro:focus, .input-oscuro.p-select:focus, .input-oscuro.p-select-focus { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
-input.input-oscuro::placeholder, .p-iconfield input::placeholder, .p-iconfield .p-inputicon { color: #94a3b8 !important; }
-.input-oscuro .p-select-label { color: #ffffff !important; }
-.menu-oscuro-global { background-color: #1e252d !important; border: 1px solid #4a5568 !important; color: #ffffff !important; }
-.menu-oscuro-global .p-select-list { background-color: transparent !important; padding: 0 !important; }
-.menu-oscuro-global .p-select-option { color: #cbd5e1 !important; background-color: transparent !important; padding: 0.75rem 1rem !important; }
-.menu-oscuro-global .p-select-option:hover, .menu-oscuro-global .p-select-option.p-focus { background-color: #36464d !important; color: #ffffff !important; }
-.menu-oscuro-global .p-select-option.p-select-option-selected { background-color: #5ab1ce !important; color: #ffffff !important; }
 </style>

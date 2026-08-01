@@ -99,37 +99,16 @@ const emit = defineEmits(['cerrar']);
         </div>
         
         <template #footer>
-            <Button label="Cerrar Detalles" icon="pi pi-times" @click="emit('cerrar')" class="p-button-text text-white hover:text-blue-300 transition-colors w-full sm:w-auto" />
+            <!-- Utilizamos nuestra clase global .btn-cancelar -->
+            <Button label="Cerrar Detalles" icon="pi pi-times" @click="emit('cerrar')" class="btn-cancelar font-bold w-full sm:w-auto" />
         </template>
     </Dialog>
 </template>
 
 <style scoped>
-:deep(.modal-oscuro .p-dialog-header),
-:deep(.modal-oscuro .p-dialog-content),
-:deep(.modal-oscuro .p-dialog-footer) {
-    background-color: #1e252d !important;
-    color: #ffffff !important;
-    border: none;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-}
-
-@media (min-width: 768px) {
-    :deep(.modal-oscuro .p-dialog-header),
-    :deep(.modal-oscuro .p-dialog-content),
-    :deep(.modal-oscuro .p-dialog-footer) {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-    }
-}
-
-:deep(.modal-oscuro .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
-:deep(.modal-oscuro .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
-
-:deep(.modal-oscuro .p-dialog-header-icon) { color: #94a3b8 !important; }
-:deep(.modal-oscuro .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
-
+/* =========================================================
+   COLORES ESPECÍFICOS PARA EL DESGLOSE DE HERRAMIENTAS
+   ========================================================= */
 .surface-100 { background-color: #313a46 !important; }
 .surface-200 { background-color: #242b35 !important; }
 .last-border-none:last-child { border-bottom: none !important; }

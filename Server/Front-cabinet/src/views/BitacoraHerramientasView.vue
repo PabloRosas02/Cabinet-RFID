@@ -132,7 +132,7 @@ const opcionesExportar = ref([
 </script>
 
 <template>
-  <div class="panel-bitacora p-3 md:p-4 border-round-xl shadow-1 mt-4">
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Bitácora de Auditoría</h2>
     </div>
@@ -142,6 +142,7 @@ const opcionesExportar = ref([
       
       <!-- IZQUIERDA -->
       <div class="flex flex-column sm:flex-row gap-3 w-full xl:w-auto align-items-stretch sm:align-items-center">
+        <!-- btn-volver ya vive en main.css -->
         <Button label="Volver" icon="pi pi-arrow-left" class="p-button-secondary p-button-outlined btn-volver w-full sm:w-auto" @click="router.back()" />
         <IconField iconPosition="left" class="w-full xl:w-25rem">
           <InputIcon class="pi pi-search" />
@@ -152,7 +153,7 @@ const opcionesExportar = ref([
       <!-- DERECHA -->
       <div class="flex flex-column sm:flex-row flex-wrap xl:flex-nowrap gap-2 w-full xl:w-auto justify-content-start xl:justify-content-end align-items-center">
         <Button type="button" :label="labelFiltroAccion" :icon="iconFiltroAccion" :class="claseFiltroAccion" class="w-full sm:w-auto font-bold flex align-items-center justify-content-center border-round" style="min-width: 200px;" @click="toggleFiltroAccion" />
-        <Select v-model="filtroTiempo" :options="opcionesTiempo" placeholder="Filtrar por fecha" class="w-full sm:w-auto input-oscuro flex align-items-center" style="min-width: 170px;" />
+        <Select v-model="filtroTiempo" :options="opcionesTiempo" placeholder="Filtrar por fecha" class="w-full sm:w-auto input-oscuro flex align-items-center" style="min-width: 170px;" overlayClass="menu-oscuro-global" panelClass="menu-oscuro-global" />
         <Button type="button" label="Exportar Bitácora" icon="pi pi-angle-down" iconPos="right" class="btn-exportar w-full sm:w-auto font-bold" @click="$refs.menuExportar.toggle($event)" aria-haspopup="true" aria-controls="exportar_menu" />
         <Menu ref="menuExportar" id="exportar_menu" :model="opcionesExportar" :popup="true" class="menu-oscuro" />
       </div>
@@ -174,30 +175,3 @@ const opcionesExportar = ref([
 
   </div>
 </template>
-
-<style scoped>
-/* Contenedor y Toolbar */
-.panel-bitacora { background-color: #2a323d !important; color: #ffffff; }
-.toolbar-oscuro { background-color: #1e252d !important; }
-
-/* Inputs y Botones */
-:deep(.input-oscuro) { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
-:deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
-:deep(.input-oscuro .p-Select-label) { color: #ffffff !important; }
-:deep(.input-oscuro .p-Select-trigger) { color: #94a3b8 !important; }
-.btn-exportar { background-color: #217346 !important; border: none !important; color: white !important; }
-.btn-volver { color: #cbd5e1 !important; border-color: #4a5568 !important; }
-.btn-volver:hover { background-color: #36464d !important; border-color: #cbd5e1 !important; color: white !important;}
-
-/* Menú Oscuro (Exportar) */
-:deep(.menu-oscuro) { background-color: #1e252d !important; border: 1px solid #4a5568 !important; }
-:deep(.menu-oscuro .p-menuitem-link) { color: #ffffff !important; }
-:deep(.menu-oscuro .p-menuitem-link:hover) { background-color: #36464d !important; }
-:deep(.menu-oscuro .p-menuitem-icon) { color: #217346 !important; }
-
-/* Panel de Opciones del Select */
-:deep(.p-Select-panel) { background-color: #1e252d !important; border: 1px solid #4a5568 !important; color: #ffffff; }
-:deep(.p-Select-panel .p-Select-items .p-Select-item) { color: #ffffff !important; }
-:deep(.p-Select-panel .p-Select-items .p-Select-item.p-highlight) { background-color: #5ab1ce !important; color: white !important; }
-:deep(.p-Select-panel .p-Select-items .p-Select-item:not(.p-highlight):hover) { background-color: #36464d !important; }
-</style>

@@ -69,6 +69,7 @@ const abrirDetalles = (data) => {
         </template>
 
         <!-- Slot Personalizado: Acción -->
+        <!-- Las clases badge-accion y derivadas ya existen en main.css -->
         <template #accion="{ data }">
             <span :class="['badge-accion', getBadgeClase(data.accion)]">{{ data.accion }}</span>
         </template>
@@ -82,9 +83,10 @@ const abrirDetalles = (data) => {
         <!-- Slot Personalizado: Detalle -->
         <template #detalle="{ data }">
             <div class="flex align-items-center gap-2">
+                <!-- Usamos nuestra clase global .btn-ver (ajustada en tamaño con inline styles) -->
                 <Button 
                     icon="pi pi-eye" 
-                    class="p-button-rounded p-button-text p-button-info p-0 m-0" 
+                    class="p-button-rounded p-button-text p-button-info btn-ver p-0 m-0" 
                     style="height: 2rem; width: 2rem;" 
                     @click.stop="abrirDetalles(data)" 
                 />
@@ -101,12 +103,3 @@ const abrirDetalles = (data) => {
         </template>
     </TablaGenerica>
 </template>
-
-<style scoped>
-/* Badges de Acción específicos para la bitácora */
-.badge-accion { padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 800; display: inline-block; font-size: 0.85rem; text-align: center;}
-.badge-creacion { background-color: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
-.badge-modificacion { background-color: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
-.badge-eliminacion { background-color: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
-.badge-default { background-color: rgba(148, 163, 184, 0.15); color: #94a3b8; }
-</style>

@@ -107,7 +107,8 @@ const procesarArchivo = async (evento) => {
 
 <template>
   <Toast /> 
-  <div class="panel-nuevo-producto p-3 md:p-4 border-round-xl shadow-1 max-w-70rem mx-auto mt-4">
+  <!-- Cambiamos a la clase .panel-principal -->
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 max-w-70rem mx-auto mt-4">
     <div class="flex flex-column lg:flex-row justify-content-between align-items-start lg:align-items-center mb-4 gap-4">
         <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Registrar Nuevo Producto</h2>
         
@@ -117,6 +118,7 @@ const procesarArchivo = async (evento) => {
                 class="p-button-outlined text-white border-white hover:bg-white-alpha-10 w-full sm:w-auto" 
                 @click="toggleMenu" aria-haspopup="true" aria-controls="overlay_menu"
             />
+            <!-- Usamos la clase global .menu-oscuro -->
             <Menu ref="menuDescarga" id="overlay_menu" :model="opcionesDescarga" :popup="true" class="menu-oscuro" />
             
             <input 
@@ -134,12 +136,3 @@ const procesarArchivo = async (evento) => {
     <FormularioProducto ref="formRef" :cargando="cargando" @guardar="guardarProducto" />
   </div>
 </template>
-
-<style scoped>
-.panel-nuevo-producto { background-color: #2a323d !important; color: #ffffff; }
-.hidden { display: none; }
-:deep(.menu-oscuro) { background-color: #1e252d !important; border: 1px solid #4a5568 !important; }
-:deep(.menu-oscuro .p-menuitem-link) { color: #ffffff !important; }
-:deep(.menu-oscuro .p-menuitem-link:hover) { background-color: #36464d !important; }
-:deep(.menu-oscuro .p-menuitem-icon) { color: #5ab1ce !important; }
-</style>

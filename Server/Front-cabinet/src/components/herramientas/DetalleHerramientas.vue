@@ -104,7 +104,7 @@ const obtenerTextoStock = (h) => {
           <Button 
             label="Cerrar" 
             icon="pi pi-times" 
-            class="p-button-text btn-cerrar-modal" 
+            class="btn-cancelar font-bold" 
             @click="cerrar" 
             autofocus 
           />
@@ -113,76 +113,25 @@ const obtenerTextoStock = (h) => {
   </Dialog>
 </template>
 
-<style>
+<style scoped>
 /* =========================================================
-   ESTILOS GLOBALES DEL MODAL 
+   CLASES INTERNAS (Específicas de este componente)
    ========================================================= */
-
-/* Contenedor Principal del Dialog */
-.modal-oscuro-primeflex {
-    background-color: #1e252d !important;
-    border: 1px solid #4a5568 !important;
-    border-radius: 8px !important;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
-}
-
-/* Cabecera, Contenido y Pie del Dialog */
-.modal-oscuro-primeflex .p-dialog-header,
-.modal-oscuro-primeflex .p-dialog-content,
-.modal-oscuro-primeflex .p-dialog-footer {
-    background-color: #1e252d !important;
-    color: #ffffff !important;
-    border: none !important;
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
-}
-
-.modal-oscuro-primeflex .p-dialog-header {
-    border-bottom: 1px solid #2a323d !important;
-    padding-top: 1.5rem !important;
-}
-
-.modal-oscuro-primeflex .p-dialog-footer {
-    border-top: 1px solid #2a323d !important;
-    padding-bottom: 1.5rem !important;
-}
-
-/* Botón 'X' de la esquina superior derecha */
-.modal-oscuro-primeflex .p-dialog-header-icon {
-    color: #94a3b8 !important;
-}
-.modal-oscuro-primeflex .p-dialog-header-icon:hover {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
-}
-
-/* =========================================================
-   CLASES INTERNAS 
-   ========================================================= */
-.modal-oscuro-primeflex .label-gris {
+.label-gris {
     color: #94a3b8 !important;
 }
 
-.modal-oscuro-primeflex .caja-descripcion {
+.caja-descripcion {
     background-color: #313a46 !important;
     border: 1px solid #3f4b5b !important;
     color: #cbd5e1 !important;
 }
 
-.modal-oscuro-primeflex .fondo-imagen-vacia {
+.fondo-imagen-vacia {
     background-color: #121820 !important;
 }
 
-.modal-oscuro-primeflex .icono-vacio {
+.icono-vacio {
     color: #4a5568 !important;
-}
-
-.modal-oscuro-primeflex .btn-cerrar-modal {
-    color: #94a3b8 !important;
-}
-
-.modal-oscuro-primeflex .btn-cerrar-modal:hover {
-    color: #ffffff !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
 }
 </style>

@@ -74,8 +74,8 @@ const obtenerTextoStock = (h) => {
 </script>
 
 <template>
-    <div class="panel-pedido p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo text-xl md:text-2xl font-bold">Detalle del Pedido</h3>
+    <div class="panel-principal flex flex-column h-full p-3 md:p-4 border-round-xl shadow-1">
+        <h3 class="m-0 mb-4 text-xl md:text-2xl font-bold text-white">Detalle del Pedido</h3>
 
         <!-- Formulario del Trabajador -->
         <div class="formulario-trabajador mb-4">
@@ -133,7 +133,7 @@ const obtenerTextoStock = (h) => {
         </div>
 
         <!-- Lista de Herramientas Seleccionadas -->
-        <h4 class="subtitulo-menor mt-4 border-top-1 border-gray-600 pt-3">Herramientas a entregar:</h4>
+        <h4 class="text-300 text-lg mt-4 border-top-1 border-gray-600 pt-3">Herramientas a entregar:</h4>
         
         <div v-if="pedido.length === 0" class="mensaje-vacio">Aún no has agregado herramientas.</div>
 
@@ -187,7 +187,7 @@ const obtenerTextoStock = (h) => {
             header="Detalles de la Herramienta" 
             :modal="true" 
             dismissableMask 
-            class="modal-oscuro-primeflex"
+            class="modal-oscuro"
         >
             <div v-if="herramientaActual" class="p-2 md:p-4">
                 <div class="flex flex-column align-items-center mb-5">
@@ -208,7 +208,7 @@ const obtenerTextoStock = (h) => {
             </div>
             <template #footer>
                 <div class="flex justify-content-end mt-2 md:mt-3">
-                    <Button label="Cerrar" icon="pi pi-times" class="p-button-text text-500 hover:text-white w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
+                    <Button label="Cerrar" icon="pi pi-times" class="btn-cancelar font-bold w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
                 </div>
             </template>
         </Dialog>
@@ -216,19 +216,13 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-.panel-pedido { background-color: #2a323d; display: flex; flex-direction: column; height: 100%; }
-.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; }
-.subtitulo-menor { color: #cbd5e1; font-size: 1.1rem; }
-.label-blanco { display: block; color: #cbd5e1; margin-bottom: 0.5rem; font-weight: 500; }
-
-:deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
-:deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
-
+/* =========================================================
+   ESTILOS EXCLUSIVOS DE ESTA VISTA (CARRITO)
+   ========================================================= */
 .mensaje-vacio { color: #94a3b8; font-style: italic; text-align: center; padding: 1rem 0; }
 .lista-pedido { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; max-height: 350px; }
 .item-pedido { padding: 0.75rem; background-color: #1e252d; border: 1px solid #4a5568; border-radius: 8px; margin-bottom: 0.5rem; }
 
-/* Eliminamos los anchos fijos, PrimeFlex se encarga ahora */
 .item-info { display: flex; flex-direction: column; }
 .item-codigo { font-size: 0.8rem; color: #94a3b8; }
 .item-nombre { font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -247,35 +241,10 @@ const obtenerTextoStock = (h) => {
 :deep(.surface-200) { background-color: #1e252d !important; }
 :deep(.text-500) { color: #94a3b8 !important; }
 :deep(.text-300) { color: #cbd5e1 !important; }
-
-/* Modal responsivo */
-:deep(.modal-oscuro-primeflex .p-dialog-header), 
-:deep(.modal-oscuro-primeflex .p-dialog-content), 
-:deep(.modal-oscuro-primeflex .p-dialog-footer) { 
-    background-color: #1e252d !important; 
-    color: #ffffff !important; 
-    border: none; 
-    padding-left: 1rem !important; 
-    padding-right: 1rem !important;
-}
-
-@media (min-width: 768px) {
-    :deep(.modal-oscuro-primeflex .p-dialog-header), 
-    :deep(.modal-oscuro-primeflex .p-dialog-content), 
-    :deep(.modal-oscuro-primeflex .p-dialog-footer) { 
-        padding-left: 1.5rem !important; 
-        padding-right: 1.5rem !important;
-    }
-}
-
-:deep(.modal-oscuro-primeflex .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon) { color: #94a3b8 !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
 </style>
 
 <style>
-/* Estilos globales para AutoComplete */
+/* Estilos globales obligatorios para el AutoComplete de PrimeVue */
 .panel-autocomplete-oscuro {
     background-color: #1e252d !important;
     border: 1px solid #4a5568 !important;

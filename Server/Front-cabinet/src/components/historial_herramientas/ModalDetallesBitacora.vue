@@ -94,45 +94,15 @@ const obtenerListaDetalles = (texto) => {
 
         </div>
         <template #footer>
-            <Button label="Cerrar Detalles" icon="pi pi-times" @click="emit('cerrar')" class="p-button-text text-white hover:text-blue-300 transition-colors w-full sm:w-auto" />
+            <Button label="Cerrar Detalles" icon="pi pi-times" @click="emit('cerrar')" class="btn-cancelar font-bold w-full sm:w-auto" />
         </template>
     </Dialog>
 </template>
 
 <style scoped>
-/* Badges de Acción (Necesarios aquí para las etiquetas dentro del modal) */
-.badge-accion { padding: 0.35rem 0.75rem; border-radius: 6px; font-weight: 800; display: inline-block; font-size: 0.85rem; text-align: center;}
-.badge-creacion { background-color: rgba(74, 222, 128, 0.15); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.3); }
-.badge-modificacion { background-color: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.3); }
-.badge-eliminacion { background-color: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
-.badge-default { background-color: rgba(148, 163, 184, 0.15); color: #94a3b8; }
-
-/* ESTILOS DEL MODAL OSCURO */
-:deep(.modal-oscuro .p-dialog-header),
-:deep(.modal-oscuro .p-dialog-content),
-:deep(.modal-oscuro .p-dialog-footer) {
-    background-color: #1e252d !important;
-    color: #ffffff !important;
-    border: none;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-}
-
-@media (min-width: 768px) {
-    :deep(.modal-oscuro .p-dialog-header),
-    :deep(.modal-oscuro .p-dialog-content),
-    :deep(.modal-oscuro .p-dialog-footer) {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-    }
-}
-
-:deep(.modal-oscuro .p-dialog-header) { border-bottom: 1px solid #2a323d !important; padding-top: 1.5rem !important; }
-:deep(.modal-oscuro .p-dialog-footer) { border-top: 1px solid #2a323d !important; padding-bottom: 1.5rem !important; }
-
-:deep(.modal-oscuro .p-dialog-header-icon) { color: #94a3b8 !important; }
-:deep(.modal-oscuro .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
-
+/* =========================================================
+   FONDOS OSCUROS ESPECÍFICOS PARA LAS CAJAS DE DETALLE
+   ========================================================= */
 .surface-100 { background-color: #313a46 !important; }
 .surface-200 { background-color: #242b35 !important; }
 </style>

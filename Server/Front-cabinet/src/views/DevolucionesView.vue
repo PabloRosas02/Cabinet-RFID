@@ -116,11 +116,3 @@ const confirmarDevolucion = async (pedidoModificado) => {
     />
   </div>
 </template>
-
-<style scoped>
-.panel-principal {
-    background-color: #2a323d !important;
-    color: #ffffff;
-    overflow-x: hidden; 
-}
-</style>

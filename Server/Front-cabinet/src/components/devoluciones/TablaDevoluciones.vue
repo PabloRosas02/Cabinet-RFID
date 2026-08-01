@@ -117,19 +117,12 @@ const formatearFecha = (fechaString) => {
 </template>
 
 <style scoped>
-:deep(.input-oscuro) { 
-    background-color: #121820 !important; 
-    color: #ffffff !important; 
-    border: 1px solid #4a5568 !important; 
-}
-:deep(.input-oscuro:focus) { 
-    border-color: #5ab1ce !important; 
-    box-shadow: 0 0 0 1px #5ab1ce !important; 
-}
-
 .btn-accion-devolver { 
     background-color: #3b82f6 !important; 
     border: none !important; 
     font-weight: bold; 
+}
+.btn-accion-devolver:hover { 
+    background-color: #2563eb !important; 
 }
 </style>

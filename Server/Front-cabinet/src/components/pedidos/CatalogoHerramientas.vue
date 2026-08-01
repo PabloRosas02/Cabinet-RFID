@@ -134,7 +134,7 @@ const obtenerTextoStock = (h) => {
             header="Detalles de la Herramienta" 
             :modal="true"
             dismissableMask
-            class="modal-oscuro-primeflex"
+            class="modal-oscuro"
         >
             <!-- Padding adaptativo -->
             <div v-if="herramientaActual" class="p-2 md:p-4">
@@ -200,7 +200,7 @@ const obtenerTextoStock = (h) => {
                     <Button 
                         label="Cerrar" 
                         icon="pi pi-times" 
-                        class="p-button-text text-500 hover:text-white w-full sm:w-auto" 
+                        class="btn-cancelar w-full sm:w-auto" 
                         @click="mostrarDetalles = false" 
                     />
                     <Button 
@@ -218,69 +218,10 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-/* =========================================================
-   ESTILOS LOCALES (Casi todo el CSS de tabla desapareció)
-   ========================================================= */
-.panel-inventario { background-color: #2a323d; height: 100%; }
-.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; }
-
-:deep(.input-oscuro) { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
-:deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
-
+/* Solo conservamos los fondos específicos de las tarjetas internas */
+.subtitulo { margin-top: 0; margin-bottom: 1.5rem; }
 :deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }
 :deep(.surface-200) { background-color: #1e252d !important; }
 :deep(.text-500) { color: #94a3b8 !important; }
 :deep(.text-300) { color: #cbd5e1 !important; }
-
-/* Modal y Botones */
-:deep(.modal-oscuro-primeflex .p-dialog-header),
-:deep(.modal-oscuro-primeflex .p-dialog-content),
-:deep(.modal-oscuro-primeflex .p-dialog-footer) {
-    background-color: #1e252d !important;
-    color: #ffffff !important;
-    border: none;
-    padding-left: 1rem !important; 
-    padding-right: 1rem !important;
-}
-
-@media (min-width: 768px) {
-    :deep(.modal-oscuro-primeflex .p-dialog-header),
-    :deep(.modal-oscuro-primeflex .p-dialog-content),
-    :deep(.modal-oscuro-primeflex .p-dialog-footer) {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-    }
-}
-
-:deep(.modal-oscuro-primeflex .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
-
-/* Efecto hover en el ícono de cerrar modal (X) */
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon) { color: #94a3b8 !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
-
-.boton-anadir-verde {
-    background-color: #34d399 !important; 
-    color: #064e3b !important; 
-    border: none !important;
-    font-weight: 700 !important;
-    padding: 0.8rem 1.5rem !important;
-    border-radius: 6px !important;
-    transition: filter 0.2s;
-}
-.boton-anadir-verde:hover { filter: brightness(1.1); }
-.boton-anadir-verde:disabled {
-    background-color: #4a5568 !important;
-    color: #94a3b8 !important;
-    cursor: not-allowed !important;
-}
-
-/* Color azul para el ojito */
-:deep(.btn-ojito) {
-    background-color: #3b82f6 !important; 
-    border: none !important;
-}
-:deep(.btn-ojito:hover) {
-    background-color: #2563eb !important;
-}
 </style>

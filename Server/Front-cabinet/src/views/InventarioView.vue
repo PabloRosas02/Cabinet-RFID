@@ -74,15 +74,18 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="panel-herramientas p-3 md:p-4 border-round-xl shadow-1 mt-4">
+  <!-- Cambiado a .panel-principal global -->
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     
     <div class="flex justify-content-between align-items-center mb-4">
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Control de Inventario</h2>
     </div>
 
+    <!-- Las clases toolbar-oscuro ya están en el main.css -->
     <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
       
       <div class="flex flex-wrap gap-2 w-full xl:w-auto">
+        <!-- btn-exportar ya vive en main.css -->
         <Button 
             type="button" 
             label="Exportar Inventario" 
@@ -154,31 +157,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.panel-herramientas { 
-    background-color: #2a323d !important; 
-    color: #ffffff;
-}
-
-.toolbar-oscuro {
-    background-color: #1e252d !important;
-}
-
-:deep(.input-oscuro) { 
-    background-color: #121820 !important; 
-    color: #ffffff !important; 
-    border: 1px solid #4a5568 !important; 
-}
-:deep(.input-oscuro:focus) { 
-    border-color: #5ab1ce !important; 
-    box-shadow: 0 0 0 1px #5ab1ce !important; 
-}
-
-.btn-exportar {
-    background-color: #16a34a !important; 
-    border: none !important;
-    color: white !important;
-}
-
+/* =========================================================
+   BOTONES EXCLUSIVOS DE ESTA VISTA
+   ========================================================= */
 .btn-actualizar {
     background-color: #0ea5e9 !important; 
     border: none !important;
@@ -197,6 +178,9 @@ onMounted(() => {
     background-color: #374151 !important;
 }
 
+/* =========================================================
+   BOTÓN DINÁMICO DE ALERTAS
+   ========================================================= */
 :deep(.btn-alertas.p-button-warning.p-button-outlined) {
     color: #fbbf24 !important; 
     border-color: #fbbf24 !important;
@@ -215,26 +199,9 @@ onMounted(() => {
     background-color: #16a34a !important;
 }
 
-.btn-exportar i,
-.btn-actualizar i,
-.btn-bitacora i {
-    color: white !important;
-}
-
-:deep(.menu-oscuro) {
-    background-color: #1e252d !important;
-    border: 1px solid #4a5568 !important;
-}
-:deep(.menu-oscuro .p-menuitem-link) {
-    color: #ffffff !important;
-}
-:deep(.menu-oscuro .p-menuitem-link:hover) {
-    background-color: #36464d !important;
-}
-:deep(.menu-oscuro .p-menuitem-icon) {
-    color: #217346 !important;
-}
-
+/* =========================================================
+   SCROLLBAR DE LA TABLA
+   ========================================================= */
 :deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
 :deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
 :deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }

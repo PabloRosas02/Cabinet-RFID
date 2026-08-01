@@ -78,7 +78,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="panel-movimientos p-3 md:p-4 border-round-xl shadow-1 mt-4">
+  <!-- Usamos .panel-principal del main.css -->
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     
     <Toast />
 
@@ -86,9 +87,11 @@ onMounted(() => {
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Administración y Movimientos</h2>
     </div>
 
+    <!-- toolbar-oscuro ya vive en main.css -->
     <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
 
       <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
+        <!-- btn-volver ya vive en main.css -->
         <Button 
             icon="pi pi-arrow-left" 
             label="Volver" 
@@ -156,28 +159,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* Contenedor principal con fondo de pedidos */
-.panel-movimientos { 
-    background-color: #2a323d !important; 
-    color: #ffffff;
-}
-
-/* Contenedor oscuro estilo toolbar */
-.toolbar-oscuro {
-    background-color: #1e252d !important;
-}
-
-/* Botón Volver */
-.btn-volver {
-    color: #94a3b8 !important;
-    border-color: #4a5568 !important;
-}
-.btn-volver:hover {
-    background-color: rgba(148, 163, 184, 0.1) !important;
-    color: #ffffff !important;
-}
-
-/* Colores vibrantes para los botones de acción usando /deep/ para PrimeVue */
+/* =========================================================
+   BOTONES DE ACCIÓN EXCLUSIVOS DE ESTA VISTA
+   ========================================================= */
 :deep(.btn-editar) {
     background-color: #0ea5e9 !important;
     border: none !important;
@@ -199,16 +183,5 @@ onMounted(() => {
 /* Opacidad cuando no hay nada seleccionado */
 :deep(.p-button:disabled) {
     opacity: 0.5 !important;
-}
-
-/* Buscador oscuro */
-:deep(.input-oscuro) { 
-    background-color: #121820 !important; 
-    color: #ffffff !important; 
-    border: 1px solid #4a5568 !important; 
-}
-:deep(.input-oscuro:focus) { 
-    border-color: #5ab1ce !important; 
-    box-shadow: 0 0 0 1px #5ab1ce !important; 
 }
 </style>
