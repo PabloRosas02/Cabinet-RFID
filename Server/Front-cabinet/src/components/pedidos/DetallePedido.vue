@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
     pedido: { type: Array, required: true },
@@ -12,6 +13,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['quitar', 'registrar']);
+const { t } = useI18n(); 
 
 const resultadosSugeridos = ref([]);
 
@@ -34,6 +36,22 @@ const seleccionarUsuario = (event) => {
     }
 };
 
+const trabajadorValido = computed(() => {
+    // Si no hay datos o la lista está vacía, no es válido
+    if (!props.trabajador.numero || !props.trabajador.nombre || !props.listaUsuarios) return false;
+    
+    const numIngresado = props.trabajador.numero.toString().trim();
+    const nomIngresado = props.trabajador.nombre.toString().trim().toLowerCase();
+
+    // Verificamos que exista un usuario en la base de datos que coincida 
+    // Exactamente con el número y el nombre ingresados
+    return props.listaUsuarios.some(u => 
+        u.numTrabajador?.toString() === numIngresado && 
+        u.nombre?.toString().toLowerCase() === nomIngresado
+    );
+});
+// =====================================================================
+
 const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
 
@@ -51,22 +69,22 @@ const obtenerSeveridadStock = (h) => {
 
 const obtenerTextoStock = (h) => {
     if (!h) return '';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'CRÍTICO';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'ALERTA';
-    return 'NORMAL';
+    if (h.cantidadDisponible < h.cantidadMinima) return t('detalle_pedido.estado_critico');
+    if (h.cantidadDisponible === h.cantidadMinima) return t('detalle_pedido.estado_alerta');
+    return t('detalle_pedido.estado_normal');
 };
 </script>
 
 <template>
-    <div class="panel-pedido p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo text-xl md:text-2xl font-bold">Detalle del Pedido</h3>
+    <div class="panel-principal flex flex-column h-full p-3 md:p-4 border-round-xl shadow-1">
+        <h3 class="m-0 mb-4 text-xl md:text-2xl font-bold text-white">{{ t('detalle_pedido.titulo') }}</h3>
 
         <!-- Formulario del Trabajador -->
         <div class="formulario-trabajador mb-4">
             
             <!-- Búsqueda por Número -->
             <div class="field mb-3">
-                <label for="buscarNumEmpleado" class="label-blanco">No. de Empleado (Buscar o Escribir)</label>
+                <label for="buscarNumEmpleado" class="label-blanco">{{ t('detalle_pedido.label_num_empleado') }}</label>
                 <AutoComplete 
                     inputId="buscarNumEmpleado"
                     v-model="trabajador.numero" 
@@ -74,7 +92,7 @@ const obtenerTextoStock = (h) => {
                     @complete="buscarUsuario" 
                     @item-select="seleccionarUsuario"
                     field="numTrabajador"
-                    placeholder="Ej. 1045..." 
+                    :placeholder="t('detalle_pedido.ph_num_empleado')" 
                     class="w-full"
                     inputClass="w-full input-oscuro"
                     panelClass="panel-autocomplete-oscuro"
@@ -91,7 +109,7 @@ const obtenerTextoStock = (h) => {
             
             <!-- Búsqueda por Nombre -->
             <div class="field">
-                <label for="buscarNomEmpleado" class="label-blanco">Nombre del Trabajador</label>
+                <label for="buscarNomEmpleado" class="label-blanco">{{ t('detalle_pedido.label_nom_empleado') }}</label>
                 <AutoComplete 
                     inputId="buscarNomEmpleado"
                     v-model="trabajador.nombre" 
@@ -99,7 +117,7 @@ const obtenerTextoStock = (h) => {
                     @complete="buscarUsuario" 
                     @item-select="seleccionarUsuario"
                     field="nombre"
-                    placeholder="Ej. Eduardo Cruz..." 
+                    :placeholder="t('detalle_pedido.ph_nom_empleado')" 
                     class="w-full"
                     inputClass="w-full input-oscuro"
                     panelClass="panel-autocomplete-oscuro"
@@ -117,9 +135,9 @@ const obtenerTextoStock = (h) => {
         </div>
 
         <!-- Lista de Herramientas Seleccionadas -->
-        <h4 class="subtitulo-menor mt-4 border-top-1 border-gray-600 pt-3">Herramientas a entregar:</h4>
+        <h4 class="text-300 text-lg mt-4 border-top-1 border-gray-600 pt-3">{{ t('detalle_pedido.titulo_herramientas') }}</h4>
         
-        <div v-if="pedido.length === 0" class="mensaje-vacio">Aún no has agregado herramientas.</div>
+        <div v-if="pedido.length === 0" class="mensaje-vacio">{{ t('detalle_pedido.mensaje_vacio') }}</div>
 
         <ul v-else class="lista-pedido">
             <li v-for="item in pedido" :key="item.id" class="item-pedido flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-3 sm:gap-0">
@@ -130,42 +148,48 @@ const obtenerTextoStock = (h) => {
                 </div>
 
                 <div class="item-acciones w-full sm:w-7 flex justify-content-between sm:justify-content-end align-items-center">
-                    <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" aria-label="Ver Detalles" />
+                    <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" :aria-label="t('detalle_pedido.aria_ver_detalles')" />
                     
                     <div class="control-cantidad">
-                        <span class="etiqueta-cant">Cant:</span>
+                        <span class="etiqueta-cant">{{ t('detalle_pedido.etiqueta_cant') }}</span>
                         <input 
                             type="number" 
                             v-model.number="item.cantidadLlevada" 
                             min="1" 
                             :max="item.cantidadDisponible" 
                             class="input-oscuro input-numero" 
-                            aria-label="Cantidad a llevar"
+                            :aria-label="t('detalle_pedido.aria_cantidad')"
                         />
                         <span class="etiqueta-stock">/ {{ item.cantidadDisponible }}</span>
                     </div>
                     
-                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" aria-label="Quitar" />
+                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" :aria-label="t('detalle_pedido.aria_quitar')" />
                 </div>
             </li>
         </ul>
 
-        <!-- Botón de Registro -->
-        <Button 
-            label="Registrar Pedido" 
-            icon="pi pi-check" 
-            class="w-full mt-4 boton-registrar" 
-            @click="emit('registrar')" 
-            :disabled="pedido.length === 0 || !trabajador.numero || !trabajador.nombre"
-        />
+        <div class="mt-4">
+            <div v-if="(trabajador.numero || trabajador.nombre) && !trabajadorValido" class="text-red-400 text-sm mb-3 flex align-items-center font-semibold">
+                <i class="pi pi-exclamation-triangle mr-2"></i> {{ t('detalle_pedido.error_trabajador') }}
+            </div>
+            
+            <Button 
+                :label="t('detalle_pedido.btn_registrar')" 
+                icon="pi pi-check" 
+                class="w-full boton-registrar" 
+                @click="emit('registrar')" 
+                :disabled="pedido.length === 0 || !trabajadorValido"
+            />
+        </div>
+
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
             :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
-            header="Detalles de la Herramienta" 
+            :header="t('detalle_pedido.modal_titulo')" 
             :modal="true" 
             dismissableMask 
-            class="modal-oscuro-primeflex"
+            class="modal-oscuro"
         >
             <div v-if="herramientaActual" class="p-2 md:p-4">
                 <div class="flex flex-column align-items-center mb-5">
@@ -175,18 +199,18 @@ const obtenerTextoStock = (h) => {
                 </div>
 
                 <div class="grid">
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Código</span><span class="text-xl font-bold" style="color: #38bdf8;">{{ herramientaActual.codigo }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Nombre</span><span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Tipo / Categoría</span><span class="text-lg text-white">{{ herramientaActual.tipo || 'N/A' }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Ubicación Física</span><span class="text-lg text-white">{{ herramientaActual.ubicacion || 'N/A' }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Marca / Proveedor</span><span class="text-lg text-white">{{ herramientaActual.marca || 'N/A' }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Stock Actual vs Mínimo</span><span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} unidades</span></div>
-                    <div class="col-12 mb-3"><span class="text-500 block mb-1">Descripción y Notas</span><div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">{{ herramientaActual.descripcion || 'Sin descripción disponible.' }}</div></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.col_codigo') }}</span><span class="text-xl font-bold" style="color: #38bdf8;">{{ herramientaActual.codigo }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.col_nombre') }}</span><span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_tipo') }}</span><span class="text-lg text-white">{{ herramientaActual.tipo || t('detalle_pedido.no_aplica') }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_ubicacion') }}</span><span class="text-lg text-white">{{ herramientaActual.ubicacion || t('detalle_pedido.no_aplica') }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_marca') }}</span><span class="text-lg text-white">{{ herramientaActual.marca || t('detalle_pedido.no_aplica') }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }}</span><span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} {{ t('detalle_pedido.modal_unidades') }}</span></div>
+                    <div class="col-12 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_descripcion') }}</span><div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">{{ herramientaActual.descripcion || t('detalle_pedido.modal_sin_descripcion') }}</div></div>
                 </div>
             </div>
             <template #footer>
                 <div class="flex justify-content-end mt-2 md:mt-3">
-                    <Button label="Cerrar" icon="pi pi-times" class="p-button-text text-500 hover:text-white w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
+                    <Button :label="t('detalle_pedido.btn_cerrar')" icon="pi pi-times" class="btn-cancelar font-bold w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
                 </div>
             </template>
         </Dialog>
@@ -194,19 +218,13 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-.panel-pedido { background-color: #2a323d; display: flex; flex-direction: column; height: 100%; }
-.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; }
-.subtitulo-menor { color: #cbd5e1; font-size: 1.1rem; }
-.label-blanco { display: block; color: #cbd5e1; margin-bottom: 0.5rem; font-weight: 500; }
-
-:deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
-:deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
-
+/* =========================================================
+   ESTILOS EXCLUSIVOS DE ESTA VISTA (CARRITO)
+   ========================================================= */
 .mensaje-vacio { color: #94a3b8; font-style: italic; text-align: center; padding: 1rem 0; }
 .lista-pedido { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; max-height: 350px; }
 .item-pedido { padding: 0.75rem; background-color: #1e252d; border: 1px solid #4a5568; border-radius: 8px; margin-bottom: 0.5rem; }
 
-/* Eliminamos los anchos fijos, PrimeFlex se encarga ahora */
 .item-info { display: flex; flex-direction: column; }
 .item-codigo { font-size: 0.8rem; color: #94a3b8; }
 .item-nombre { font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -225,35 +243,10 @@ const obtenerTextoStock = (h) => {
 :deep(.surface-200) { background-color: #1e252d !important; }
 :deep(.text-500) { color: #94a3b8 !important; }
 :deep(.text-300) { color: #cbd5e1 !important; }
-
-/* Modal responsivo */
-:deep(.modal-oscuro-primeflex .p-dialog-header), 
-:deep(.modal-oscuro-primeflex .p-dialog-content), 
-:deep(.modal-oscuro-primeflex .p-dialog-footer) { 
-    background-color: #1e252d !important; 
-    color: #ffffff !important; 
-    border: none; 
-    padding-left: 1rem !important; 
-    padding-right: 1rem !important;
-}
-
-@media (min-width: 768px) {
-    :deep(.modal-oscuro-primeflex .p-dialog-header), 
-    :deep(.modal-oscuro-primeflex .p-dialog-content), 
-    :deep(.modal-oscuro-primeflex .p-dialog-footer) { 
-        padding-left: 1.5rem !important; 
-        padding-right: 1.5rem !important;
-    }
-}
-
-:deep(.modal-oscuro-primeflex .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon) { color: #94a3b8 !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
 </style>
 
 <style>
-/* Estilos globales para AutoComplete */
+/* Estilos globales obligatorios para el AutoComplete de PrimeVue */
 .panel-autocomplete-oscuro {
     background-color: #1e252d !important;
     border: 1px solid #4a5568 !important;

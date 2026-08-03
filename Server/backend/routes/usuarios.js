@@ -52,7 +52,7 @@ router.post('/', verificarToken, async (req, res) => {
     res.status(201).json(nuevoUsuario);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Error al crear el usuario. Verifica que el No. Trabajador o RFID no estén duplicados.' });
+    res.status(500).json({ error: 'Error al crear el usuario. Verifica que el No. Trabajador.' });
   }
 });
 

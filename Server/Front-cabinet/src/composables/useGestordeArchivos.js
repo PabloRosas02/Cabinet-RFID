@@ -1,6 +1,8 @@
 import ExcelJS from 'exceljs';
+import { useI18n } from 'vue-i18n';
 
 export function useGestorArchivos() {
+    const { t, locale } = useI18n();
     
     // =======================================================
     // 1. Descargar CSV Genérico
@@ -56,22 +58,23 @@ export function useGestorArchivos() {
     // 3. Generar Plantilla Específica para Herramientas
     // =======================================================
     const descargarPlantillaHerramientas = (formato) => {
+        const nombreArchivo = t('export.plantilla_herramientas');
         if (formato === 'csv') {
-            const cabeceras = ['Codigo', 'Nombre', 'Marca', 'Descripcion', 'Cantidad', 'CantidadMinima', 'Tipo', 'Ubicacion'];
-            const filaEjemplo = ['"HERR-EJEMPLO"', '"Taladro Inalámbrico"', '"DeWalt"', '"Taladro de 20V con batería"', '"5"', '"1"', '"Eléctrica"', '"Estante A"'];
-            generarDescarga('Plantilla_Nuevas_Herramientas.csv', cabeceras, [filaEjemplo.join(',')]);
+            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.marca'), t('export.descripcion'), t('export.cantidad'), t('export.cantidad_minima'), t('export.tipo'), t('export.ubicacion')];
+            const filaEjemplo = ['"HERR-EJEMPLO"', `"${t('export.ejemplo_taladro')}"`, '"DeWalt"', `"${t('export.ejemplo_desc')}"`, '"5"', '"1"', `"${t('export.ejemplo_tipo')}"`, '"Estante A"'];
+            generarDescarga(`${nombreArchivo}.csv`, cabeceras, [filaEjemplo.join(',')]);
         } else {
             const datosParaExcel = [{
-                Codigo: 'HERR-EJEMPLO',
-                Nombre: 'Taladro Inalámbrico',
-                Marca: 'DeWalt',
-                Descripcion: 'Taladro de 20V con batería',
-                Cantidad: 5,
-                CantidadMinima: 1,
-                Tipo: 'Eléctrica',
-                Ubicacion: 'Estante A'
+                [t('export.codigo')]: 'HERR-EJEMPLO',
+                [t('export.nombre')]: t('export.ejemplo_taladro'),
+                [t('export.marca')]: 'DeWalt',
+                [t('export.descripcion')]: t('export.ejemplo_desc'),
+                [t('export.cantidad')]: 5,
+                [t('export.cantidad_minima')]: 1,
+                [t('export.tipo')]: t('export.ejemplo_tipo'),
+                [t('export.ubicacion')]: 'Estante A'
             }];
-            generarDescargaExcel('Plantilla_Nuevas_Herramientas.xlsx', datosParaExcel);
+            generarDescargaExcel(`${nombreArchivo}.xlsx`, datosParaExcel);
         }
     };
 
@@ -84,7 +87,7 @@ export function useGestorArchivos() {
         if (archivo.name.toLowerCase().endsWith('.csv')) {
             const texto = await archivo.text();
             const lineas = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            if (lineas.length < 2) throw new Error("El archivo CSV está vacío o solo tiene cabeceras.");
+            if (lineas.length < 2) throw new Error(t('export.error_csv_vacio'));
 
             const leerFilaCSV = (linea) => {
                 const resultado = [];
@@ -109,14 +112,15 @@ export function useGestorArchivos() {
                 const obj = {};
                 cabeceras.forEach((cabecera, index) => {
                     let valor = valores[index] || '';
-                    if (cabecera.includes('codigo')) obj.codigo = valor;
-                    if (cabecera.includes('nombre')) obj.nombre = valor;
-                    if (cabecera.includes('marca')) obj.marca = valor;
-                    if (cabecera.includes('descripcion')) obj.descripcion = valor;
-                    if (cabecera.includes('cantidadminima')) obj.cantidadMinima = valor;
-                    else if (cabecera.includes('cantidad')) obj.cantidad = valor;
-                    if (cabecera.includes('tipo')) obj.tipo = valor;
-                    if (cabecera.includes('ubicacion')) obj.ubicacion = valor;
+                    // Soporte bilingüe para la importación
+                    if (cabecera.includes('codigo') || cabecera.includes('code')) obj.codigo = valor;
+                    if (cabecera.includes('nombre') || cabecera.includes('name')) obj.nombre = valor;
+                    if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
+                    if (cabecera.includes('descripcion') || cabecera.includes('description')) obj.descripcion = valor;
+                    if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) obj.cantidadMinima = valor;
+                    else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) obj.cantidad = valor;
+                    if (cabecera.includes('tipo') || cabecera.includes('type')) obj.tipo = valor;
+                    if (cabecera.includes('ubicacion') || cabecera.includes('location')) obj.ubicacion = valor;
                 });
                 if (obj.codigo && obj.nombre) herramientas.push(obj);
             }
@@ -127,7 +131,7 @@ export function useGestorArchivos() {
             await workbook.xlsx.load(arrayBuffer);
             
             const worksheet = workbook.worksheets[0]; 
-            if (!worksheet || worksheet.rowCount < 2) throw new Error("El archivo Excel está vacío.");
+            if (!worksheet || worksheet.rowCount < 2) throw new Error(t('export.error_excel_vacio'));
 
             const cabeceras = {};
             
@@ -151,76 +155,100 @@ export function useGestorArchivos() {
                     }
                     valor = valor.trim();
 
-                    if (cabecera.includes('codigo')) obj.codigo = valor;
-                    if (cabecera.includes('nombre')) obj.nombre = valor;
-                    if (cabecera.includes('marca')) obj.marca = valor;
-                    if (cabecera.includes('descripcion')) obj.descripcion = valor;
-                    if (cabecera.includes('cantidadminima')) obj.cantidadMinima = valor;
-                    else if (cabecera.includes('cantidad')) obj.cantidad = valor;
-                    if (cabecera.includes('tipo')) obj.tipo = valor;
-                    if (cabecera.includes('ubicacion')) obj.ubicacion = valor;
+                    // Soporte bilingüe
+                    if (cabecera.includes('codigo') || cabecera.includes('code')) obj.codigo = valor;
+                    if (cabecera.includes('nombre') || cabecera.includes('name')) obj.nombre = valor;
+                    if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
+                    if (cabecera.includes('descripcion') || cabecera.includes('description')) obj.descripcion = valor;
+                    if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) obj.cantidadMinima = valor;
+                    else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) obj.cantidad = valor;
+                    if (cabecera.includes('tipo') || cabecera.includes('type')) obj.tipo = valor;
+                    if (cabecera.includes('ubicacion') || cabecera.includes('location')) obj.ubicacion = valor;
                 });
 
                 if (obj.codigo && obj.nombre) herramientas.push(obj);
             }
         } else {
-            throw new Error("Formato de archivo no soportado. Por favor sube un .csv o .xlsx");
+            throw new Error(t('export.error_formato'));
         }
 
         if (herramientas.length === 0) {
-            throw new Error("No se encontraron registros válidos. Asegúrate de incluir 'Codigo' y 'Nombre'.");
+            throw new Error(t('export.error_sin_registros'));
         }
 
         return herramientas;
     };
+
     // =======================================================
     // 5. Exportar Bitácora de Auditoría
     // =======================================================
-    const exportarBitacora = (bitacoraDatos, formato) => {
-        if (!bitacoraDatos || bitacoraDatos.length === 0) return;
+    const exportarBitacora = (bitacoraDatos, filtroTiempo, formato) => {
+        if (!bitacoraDatos || bitacoraDatos.length === 0) {
+            alert(t('export.alerta_sin_datos'));
+            return;
+        }
         
-        const nombreArchivo = `Bitacora_Auditoria_${new Date().toISOString().split('T')[0]}`;
+        const hoy = new Date();
+        const strLocale = locale.value; 
         
-        // Función interna para formatear la fecha solo para el reporte
+        const esHoyOTodos = ['Hoy', 'Todos', t('filtros.hoy'), t('filtros.todos')].includes(filtroTiempo);
+        const esEsteMes = ['Este Mes', t('filtros.este_mes')].includes(filtroTiempo);
+        const esEsteAno = ['Este Año', t('filtros.este_anio')].includes(filtroTiempo);
+
+        const sufijoFecha = esHoyOTodos ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString(strLocale, { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
+                            esEsteMes ? `${hoy.toLocaleString(strLocale, { month: 'long' })}_${hoy.getFullYear()}` : 
+                            esEsteAno ? `${hoy.getFullYear()}` : `${t('export.semana')}_${hoy.getDate()}`; 
+        
+        const nombreArchivo = `${t('export.reporte_bitacora')}_${sufijoFecha}`;
+        
         const formatearFechaReporte = (fechaString) => {
-            return new Date(fechaString).toLocaleDateString('es-MX', { 
+            return new Date(fechaString).toLocaleDateString(strLocale, { 
                 year: 'numeric', month: 'short', day: 'numeric', 
                 hour: '2-digit', minute: '2-digit' 
             });
         };
 
+        // INTERCEPTOR PARA TRADUCIR ACCIONES DE LA BD
+        const traducirAccion = (accion) => {
+            if (accion === 'CREACION') return t('export.accion_creacion');
+            if (accion === 'MODIFICACION') return t('export.accion_modificacion');
+            if (accion === 'ELIMINACION') return t('export.accion_eliminacion');
+            return accion;
+        };
+
         if (formato === 'csv') {
-            const cabeceras = ['Fecha', 'Acción', 'Código Herramienta', 'Nombre Herramienta', 'Usuario', 'Rol'];
+            const cabeceras = [t('export.fecha'), t('export.accion'), t('export.col_codigo_herr'), t('export.col_nombre_herr'), t('export.usuario'), t('export.rol')];
             const filas = bitacoraDatos.map(b => 
-                `"${formatearFechaReporte(b.fecha)}","${b.accion}","${b.herramienta?.codigo || 'N/A'}","${b.herramienta?.nombre || 'N/A'}","${b.usuario?.nombre || 'N/A'}","${b.usuario?.rol || 'N/A'}"`
+                `"${formatearFechaReporte(b.fecha)}","${traducirAccion(b.accion)}","${b.herramienta?.codigo || t('export.na')}","${b.herramienta?.nombre || t('export.na')}","${b.usuario?.nombre || t('export.na')}","${b.usuario?.rol || t('export.na')}"`
             );
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
         } else {
             const datosExcel = bitacoraDatos.map(b => ({
-                'Fecha': formatearFechaReporte(b.fecha),
-                'Acción': b.accion,
-                'Código Herramienta': b.herramienta?.codigo || 'N/A',
-                'Nombre Herramienta': b.herramienta?.nombre || 'Desconocida',
-                'Usuario (Autor)': b.usuario?.nombre || 'N/A',
-                'Rol': b.usuario?.rol || 'N/A'
+                [t('export.fecha')]: formatearFechaReporte(b.fecha),
+                [t('export.accion')]: traducirAccion(b.accion), // Usando el interceptor
+                [t('export.col_codigo_herr')]: b.herramienta?.codigo || t('export.na'),
+                [t('export.col_nombre_herr')]: b.herramienta?.nombre || t('export.desconocido'),
+                [t('export.usuario_autor')]: b.usuario?.nombre || t('export.na'),
+                [t('export.rol')]: b.usuario?.rol || t('export.na')
             }));
             generarDescargaExcel(`${nombreArchivo}.xlsx`, datosExcel);
         }
     };
+
     // =======================================================
     // 6. Exportar Inventario Actual
     // =======================================================
     const exportarInventario = (herramientasVisibles, formato) => {
         if (!herramientasVisibles || herramientasVisibles.length === 0) {
-            alert("No hay datos para exportar con los filtros actuales.");
+            alert(t('export.alerta_sin_datos'));
             return;
         }
 
         const fecha = new Date().toISOString().split('T')[0];
-        const nombreArchivo = `Reporte_Inventario_${fecha}`;
+        const nombreArchivo = `${t('export.reporte_inventario')}_${fecha}`;
 
         if (formato === 'csv') {
-            const cabeceras = ['Código', 'Nombre', 'Tipo', 'Ubicación', 'Stock Mín.', 'Stock Físico'];
+            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.tipo'), t('export.ubicacion'), t('export.stock_min'), t('export.stock_fisico')];
             const filas = herramientasVisibles.map(h => {
                 return `"${h.codigo}","${h.nombre}","${h.tipo || ''}","${h.ubicacion || ''}","${h.cantidadMinima}","${h.cantidadDisponible}"`;
             });
@@ -228,79 +256,94 @@ export function useGestorArchivos() {
         } 
         else if (formato === 'xlsx') {
             const datosParaExcel = herramientasVisibles.map(h => ({
-                'Código': h.codigo,
-                'Nombre': h.nombre,
-                'Tipo': h.tipo || 'N/A',
-                'Ubicación': h.ubicacion || 'N/A',
-                'Stock Mínimo': h.cantidadMinima,
-                'Stock Físico': h.cantidadDisponible
+                [t('export.codigo')]: h.codigo,
+                [t('export.nombre')]: h.nombre,
+                [t('export.tipo')]: h.tipo || t('export.na'),
+                [t('export.ubicacion')]: h.ubicacion || t('export.na'),
+                [t('export.stock_min')]: h.cantidadMinima,
+                [t('export.stock_fisico')]: h.cantidadDisponible
             }));
             generarDescargaExcel(`${nombreArchivo}.xlsx`, datosParaExcel);
         }
     };
+
     // =======================================================
     // 7. Exportar Historial de Pedidos
     // =======================================================
     const exportarHistorialPedidos = (historialFiltrado, filtroTiempo, formato) => {
         if (!historialFiltrado || historialFiltrado.length === 0) {
-            throw new Error('No hay registros para exportar con los filtros actuales.');
+            throw new Error(t('export.alerta_sin_datos'));
         }
 
         const hoy = new Date();
-        const sufijoFecha = filtroTiempo === 'Hoy' || filtroTiempo === 'Todos' ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString('es-MX', { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
-                            filtroTiempo === 'Este Mes' ? `${hoy.toLocaleString('es-MX', { month: 'long' })}_${hoy.getFullYear()}` : 
-                            filtroTiempo === 'Este Año' ? `${hoy.getFullYear()}` : `Semana_${hoy.getDate()}`; 
-        const nombreArchivo = `Reporte_Historial_${sufijoFecha}`; 
+        const strLocale = locale.value;
+        
+        const esHoyOTodos = ['Hoy', 'Todos', t('filtros.hoy'), t('filtros.todos')].includes(filtroTiempo);
+        const esEsteMes = ['Este Mes', t('filtros.este_mes')].includes(filtroTiempo);
+        const esEsteAno = ['Este Año', t('filtros.este_anio')].includes(filtroTiempo);
 
-        // Formateador interno rápido
+        const sufijoFecha = esHoyOTodos ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString(strLocale, { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
+                            esEsteMes ? `${hoy.toLocaleString(strLocale, { month: 'long' })}_${hoy.getFullYear()}` : 
+                            esEsteAno ? `${hoy.getFullYear()}` : `${t('export.semana')}_${hoy.getDate()}`; 
+                            
+        const nombreArchivo = `${t('export.reporte_historial')}_${sufijoFecha}`; 
+
         const formatFecha = (fechaString) => {
-            if (!fechaString) return 'Pendiente';
-            return new Date(fechaString).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            if (!fechaString) return t('export.pendiente');
+            return new Date(fechaString).toLocaleDateString(strLocale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        };
+
+        // INTERCEPTOR PARA TRADUCIR ESTADOS DE LA BD
+        const traducirEstado = (estado) => {
+            if (estado === 'PENDIENTE') return t('export.estado_pendiente');
+            if (estado === 'DEVUELTO') return t('export.estado_devuelto');
+            return estado;
         };
 
         if (formato === 'csv') {
-            const cabeceras = ['Folio', 'Autorizó (Prestador)', 'Solicitó (Empleado)', 'Fecha Préstamo', 'Fecha Devolución General', 'Resumen de Herramientas', 'Observaciones (Rastreo Parcial)', 'Estado'];
+            const cabeceras = [t('export.folio'), t('export.autorizo'), t('export.solicito'), t('export.fecha_prestamo'), t('export.fecha_devolucion'), t('export.resumen_herr'), t('export.observaciones'), t('export.estado')];
 
             const filas = historialFiltrado.map(pedido => {
                 const folio = `#${pedido.id}`;
-                const autorizo = pedido.prestadorNombre || 'N/A';
+                const autorizo = pedido.prestadorNombre || t('export.na');
                 const solicito = `${pedido.trabajadorNumero} - ${pedido.trabajadorNombre}`;
-                const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (Regresó: ${h.cantidadRegresada})` : '')).join(' | ');
+                const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
 
                 const observaciones = pedido.herramientas.map(h => {
                     if (h.historialDevoluciones?.length > 0) {
                         const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
-                        if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x recibidas por ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
+                        if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x ${t('export.recibidas_por')} ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
                     }
                     return null;
-                }).filter(Boolean).join(' || ') || 'Sin recepciones registradas';
+                }).filter(Boolean).join(' || ') || t('export.sin_recepciones');
 
-                return [`"${folio}"`, `"${autorizo}"`, `"${solicito}"`, `"${formatFecha(pedido.fechaPedido)}"`, `"${formatFecha(pedido.fechaDevolucion)}"`, `"${herramientas}"`, `"${observaciones}"`, `"${pedido.estado}"`].join(',');
+                // Usando traducirEstado(pedido.estado) aquí:
+                return [`"${folio}"`, `"${autorizo}"`, `"${solicito}"`, `"${formatFecha(pedido.fechaPedido)}"`, `"${formatFecha(pedido.fechaDevolucion)}"`, `"${herramientas}"`, `"${observaciones}"`, `"${traducirEstado(pedido.estado)}"`].join(',');
             });
 
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
         } 
         else if (formato === 'xlsx') {
             const datosParaExcel = historialFiltrado.map(pedido => {
-                const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (Regresó: ${h.cantidadRegresada})` : '')).join(' | ');
+                const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
                 
                 const observaciones = pedido.herramientas.map(h => {
                     if (h.historialDevoluciones?.length > 0) {
                         const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
-                        if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x recibidas por ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
+                        if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x ${t('export.recibidas_por')} ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
                     }
                     return null;
-                }).filter(Boolean).join(' || ') || 'Sin recepciones registradas';
+                }).filter(Boolean).join(' || ') || t('export.sin_recepciones');
 
                 return {
-                    'Folio': `#${pedido.id}`,
-                    'Autorizó (Prestador)': pedido.prestadorNombre || 'N/A',
-                    'Solicitó (Empleado)': `${pedido.trabajadorNumero} - ${pedido.trabajadorNombre}`,
-                    'Fecha Préstamo': formatFecha(pedido.fechaPedido),
-                    'Fecha Devolución General': formatFecha(pedido.fechaDevolucion),
-                    'Resumen de Herramientas': herramientas,
-                    'Observaciones (Rastreo Parcial)': observaciones,
-                    'Estado': pedido.estado
+                    [t('export.folio')]: `#${pedido.id}`,
+                    [t('export.autorizo')]: pedido.prestadorNombre || t('export.na'),
+                    [t('export.solicito')]: `${pedido.trabajadorNumero} - ${pedido.trabajadorNombre}`,
+                    [t('export.fecha_prestamo')]: formatFecha(pedido.fechaPedido),
+                    [t('export.fecha_devolucion')]: formatFecha(pedido.fechaDevolucion),
+                    [t('export.resumen_herr')]: herramientas,
+                    [t('export.observaciones')]: observaciones,
+                    [t('export.estado')]: traducirEstado(pedido.estado) 
                 };
             });
 
@@ -317,5 +360,4 @@ export function useGestorArchivos() {
         exportarInventario,
         exportarHistorialPedidos 
     };
-
 }

@@ -2,12 +2,13 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import InputText from 'primevue/inputtext';
 import Button from 'primevue/button';
-import DataTable from 'primevue/datatable';
-import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag'; 
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import { FilterMatchMode } from '@primevue/core/api';
+import TablaGenerica from '@/components/TablaGenerica.vue';
+import { useI18n } from 'vue-i18n'; 
 
 const props = defineProps({
     inventario: {
@@ -17,6 +18,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['agregar']);
+const { t } = useI18n(); 
 
 // =========================================================
 // LÓGICA RESPONSIVA DINÁMICA
@@ -30,28 +32,30 @@ const actualizarVista = () => {
 onMounted(() => window.addEventListener('resize', actualizarVista));
 onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 
-const busqueda = ref('');
+// =====================================================
+// DEFINICIÓN DINÁMICA DE COLUMNAS
+// =====================================================
+// Aplicamos la traducción a los encabezados
+const columnasCatalogo = computed(() => [
+    { field: 'codigo', header: t('catalogo_herramientas.col_codigo'), width: esMovil.value ? undefined : '20%', minWidth: '120px' },
+    { field: 'nombre', header: t('catalogo_herramientas.col_nombre'), width: esMovil.value ? undefined : '40%', minWidth: '200px' },
+    { field: 'cantidadDisponible', header: 'Stock', width: esMovil.value ? undefined : '20%', minWidth: '90px' },
+    { header: t('catalogo_herramientas.col_accion'), width: esMovil.value ? undefined : '20%', minWidth: '120px', slotName: 'accion' }
+]);
+
+// Filtros nativos en lugar del filtrado manual
+const filtros = ref({
+    global: { value: null, matchMode: FilterMatchMode.CONTAINS }
+});
 
 // --- Lógica del Modal de Detalles ---
 const mostrarDetalles = ref(false);
 const herramientaActual = ref({});
 
-// Para usuarios de PC (doble clic) y celulares (botón de ojito)
 const abrirDetalles = (data) => {
     herramientaActual.value = data;
     mostrarDetalles.value = true;
 };
-
-// --- Lógica de Filtrado (Buscador) ---
-const herramientasDisponibles = computed(() => {
-    if (!busqueda.value) return props.inventario;
-    
-    const termino = busqueda.value.toLowerCase();
-    return props.inventario.filter(h => 
-        h.nombre.toLowerCase().includes(termino) || 
-        h.codigo.toLowerCase().includes(termino)
-    );
-});
 
 const emitirAgregar = (herramienta) => {
     emit('agregar', herramienta);
@@ -65,17 +69,18 @@ const obtenerSeveridadStock = (h) => {
     return 'success';
 };
 
+// Traducimos los estados del Stock
 const obtenerTextoStock = (h) => {
     if (!h) return '';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'CRÍTICO';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'ALERTA';
-    return 'NORMAL';
+    if (h.cantidadDisponible < h.cantidadMinima) return t('catalogo_herramientas.estado_critico');
+    if (h.cantidadDisponible === h.cantidadMinima) return t('catalogo_herramientas.estado_alerta');
+    return t('catalogo_herramientas.estado_normal');
 };
 </script>
 
 <template>
     <div class="panel-inventario p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo text-xl md:text-2xl font-bold">Herramientas Disponibles</h3>
+        <h3 class="subtitulo text-xl md:text-2xl font-bold" style="color: #5ab1ce;">{{ t('catalogo_herramientas.titulo') }}</h3>
         
         <!-- Buscador -->
         <div class="buscador-container mb-4">
@@ -84,64 +89,56 @@ const obtenerTextoStock = (h) => {
                 <InputText 
                     id="buscadorHerramientas"
                     name="buscadorHerramientas"
-                    aria-label="Buscar herramienta"
-                    v-model="busqueda" 
-                    placeholder="Buscar por código o nombre..." 
+                    :aria-label="t('catalogo_herramientas.aria_buscar')"
+                    v-model="filtros['global'].value" 
+                    :placeholder="t('catalogo_herramientas.ph_buscar')" 
                     class="w-full input-oscuro" 
                     autocomplete="off"
                 />
             </IconField>
         </div>
-
-        <!-- Tabla de Inventario -->
-        <DataTable 
-            :value="herramientasDisponibles" 
-            :paginator="true" 
-            :rows="5" 
-            :pageLinkSize="esMovil ? 3 : 5" 
+        <TablaGenerica
+            :datos="inventario"
+            :columnas="columnasCatalogo"
+            :filtros="filtros"
+            :globalFilterFields="['codigo', 'nombre']"
+            llaveMemoria="catalogo_herramientas"
             dataKey="id"
-            class="tabla-oscura"
-            emptyMessage="No se encontraron herramientas."
-            @row-dblclick="(e) => abrirDetalles(e.data)" 
-            selectionMode="single"
-            :scrollable="esMovil" 
+            iconoVacio="pi-box"
+            :mensajeVacio="t('catalogo_herramientas.mensaje_vacio')"
+            @doble-click="abrirDetalles"
         >
-            <Column field="codigo" header="Código" :style="esMovil ? { minWidth: '120px' } : { width: '20%' }"></Column>
-            <Column field="nombre" header="Nombre" :style="esMovil ? { minWidth: '200px' } : { width: '40%' }"></Column>
-            <Column field="cantidadDisponible" header="Stock" :style="esMovil ? { minWidth: '90px' } : { width: '20%' }"></Column>
-            
-            <Column header="Acción" :style="esMovil ? { minWidth: '120px' } : { width: '20%' }">
-                <template #body="slotProps">
-                    <div class="flex gap-2">
-                        <Button 
-                            v-if="esMovil"
-                            icon="pi pi-eye" 
-                            class="p-button-rounded p-button-info p-button-sm btn-ojito" 
-                            @click="abrirDetalles(slotProps.data)" 
-                            aria-label="Ver detalles"
-                        />
-                        
-                        <Button 
-                            icon="pi pi-plus" 
-                            class="p-button-rounded p-button-success p-button-sm" 
-                            @click="emitirAgregar(slotProps.data)" 
-                            :disabled="slotProps.data.cantidadDisponible <= 0"
-                            aria-label="Agregar al pedido"
-                        />
-                    </div>
-                </template>
-            </Column>
-        </DataTable>
+            <!-- Slot Personalizado: Acción -->
+            <template #accion="{ data }">
+                <div class="flex gap-2">
+                    <Button 
+                        v-if="esMovil"
+                        icon="pi pi-eye" 
+                        class="p-button-rounded p-button-info p-button-sm btn-ojito" 
+                        @click.stop="abrirDetalles(data)" 
+                        :aria-label="t('catalogo_herramientas.aria_ver_detalles')"
+                    />
+                    
+                    <Button 
+                        icon="pi pi-plus" 
+                        class="p-button-rounded p-button-success p-button-sm" 
+                        @click.stop="emitirAgregar(data)" 
+                        :disabled="data.cantidadDisponible <= 0"
+                        :aria-label="t('catalogo_herramientas.aria_agregar')"
+                    />
+                </div>
+            </template>
+        </TablaGenerica>
 
         <!-- Modal de Detalles -->
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
             :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
-            header="Detalles de la Herramienta" 
+            :header="t('catalogo_herramientas.modal_titulo')" 
             :modal="true"
             dismissableMask
-            class="modal-oscuro-primeflex"
+            class="modal-oscuro"
         >
             <!-- Padding adaptativo -->
             <div v-if="herramientaActual" class="p-2 md:p-4">
@@ -167,36 +164,36 @@ const obtenerTextoStock = (h) => {
                 <!-- Grid de Datos -->
                 <div class="grid">
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Código</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.col_codigo') }}</span>
                         <span class="text-xl font-bold" style="color: #2b7a8f;">{{ herramientaActual.codigo }}</span>
                     </div>
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Nombre</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.col_nombre') }}</span>
                         <span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span>
                     </div>
                     
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Tipo / Categoría</span>
-                        <span class="text-lg text-white">{{ herramientaActual.tipo || 'N/A' }}</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_tipo') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.tipo || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Ubicación Física</span>
-                        <span class="text-lg text-white">{{ herramientaActual.ubicacion || 'N/A' }}</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_ubicacion') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.ubicacion || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
                     
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Marca / Proveedor</span>
-                        <span class="text-lg text-white">{{ herramientaActual.marca || 'N/A' }}</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_marca') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.marca || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Stock Actual vs Mínimo</span>
-                        <span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} unidades</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_stock_vs') }}</span>
+                        <span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} {{ t('catalogo_herramientas.modal_unidades') }}</span>
                     </div>
                     
                     <div class="col-12 mb-3">
-                        <span class="text-500 block mb-1">Descripción y Notas</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_descripcion') }}</span>
                         <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
-                            {{ herramientaActual.descripcion || 'Sin descripción disponible.' }}
+                            {{ herramientaActual.descripcion || t('catalogo_herramientas.modal_sin_descripcion') }}
                         </div>
                     </div>
                 </div>
@@ -205,13 +202,13 @@ const obtenerTextoStock = (h) => {
             <template #footer>
                 <div class="flex flex-column-reverse sm:flex-row justify-content-end gap-2 mt-2 md:mt-3">
                     <Button 
-                        label="Cerrar" 
+                        :label="t('catalogo_herramientas.btn_cerrar')" 
                         icon="pi pi-times" 
-                        class="p-button-text text-500 hover:text-white w-full sm:w-auto" 
+                        class="btn-cancelar w-full sm:w-auto" 
                         @click="mostrarDetalles = false" 
                     />
                     <Button 
-                        label="Añadir al Pedido" 
+                        :label="t('catalogo_herramientas.btn_anadir')" 
                         icon="pi pi-plus" 
                         class="boton-anadir-verde w-full sm:w-auto" 
                         @click="() => { emitirAgregar(herramientaActual); mostrarDetalles = false; }" 
@@ -225,126 +222,10 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-.panel-inventario { background-color: #2a323d; height: 100%; }
-.subtitulo { color: #ffffff; margin-top: 0; margin-bottom: 1.5rem; }
-
-:deep(.input-oscuro) { background-color: #1e252d !important; color: #ffffff !important; border: 1px solid #4a5568 !important; }
-:deep(.input-oscuro:focus) { border-color: #5ab1ce !important; box-shadow: 0 0 0 1px #5ab1ce !important; }
-
-/* Blindaje de la tabla PrimeVue (Modo Oscuro) */
-:deep(.tabla-oscura),
-:deep(.tabla-oscura .p-datatable-wrapper),
-:deep(.tabla-oscura .p-datatable-table) {
-    background-color: transparent !important;
-}
-
-:deep(.tabla-oscura .p-datatable-thead > tr > th) { 
-    background-color: transparent !important; 
-    color: #cbd5e1 !important; 
-    border-bottom: 1px solid #4a5568 !important; 
-}
-
-:deep(.tabla-oscura .p-datatable-tbody > tr),
-:deep(.tabla-oscura .p-datatable-tbody > tr > td) { 
-    background-color: #1e252d !important; 
-    color: #ffffff !important; 
-    border-bottom: 1px solid #3f4b5b !important; 
-    border-top: none !important;
-    border-left: none !important;
-    border-right: none !important;
-}
-
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover),
-:deep(.tabla-oscura .p-datatable-tbody > tr:hover > td) { 
-    background-color: #36464d !important; 
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr) { cursor: pointer; }
-
-:deep(.tabla-oscura .p-datatable-tbody > tr.p-datatable-empty-message > td) {
-    background-color: #1e252d !important;
-    color: #94a3b8 !important;
-    text-align: center;
-    border-bottom: 1px solid #3f4b5b !important;
-}
-
-/* Paginador y utilidades */
-:deep(.p-paginator) { background-color: transparent !important; border: none !important; margin-top: 1rem; }
-:deep(.p-paginator .p-paginator-page) { color: #cbd5e1 !important; }
-:deep(.p-paginator .p-paginator-page.p-highlight) { background-color: #5ab1ce !important; color: #ffffff !important; border-radius: 50%; }
-
-:deep(.p-paginator .p-paginator-first),
-:deep(.p-paginator .p-paginator-prev),
-:deep(.p-paginator .p-paginator-next),
-:deep(.p-paginator .p-paginator-last) {
-    color: #94a3b8 !important;
-    background-color: transparent !important;
-}
-:deep(.p-paginator .p-paginator-first:hover),
-:deep(.p-paginator .p-paginator-prev:hover),
-:deep(.p-paginator .p-paginator-next:hover),
-:deep(.p-paginator .p-paginator-last:hover) {
-    background-color: #36464d !important;
-}
-
+/* Solo conservamos los fondos específicos de las tarjetas internas */
+.subtitulo { margin-top: 0; margin-bottom: 1.5rem; }
 :deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }
 :deep(.surface-200) { background-color: #1e252d !important; }
 :deep(.text-500) { color: #94a3b8 !important; }
 :deep(.text-300) { color: #cbd5e1 !important; }
-
-/* Modal y Botones */
-:deep(.modal-oscuro-primeflex .p-dialog-header),
-:deep(.modal-oscuro-primeflex .p-dialog-content),
-:deep(.modal-oscuro-primeflex .p-dialog-footer) {
-    background-color: #1e252d !important;
-    color: #ffffff !important;
-    border: none;
-    padding-left: 1rem !important; 
-    padding-right: 1rem !important;
-}
-
-@media (min-width: 768px) {
-    :deep(.modal-oscuro-primeflex .p-dialog-header),
-    :deep(.modal-oscuro-primeflex .p-dialog-content),
-    :deep(.modal-oscuro-primeflex .p-dialog-footer) {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-    }
-}
-
-:deep(.modal-oscuro-primeflex .p-dialog-header) { border-bottom: 1px solid #2a323d !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-footer) { border-top: 1px solid #2a323d !important; }
-
-/* Efecto hover en el ícono de cerrar modal (X) */
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon) { color: #94a3b8 !important; }
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon:hover) { background-color: rgba(255, 255, 255, 0.05) !important; color: #ffffff !important; }
-
-.boton-anadir-verde {
-    background-color: #34d399 !important; 
-    color: #064e3b !important; 
-    border: none !important;
-    font-weight: 700 !important;
-    padding: 0.8rem 1.5rem !important;
-    border-radius: 6px !important;
-    transition: filter 0.2s;
-}
-.boton-anadir-verde:hover { filter: brightness(1.1); }
-.boton-anadir-verde:disabled {
-    background-color: #4a5568 !important;
-    color: #94a3b8 !important;
-    cursor: not-allowed !important;
-}
-
-/* Color azul para el ojito */
-:deep(.btn-ojito) {
-    background-color: #3b82f6 !important; 
-    border: none !important;
-}
-:deep(.btn-ojito:hover) {
-    background-color: #2563eb !important;
-}
-
-/* Scroll horizontal responsivo para la tabla */
-:deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
 </style>

@@ -2,6 +2,7 @@
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
+import { useI18n } from 'vue-i18n'; 
 
 const props = defineProps({
     visible: Boolean,
@@ -9,6 +10,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:visible']);
+
+const { t } = useI18n();
 
 const cerrar = () => emit('update:visible', false);
 
@@ -19,11 +22,12 @@ const obtenerSeveridadStock = (h) => {
     return 'success';
 };
 
+// Traducimos las etiquetas de estado del stock en el código
 const obtenerTextoStock = (h) => {
     if (!h) return '';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'CRÍTICO';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'ALERTA';
-    return 'NORMAL';
+    if (h.cantidadDisponible < h.cantidadMinima) return t('detalle_herramientas.estado_critico');
+    if (h.cantidadDisponible === h.cantidadMinima) return t('detalle_herramientas.estado_alerta');
+    return t('detalle_herramientas.estado_normal');
 };
 </script>
 
@@ -33,7 +37,7 @@ const obtenerTextoStock = (h) => {
     @update:visible="(val) => emit('update:visible', val)"
     :style="{ width: '700px' }" 
     :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }" 
-    header="Detalles de la Herramienta" 
+    :header="t('detalle_herramientas.titulo')" 
     :modal="true"
     dismissableMask
     class="modal-oscuro-primeflex"
@@ -51,9 +55,8 @@ const obtenerTextoStock = (h) => {
             class="shadow-3 border-round" 
             style="max-width: 100%; max-height: 300px; object-fit: contain;" 
           />
-          <!-- Icono por defecto si la base de datos no manda imagen -->
-          <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 100%; max-width: 200px; height: 200px;">
-              <i class="pi pi-image text-7xl text-400"></i>
+          <div v-else class="flex align-items-center justify-content-center border-round shadow-1 fondo-imagen-vacia" style="width: 100%; max-width: 200px; height: 200px;">
+              <i class="pi pi-image text-7xl icono-vacio"></i>
           </div>
           
           <div class="mt-4">
@@ -64,36 +67,37 @@ const obtenerTextoStock = (h) => {
       <!-- Grid de Datos -->
       <div class="grid">
           <div class="col-12 md:col-6 mb-3">
-              <span class="text-500 block mb-1">Código</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.codigo') }}</span>
               <span class="text-xl font-bold" style="color: #38bdf8;">{{ herramienta.codigo }}</span>
           </div>
           <div class="col-12 md:col-6 mb-3">
-              <span class="text-500 block mb-1">Nombre</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.nombre') }}</span>
               <span class="text-xl font-bold text-white">{{ herramienta.nombre }}</span>
           </div>
           
+          <!-- Se usa el || (OR) para colocar "N/A" si la base de datos no trae el dato -->
           <div class="col-12 md:col-6 mb-3">
-              <span class="text-500 block mb-1">Tipo / Categoría</span>
-              <span class="text-lg text-white">{{ herramienta.tipo || 'N/A' }}</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.tipo') }}</span>
+              <span class="text-lg text-white">{{ herramienta.tipo || t('detalle_herramientas.no_aplica') }}</span>
           </div>
           <div class="col-12 md:col-6 mb-3">
-              <span class="text-500 block mb-1">Ubicación Física</span>
-              <span class="text-lg text-white">{{ herramienta.ubicacion || 'N/A' }}</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.ubicacion') }}</span>
+              <span class="text-lg text-white">{{ herramienta.ubicacion || t('detalle_herramientas.no_aplica') }}</span>
           </div>
           
           <div class="col-12 md:col-6 mb-3">
-              <span class="text-500 block mb-1">Marca / Proveedor</span>
-              <span class="text-lg text-white">{{ herramienta.marca || 'S/M' }}</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.marca') }}</span>
+              <span class="text-lg text-white">{{ herramienta.marca || t('detalle_herramientas.sin_marca') }}</span>
           </div>
           <div class="col-12 md:col-6 mb-3">
-              <span class="text-500 block mb-1">Stock Actual vs Mínimo</span>
-              <span class="text-lg font-bold text-white">{{ herramienta.cantidadDisponible }} / {{ herramienta.cantidadMinima }} unidades</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.stock_vs_minimo') }}</span>
+              <span class="text-lg font-bold text-white">{{ herramienta.cantidadDisponible }} / {{ herramienta.cantidadMinima }} {{ t('detalle_herramientas.unidades') }}</span>
           </div>
           
           <div class="col-12 mb-3">
-              <span class="text-500 block mb-1">Descripción y Notas</span>
-              <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
-                  {{ herramienta.descripcion || 'Sin descripción o notas adicionales para esta herramienta.' }}
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.descripcion') }}</span>
+              <div class="caja-descripcion p-3 border-round text-base md:text-lg line-height-3">
+                  {{ herramienta.descripcion || t('detalle_herramientas.sin_descripcion') }}
               </div>
           </div>
       </div>
@@ -103,9 +107,9 @@ const obtenerTextoStock = (h) => {
     <template #footer>
       <div class="flex justify-content-end mt-2 md:mt-3">
           <Button 
-            label="Cerrar" 
+            :label="t('detalle_herramientas.btn_cerrar')" 
             icon="pi pi-times" 
-            class="p-button-text text-500 hover:text-white" 
+            class="btn-cancelar font-bold" 
             @click="cerrar" 
             autofocus 
           />
@@ -115,54 +119,24 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-/* Aseguramos que los fondos de PrimeFlex combinen con tu modo oscuro */
-:deep(.surface-100) {
-    background-color: #313a46 !important;
-    border: 1px solid #3f4b5b !important;
-}
-:deep(.surface-200) {
-    background-color: #1e252d !important;
-}
-:deep(.text-500) {
+/* =========================================================
+   CLASES INTERNAS (Específicas de este componente)
+   ========================================================= */
+.label-gris {
     color: #94a3b8 !important;
 }
-:deep(.text-300) {
+
+.caja-descripcion {
+    background-color: #313a46 !important;
+    border: 1px solid #3f4b5b !important;
     color: #cbd5e1 !important;
 }
 
-/* Modificadores globales para el Dialog para que tenga el fondo oscuro */
-:deep(.modal-oscuro-primeflex .p-dialog-header),
-:deep(.modal-oscuro-primeflex .p-dialog-content),
-:deep(.modal-oscuro-primeflex .p-dialog-footer) {
-    background-color: #1e252d !important;
-    color: #ffffff !important;
-    border: none;
-    padding-left: 1rem !important; /* Ligeramente menos padding lateral en móvil */
-    padding-right: 1rem !important;
+.fondo-imagen-vacia {
+    background-color: #121820 !important;
 }
 
-@media (min-width: 768px) {
-    :deep(.modal-oscuro-primeflex .p-dialog-header),
-    :deep(.modal-oscuro-primeflex .p-dialog-content),
-    :deep(.modal-oscuro-primeflex .p-dialog-footer) {
-        padding-left: 1.5rem !important;
-        padding-right: 1.5rem !important;
-    }
-}
-
-:deep(.modal-oscuro-primeflex .p-dialog-header) {
-    border-bottom: 1px solid #2a323d !important;
-}
-:deep(.modal-oscuro-primeflex .p-dialog-footer) {
-    border-top: 1px solid #2a323d !important;
-}
-
-/* Ajustes adicionales para el icono de la ventana */
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon) {
-    color: #94a3b8 !important;
-}
-:deep(.modal-oscuro-primeflex .p-dialog-header-icon:hover) {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: #ffffff !important;
+.icono-vacio {
+    color: #4a5568 !important;
 }
 </style>

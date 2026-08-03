@@ -1,11 +1,11 @@
 <script setup>
-// 1. IMPORTAMOS onMounted AQUÍ
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { FilterMatchMode } from '@primevue/core/api';
 import { useHerramientas } from '@/composables/useHerramientas';
 import { useGestorArchivos } from '@/composables/useGestordeArchivos'; 
 import Menu from 'primevue/menu';
+import { useI18n } from 'vue-i18n'; 
 
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -16,6 +16,8 @@ import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import DetalleHerramienta from '@/components/herramientas/DetalleHerramientas.vue';
 
 const router = useRouter(); 
+
+const { t } = useI18n();
 
 const { herramientas, cargando, herramientaActual, cargarHerramientas } = useHerramientas();
 const { exportarInventario } = useGestorArchivos();
@@ -44,14 +46,15 @@ const abrirDetalles = (herramienta) => {
     mostrarModalDetalle.value = true;
 };
 
-const opcionesExportar = ref([
+// Lo convertimos a computed para que las opciones del menú reaccionen al cambio de idioma
+const opcionesExportar = computed(() => [
     {
-        label: 'Exportar a CSV',
+        label: t('view_inventario.exportar_csv'),
         icon: 'pi pi-file',
         command: () => exportarInventario(herramientasVisibles.value, 'csv')
     },
     {
-        label: 'Exportar a Excel (.xlsx)',
+        label: t('view_inventario.exportar_excel'),
         icon: 'pi pi-file-excel',
         command: () => exportarInventario(herramientasVisibles.value, 'xlsx')
     }
@@ -75,10 +78,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="panel-herramientas p-3 md:p-4 border-round-xl shadow-1 mt-4">
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     
     <div class="flex justify-content-between align-items-center mb-4">
-      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Control de Inventario</h2>
+      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_inventario.titulo') }}</h2>
     </div>
 
     <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
@@ -86,7 +89,7 @@ onMounted(() => {
       <div class="flex flex-wrap gap-2 w-full xl:w-auto">
         <Button 
             type="button" 
-            label="Exportar Inventario" 
+            :label="t('view_inventario.btn_exportar')" 
             icon="pi pi-angle-down" 
             iconPos="right"
             class="btn-exportar w-full sm:w-auto"
@@ -97,7 +100,7 @@ onMounted(() => {
         <Menu ref="menuExportar" id="exportar_menu" :model="opcionesExportar" :popup="true" class="menu-oscuro" />
         
         <Button 
-            :label="verSoloAlertas ? 'Mostrando Todo' : 'Solo Alertas'" 
+            :label="verSoloAlertas ? t('view_inventario.btn_mostrando_todo') : t('view_inventario.btn_solo_alertas')" 
             :icon="verSoloAlertas ? 'pi pi-check' : 'pi pi-exclamation-triangle'" 
             :severity="verSoloAlertas ? 'success' : 'warning'"
             :outlined="!verSoloAlertas"
@@ -106,7 +109,7 @@ onMounted(() => {
         />
 
         <Button 
-            label="Actualizar Inventario" 
+            :label="t('view_inventario.btn_actualizar')" 
             icon="pi pi-sync" 
             severity="info"
             class="btn-actualizar w-full sm:w-auto"
@@ -114,7 +117,7 @@ onMounted(() => {
         />
 
         <Button 
-            label="Bitácora de Auditoría" 
+            :label="t('view_inventario.btn_bitacora')" 
             icon="pi pi-history" 
             class="btn-bitacora w-full sm:w-auto"
             @click="irABitacora" 
@@ -122,14 +125,14 @@ onMounted(() => {
       </div>
 
       <div class="w-full xl:w-auto">
-        <IconField iconPosition="left" class="w-full">
+        <IconField iconPosition="left" class="w-full xl:w-30rem">
           <InputIcon class="pi pi-search" />
           <InputText 
               id="buscadorInventario"
               name="buscadorInventario"
-              aria-label="Buscar código o nombre"
+              :aria-label="t('view_inventario.ph_buscar')"
               v-model="filtros['global'].value" 
-              placeholder="Buscar código, nombre..." 
+              :placeholder="t('view_inventario.ph_buscar')" 
               class="input-oscuro w-full" 
               autocomplete="off"
           />
@@ -142,6 +145,7 @@ onMounted(() => {
       :herramientas="herramientasVisibles"
       :cargando="cargando"
       :filtros="filtros"
+      llaveMemoria="vista_inventario" 
       @seleccion="manejarSeleccion"
       @doble-click="abrirDetalles"
     />
@@ -154,31 +158,9 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.panel-herramientas { 
-    background-color: #2a323d !important; 
-    color: #ffffff;
-}
-
-.toolbar-oscuro {
-    background-color: #1e252d !important;
-}
-
-:deep(.input-oscuro) { 
-    background-color: #121820 !important; 
-    color: #ffffff !important; 
-    border: 1px solid #4a5568 !important; 
-}
-:deep(.input-oscuro:focus) { 
-    border-color: #5ab1ce !important; 
-    box-shadow: 0 0 0 1px #5ab1ce !important; 
-}
-
-.btn-exportar {
-    background-color: #16a34a !important; 
-    border: none !important;
-    color: white !important;
-}
-
+/* =========================================================
+   BOTONES EXCLUSIVOS DE ESTA VISTA
+   ========================================================= */
 .btn-actualizar {
     background-color: #0ea5e9 !important; 
     border: none !important;
@@ -197,6 +179,9 @@ onMounted(() => {
     background-color: #374151 !important;
 }
 
+/* =========================================================
+   BOTÓN DINÁMICO DE ALERTAS
+   ========================================================= */
 :deep(.btn-alertas.p-button-warning.p-button-outlined) {
     color: #fbbf24 !important; 
     border-color: #fbbf24 !important;
@@ -215,26 +200,9 @@ onMounted(() => {
     background-color: #16a34a !important;
 }
 
-.btn-exportar i,
-.btn-actualizar i,
-.btn-bitacora i {
-    color: white !important;
-}
-
-:deep(.menu-oscuro) {
-    background-color: #1e252d !important;
-    border: 1px solid #4a5568 !important;
-}
-:deep(.menu-oscuro .p-menuitem-link) {
-    color: #ffffff !important;
-}
-:deep(.menu-oscuro .p-menuitem-link:hover) {
-    background-color: #36464d !important;
-}
-:deep(.menu-oscuro .p-menuitem-icon) {
-    color: #217346 !important;
-}
-
+/* =========================================================
+   SCROLLBAR DE LA TABLA
+   ========================================================= */
 :deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 6px; }
 :deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #4a5568; border-radius: 4px; }
 :deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }

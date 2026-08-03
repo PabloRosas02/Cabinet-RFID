@@ -1,7 +1,7 @@
-export const formatearFecha = (fechaString) => {
+export const formatearFecha = (fechaString, idioma = 'es-MX') => {
     if (!fechaString) return 'Pendiente';
     
-    return new Date(fechaString).toLocaleDateString('es-MX', { 
+    return new Date(fechaString).toLocaleDateString(idioma, { 
         year: 'numeric', 
         month: 'short', 
         day: 'numeric', 

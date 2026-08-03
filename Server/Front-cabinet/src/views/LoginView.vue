@@ -1,4 +1,3 @@
-<!-- src/views/LoginView.vue -->
 <script setup>
 import LoginForm from '@/components/LoginForm.vue'; 
 </script>
@@ -49,45 +48,60 @@ import LoginForm from '@/components/LoginForm.vue';
     flex: 1.5; 
     background-image: url('/images/fondo.webp'); 
     background-size: cover; 
-    background-position: center; 
+    background-position: center center; 
+    background-repeat: no-repeat;
     position: relative; 
+    
+    /* MEJORAS DE CALIDAD VISUAL */
+    image-rendering: high-quality;
+    -webkit-font-smoothing: antialiased;
+    filter: contrast(1.05) saturate(1.1); 
 }
 
 .overlay { 
     position: absolute; 
     top: 0; left: 0; right: 0; bottom: 0; 
-    background: linear-gradient(to right, rgba(11, 26, 38, 1) 0%, rgba(11, 26, 38, 0.4) 40%, transparent 100%); 
+    pointer-events: none; 
+    
+    background: linear-gradient(to right, 
+        rgba(11, 26, 38, 1) 0%, 
+        rgba(11, 26, 38, 0.6) 25%, 
+        rgba(11, 26, 38, 0.1) 60%, 
+        transparent 100%
+    ); 
 }
 
 /* =========================================================
    MEDIA QUERIES (RESPONSIVE)
    ========================================================= */
 
-/* Para Laptops pequeñas y Tablets en horizontal (hasta 992px) */
 @media (max-width: 992px) {
     .form-section {
-        flex: 1.2; /* Le damos un poco más de prioridad de espacio al formulario */
+        flex: 1.2; 
         max-width: 450px;
     }
     .image-section {
-        flex: 1; /* Reducimos la porción de la imagen */
+        flex: 1;
     }
     .overlay {
-        /* Hacemos el degradado un poco más oscuro para que no compita con el formulario */
-        background: linear-gradient(to right, rgba(11, 26, 38, 1) 0%, rgba(11, 26, 38, 0.6) 60%, transparent 100%); 
+        background: linear-gradient(to right, 
+            rgba(11, 26, 38, 1) 0%, 
+            rgba(11, 26, 38, 0.7) 40%, 
+            rgba(11, 26, 38, 0.2) 70%, 
+            transparent 100%
+        ); 
     }
 }
 
-/* Para Teléfonos Móviles y Tablets en vertical (hasta 768px) */
 @media (max-width: 768px) { 
     .image-section { 
-        display: none; /* Desaparecemos la imagen para limpiar la vista */
+        display: none; 
     } 
     .form-section { 
         flex: 1;
         max-width: 100%; 
         width: 100%;
-        padding: 1.5rem; /* Ajustamos el padding para pantallas angostas */
+        padding: 1.5rem;
         box-shadow: none; 
     }
 }

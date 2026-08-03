@@ -5,6 +5,7 @@ import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
+import { useI18n } from 'vue-i18n'; 
 
 const props = defineProps({
     visible: Boolean,
@@ -13,6 +14,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:visible', 'guardar']);
+
+const { t } = useI18n();
 
 const fileInputRef = ref(null);
 
@@ -74,15 +77,18 @@ const procesarImagen = (evento) => {
     :visible="visible" 
     @update:visible="(val) => emit('update:visible', val)"
     :style="{width: '600px'}" 
-    :header="esEdicion ? 'Editar Herramienta' : 'Nueva Herramienta'" 
+    :header="esEdicion ? t('formulario_herramientas.titulo_editar') : t('formulario_herramientas.titulo_nueva')" 
     :modal="true" 
+    class="modal-oscuro" 
+    dismissableMask
   >
-    <div class="flex flex-column gap-2 mb-4">
-      <label for="foto-herramienta" class="font-bold">Fotografía</label>
+    <!-- Contenido del Modal -->
+    <div class="flex flex-column gap-2 mb-4 pt-2">
+      <label for="foto-herramienta" class="label-blanco">{{ t('formulario_herramientas.fotografia') }}</label>
       <div class="flex align-items-center gap-4">
           <img v-if="herramienta.imagen" :src="herramienta.imagen" class="shadow-2 border-round" style="width: 80px; height: 80px; object-fit: cover;" />
-          <div v-else class="flex align-items-center justify-content-center surface-200 border-round" style="width: 80px; height: 80px;">
-              <i class="pi pi-image text-4xl text-500"></i>
+          <div v-else class="flex align-items-center justify-content-center border-round fondo-imagen-vacia" style="width: 80px; height: 80px;">
+              <i class="pi pi-image text-4xl icono-vacio"></i>
           </div>
           
           <div class="flex flex-column gap-2 w-full">
@@ -93,13 +99,12 @@ const procesarImagen = (evento) => {
                   type="file" 
                   accept="image/*" 
                   @change="procesarImagen" 
-                  class="p-inputtext p-component p-2 w-full" 
+                  class="w-full input-archivo-oscuro" 
               />
-              <!-- Botón para quitar la imagen si ya tiene una asignada -->
               <Button 
                   v-if="herramienta.imagen" 
                   type="button" 
-                  label="Quitar imagen" 
+                  :label="t('formulario_herramientas.btn_quitar_imagen')" 
                   icon="pi pi-trash" 
                   severity="danger" 
                   size="small" 
@@ -112,50 +117,93 @@ const procesarImagen = (evento) => {
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="codigo" class="font-bold">Código</label>
-      <InputText id="codigo" name="codigo" v-model="herramienta.codigo" required autofocus placeholder="Ej. TL-001" autocomplete="off" />
+      <label for="codigo" class="label-blanco">{{ t('formulario_herramientas.codigo') }}</label>
+      <InputText id="codigo" name="codigo" v-model="herramienta.codigo" required autofocus :placeholder="t('formulario_herramientas.ph_codigo')" autocomplete="off" class="w-full input-oscuro" />
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="nombre" class="font-bold">Nombre</label>
-      <InputText id="nombre" name="nombre" v-model="herramienta.nombre" required placeholder="Ej. Taladro Percutor 20V" autocomplete="off" />
+      <label for="nombre" class="label-blanco">{{ t('formulario_herramientas.nombre') }}</label>
+      <InputText id="nombre" name="nombre" v-model="herramienta.nombre" required :placeholder="t('formulario_herramientas.ph_nombre')" autocomplete="off" class="w-full input-oscuro" />
     </div>
 
     <div class="formgrid grid mb-3">
       <div class="col flex flex-column gap-2">
-        <label for="tipo" class="font-bold">Tipo / Categoría</label>
-        <InputText id="tipo" name="tipo" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" autocomplete="off" />
+        <label for="tipo" class="label-blanco">{{ t('formulario_herramientas.tipo') }}</label>
+        <InputText id="tipo" name="tipo" v-model="herramienta.tipo" :placeholder="t('formulario_herramientas.ph_tipo')" autocomplete="off" class="w-full input-oscuro" />
       </div>
       <div class="col flex flex-column gap-2">
-        <label for="ubicacion" class="font-bold">Ubicación</label>
-        <InputText id="ubicacion" name="ubicacion" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" autocomplete="off" />
+        <label for="ubicacion" class="label-blanco">{{ t('formulario_herramientas.ubicacion') }}</label>
+        <InputText id="ubicacion" name="ubicacion" v-model="herramienta.ubicacion" :placeholder="t('formulario_herramientas.ph_ubicacion')" autocomplete="off" class="w-full input-oscuro" />
       </div>
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="marca" class="font-bold">Marca / Proveedor</label>
-      <InputText id="marca" name="marca" v-model="herramienta.marca" placeholder="Ej. DeWalt, Truper..." autocomplete="off" />
+      <label for="marca" class="label-blanco">{{ t('formulario_herramientas.marca') }}</label>
+      <InputText id="marca" name="marca" v-model="herramienta.marca" :placeholder="t('formulario_herramientas.ph_marca')" autocomplete="off" class="w-full input-oscuro" />
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="descripcion" class="font-bold">Descripción / Detalles</label>
-      <Textarea id="descripcion" name="descripcion" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones, notas, cuidados especiales..." />
+      <label for="descripcion" class="label-blanco">{{ t('formulario_herramientas.descripcion') }}</label>
+      <Textarea id="descripcion" name="descripcion" v-model="herramienta.descripcion" rows="3" :placeholder="t('formulario_herramientas.ph_descripcion')" class="w-full input-oscuro" />
     </div>
 
     <div class="formgrid grid mb-4">
       <div class="col flex flex-column gap-2">
-        <label for="cantidadMinima" class="font-bold">Stock Mínimo</label>
-        <InputNumber inputId="cantidadMinima" name="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly />
+        <label for="cantidadMinima" class="label-blanco">{{ t('formulario_herramientas.stock_minimo') }}</label>
+        <InputNumber inputId="cantidadMinima" name="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>
       <div class="col flex flex-column gap-2">
-        <label for="cantidadDisponible" class="font-bold">Stock Físico</label>
-        <InputNumber inputId="cantidadDisponible" name="cantidadDisponible" v-model="herramienta.cantidadDisponible" integeronly />
+        <label for="cantidadDisponible" class="label-blanco">{{ t('formulario_herramientas.stock_fisico') }}</label>
+        <InputNumber inputId="cantidadDisponible" name="cantidadDisponible" v-model="herramienta.cantidadDisponible" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>
     </div>
 
     <template #footer>
-      <Button label="Cancelar" icon="pi pi-times" text @click="cerrar" />
-      <Button label="Guardar" icon="pi pi-check" @click="guardar" />
+      <div class="flex justify-content-end gap-2 mt-3">
+          <Button :label="t('formulario_herramientas.btn_cancelar')" icon="pi pi-times" class="btn-cancelar" @click="cerrar" />
+          <Button :label="t('formulario_herramientas.btn_guardar')" icon="pi pi-check" class="btn-nuevo" @click="guardar" />
+      </div>
     </template>
   </Dialog>
 </template>
+
+<style scoped>
+/* =========================================================
+   ELEMENTOS EXCLUSIVOS DE ESTE COMPONENTE
+   ========================================================= */
+
+/* Input Tipo File Nativo (Subida de Imagen) */
+.input-archivo-oscuro {
+    background-color: #121820 !important;
+    color: #94a3b8 !important;
+    border: 1px solid #4a5568 !important;
+    border-radius: 6px;
+    padding: 0.5rem;
+    font-family: inherit;
+}
+
+/* Estilo para el botón interno del Input File ("Choose File") */
+.input-archivo-oscuro::file-selector-button {
+    background-color: #313a46;
+    color: #ffffff;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    padding: 0.4rem 0.8rem;
+    cursor: pointer;
+    margin-right: 1rem;
+    transition: background-color 0.2s;
+    font-weight: 600;
+}
+.input-archivo-oscuro::file-selector-button:hover {
+    background-color: #3f4b5b;
+}
+
+/* Placeholder cuando no hay imagen seleccionada */
+.fondo-imagen-vacia {
+    background-color: #121820 !important;
+    border: 1px dashed #4a5568 !important;
+}
+.icono-vacio {
+    color: #4a5568 !important;
+}
+</style>

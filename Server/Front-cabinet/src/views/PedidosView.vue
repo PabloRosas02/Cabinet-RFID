@@ -3,12 +3,13 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import Toast from 'primevue/toast'; 
+import { useI18n } from 'vue-i18n'; 
 
 import CatalogoHerramientas from '../components/pedidos/CatalogoHerramientas.vue';
 import DetallePedido from '../components/pedidos/DetallePedido.vue';
 
-// Estados reactivos y utilidades
 const toast = useToast(); 
+const { t } = useI18n();
 
 const trabajador = ref({
     numero: '',
@@ -55,10 +56,13 @@ const manejarAgregar = (herramienta) => {
         if (itemExistente.cantidadLlevada < herramienta.cantidadDisponible) {
             itemExistente.cantidadLlevada++;
         } else {
+            // Limpia los toasts anteriores antes de mostrar el nuevo
+            toast.removeAllGroups(); 
+            
             toast.add({ 
                 severity: 'warn', 
-                summary: 'Límite alcanzado', 
-                detail: 'Has alcanzado el límite de stock disponible para esta herramienta.', 
+                summary: t('view_pedidos.toast_limite_titulo'), 
+                detail: t('view_pedidos.toast_limite_detalle'), 
                 life: 3000 
             });
         }
@@ -77,7 +81,7 @@ const procesarPedido = async () => {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
-            throw new Error('No se encontró una sesión activa. Por favor, vuelve a iniciar sesión.');
+            throw new Error(t('view_pedidos.error_sesion'));
         }
 
         const payload = {
@@ -92,11 +96,12 @@ const procesarPedido = async () => {
 
         await axios.post('/api/pedidos', payload);
 
-        // TOAST DE ÉXITO
+        // TOAST DE ÉXITO 
+        toast.removeAllGroups();
         toast.add({ 
             severity: 'success', 
-            summary: '¡Éxito!', 
-            detail: 'Pedido registrado exitosamente. El inventario ha sido actualizado.', 
+            summary: t('view_pedidos.toast_exito_titulo'), 
+            detail: t('view_pedidos.toast_exito_detalle'), 
             life: 3000 
         });
         
@@ -109,10 +114,11 @@ const procesarPedido = async () => {
         console.error("Error al guardar el pedido:", error);
         
         // TOAST DE ERROR
+        toast.removeAllGroups();
         toast.add({ 
             severity: 'error', 
-            summary: 'Error al registrar', 
-            detail: error.response?.data?.error || error.message || "Error de conexión con el servidor.", 
+            summary: t('view_pedidos.toast_error_titulo'), 
+            detail: error.response?.data?.error || error.message || t('view_pedidos.toast_error_detalle'), 
             life: 5000 
         });
     }
@@ -124,11 +130,6 @@ const procesarPedido = async () => {
   <div class="p-3 md:p-4 text-gray-200 overflow-x-hidden">
     
     <Toast />
-
-    <!-- Título adaptable -->
-    <h2 class="text-xl md:text-2xl font-bold m-0 mb-4" style="color: #5ab1ce;">Registro de Préstamos</h2>
-
-    <!-- GRID INTELIGENTE: flex-column en móvil, flex-row en Desktop (lg) -->
     <div class="flex flex-column lg:flex-row gap-4">
 
       <div class="w-full lg:w-7 xl:w-8">
