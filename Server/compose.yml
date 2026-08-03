@@ -21,22 +21,6 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
 
-  postgres:
-    image: postgres:15-alpine
-    container_name: rfid_postgres
-    profiles: ["dev", "prod"]
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - rfid_internal
-
   backend:
     container_name: rfid_backend
     profiles: ["dev", "prod"]
@@ -44,7 +28,6 @@ services:
       - .env
     depends_on:
       - mosquitto
-      - postgres
     <<: *backend-base
 
   frontend-dev:
@@ -100,8 +83,6 @@ services:
       - frontend-prod
 
 volumes:
-  postgres_data:
-    driver: local
   frontend_node_modules:
   mosquitto_data:
   mosquitto_log:
@@ -110,7 +91,6 @@ volumes:
 networks:
   rfid_internal:
     driver: bridge
-    internal: true
   default:
     name: rfid_external
     driver: bridge
