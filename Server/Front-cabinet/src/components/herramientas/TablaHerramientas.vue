@@ -1,6 +1,10 @@
 <script setup>
+import { computed } from 'vue'; 
+import { useI18n } from 'vue-i18n'; 
 import TablaGenerica from '@/components/TablaGenerica.vue';
 import Button from 'primevue/button';
+
+const { t } = useI18n();
 
 const props = defineProps({
     herramientas: Array,
@@ -12,7 +16,7 @@ const props = defineProps({
     },
     mensajeVacio: {
         type: String,
-        default: 'No se encontraron herramientas con los filtros actuales.'
+        default: null // Lo dejamos en null para inyectar la traducción en el template
     },
     iconoVacio: {
         type: String,
@@ -22,15 +26,16 @@ const props = defineProps({
 
 const emit = defineEmits(['seleccion', 'doble-click']);
 
-const columnas = [
-    { field: 'codigo', header: 'Código', sortable: true, width: '15%', minWidth: '120px' },
-    { field: 'nombre', header: 'Nombre', sortable: true, width: '25%', minWidth: '200px' },
-    { field: 'tipo', header: 'Tipo', sortable: true, width: '15%', minWidth: '140px' },
-    { field: 'ubicacion', header: 'Ubicación', sortable: true, width: '15%', minWidth: '140px' },
-    { field: 'cantidadMinima', header: 'Stock Mín.', sortable: true, width: '10%', minWidth: '120px' },
-    { field: 'cantidadDisponible', header: 'Stock Físico', sortable: true, width: '15%', minWidth: '130px', slotName: 'stock' },
+// Convertimos las columnas en una propiedad computada para que reaccionen al cambio de idioma
+const columnas = computed(() => [
+    { field: 'codigo', header: t('tabla_herramientas.codigo'), sortable: true, width: '15%', minWidth: '120px' },
+    { field: 'nombre', header: t('tabla_herramientas.nombre'), sortable: true, width: '25%', minWidth: '200px' },
+    { field: 'tipo', header: t('tabla_herramientas.tipo'), sortable: true, width: '15%', minWidth: '140px' },
+    { field: 'ubicacion', header: t('tabla_herramientas.ubicacion'), sortable: true, width: '15%', minWidth: '140px' },
+    { field: 'cantidadMinima', header: t('tabla_herramientas.stock_min'), sortable: true, width: '10%', minWidth: '120px' },
+    { field: 'cantidadDisponible', header: t('tabla_herramientas.stock_fisico'), sortable: true, width: '15%', minWidth: '130px', slotName: 'stock' },
     { width: '5%', minWidth: '70px', slotName: 'acciones' }
-];
+]);
 
 const getEstadoStock = (herramienta) => {
     if (herramienta.cantidadDisponible < herramienta.cantidadMinima) return 'agotado';
@@ -48,7 +53,7 @@ const getEstadoStock = (herramienta) => {
         :globalFilterFields="['codigo', 'nombre', 'tipo', 'ubicacion']" 
         :llaveMemoria="llaveMemoria"
         :seleccionable="true"
-        :mensajeVacio="mensajeVacio"
+        :mensajeVacio="mensajeVacio || t('tabla_herramientas.mensaje_vacio')"
         :iconoVacio="iconoVacio"
         @seleccion="emit('seleccion', $event)"
         @doble-click="emit('doble-click', $event)"

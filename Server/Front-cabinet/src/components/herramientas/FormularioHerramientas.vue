@@ -5,6 +5,7 @@ import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
+import { useI18n } from 'vue-i18n'; 
 
 const props = defineProps({
     visible: Boolean,
@@ -13,6 +14,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:visible', 'guardar']);
+
+const { t } = useI18n();
 
 const fileInputRef = ref(null);
 
@@ -70,19 +73,18 @@ const procesarImagen = (evento) => {
 </script>
 
 <template>
-  <!-- USAMOS LA CLASE GLOBAL 'modal-oscuro' DEFINIDA EN MAIN.CSS -->
   <Dialog 
     :visible="visible" 
     @update:visible="(val) => emit('update:visible', val)"
     :style="{width: '600px'}" 
-    :header="esEdicion ? 'Editar Herramienta' : 'Nueva Herramienta'" 
+    :header="esEdicion ? t('formulario_herramientas.titulo_editar') : t('formulario_herramientas.titulo_nueva')" 
     :modal="true" 
     class="modal-oscuro" 
     dismissableMask
   >
     <!-- Contenido del Modal -->
     <div class="flex flex-column gap-2 mb-4 pt-2">
-      <label for="foto-herramienta" class="label-blanco">Fotografía</label>
+      <label for="foto-herramienta" class="label-blanco">{{ t('formulario_herramientas.fotografia') }}</label>
       <div class="flex align-items-center gap-4">
           <img v-if="herramienta.imagen" :src="herramienta.imagen" class="shadow-2 border-round" style="width: 80px; height: 80px; object-fit: cover;" />
           <div v-else class="flex align-items-center justify-content-center border-round fondo-imagen-vacia" style="width: 80px; height: 80px;">
@@ -102,7 +104,7 @@ const procesarImagen = (evento) => {
               <Button 
                   v-if="herramienta.imagen" 
                   type="button" 
-                  label="Quitar imagen" 
+                  :label="t('formulario_herramientas.btn_quitar_imagen')" 
                   icon="pi pi-trash" 
                   severity="danger" 
                   size="small" 
@@ -115,52 +117,51 @@ const procesarImagen = (evento) => {
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="codigo" class="label-blanco">Código</label>
-      <InputText id="codigo" name="codigo" v-model="herramienta.codigo" required autofocus placeholder="Ej. TL-001" autocomplete="off" class="w-full input-oscuro" />
+      <label for="codigo" class="label-blanco">{{ t('formulario_herramientas.codigo') }}</label>
+      <InputText id="codigo" name="codigo" v-model="herramienta.codigo" required autofocus :placeholder="t('formulario_herramientas.ph_codigo')" autocomplete="off" class="w-full input-oscuro" />
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="nombre" class="label-blanco">Nombre</label>
-      <InputText id="nombre" name="nombre" v-model="herramienta.nombre" required placeholder="Ej. Taladro Percutor 20V" autocomplete="off" class="w-full input-oscuro" />
+      <label for="nombre" class="label-blanco">{{ t('formulario_herramientas.nombre') }}</label>
+      <InputText id="nombre" name="nombre" v-model="herramienta.nombre" required :placeholder="t('formulario_herramientas.ph_nombre')" autocomplete="off" class="w-full input-oscuro" />
     </div>
 
     <div class="formgrid grid mb-3">
       <div class="col flex flex-column gap-2">
-        <label for="tipo" class="label-blanco">Tipo / Categoría</label>
-        <InputText id="tipo" name="tipo" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" autocomplete="off" class="w-full input-oscuro" />
+        <label for="tipo" class="label-blanco">{{ t('formulario_herramientas.tipo') }}</label>
+        <InputText id="tipo" name="tipo" v-model="herramienta.tipo" :placeholder="t('formulario_herramientas.ph_tipo')" autocomplete="off" class="w-full input-oscuro" />
       </div>
       <div class="col flex flex-column gap-2">
-        <label for="ubicacion" class="label-blanco">Ubicación</label>
-        <InputText id="ubicacion" name="ubicacion" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" autocomplete="off" class="w-full input-oscuro" />
+        <label for="ubicacion" class="label-blanco">{{ t('formulario_herramientas.ubicacion') }}</label>
+        <InputText id="ubicacion" name="ubicacion" v-model="herramienta.ubicacion" :placeholder="t('formulario_herramientas.ph_ubicacion')" autocomplete="off" class="w-full input-oscuro" />
       </div>
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="marca" class="label-blanco">Marca / Proveedor</label>
-      <InputText id="marca" name="marca" v-model="herramienta.marca" placeholder="Ej. DeWalt, Truper..." autocomplete="off" class="w-full input-oscuro" />
+      <label for="marca" class="label-blanco">{{ t('formulario_herramientas.marca') }}</label>
+      <InputText id="marca" name="marca" v-model="herramienta.marca" :placeholder="t('formulario_herramientas.ph_marca')" autocomplete="off" class="w-full input-oscuro" />
     </div>
 
     <div class="flex flex-column gap-2 mb-3">
-      <label for="descripcion" class="label-blanco">Descripción / Detalles</label>
-      <Textarea id="descripcion" name="descripcion" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones, notas, cuidados especiales..." class="w-full input-oscuro" />
+      <label for="descripcion" class="label-blanco">{{ t('formulario_herramientas.descripcion') }}</label>
+      <Textarea id="descripcion" name="descripcion" v-model="herramienta.descripcion" rows="3" :placeholder="t('formulario_herramientas.ph_descripcion')" class="w-full input-oscuro" />
     </div>
 
     <div class="formgrid grid mb-4">
       <div class="col flex flex-column gap-2">
-        <label for="cantidadMinima" class="label-blanco">Stock Mínimo</label>
+        <label for="cantidadMinima" class="label-blanco">{{ t('formulario_herramientas.stock_minimo') }}</label>
         <InputNumber inputId="cantidadMinima" name="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>
       <div class="col flex flex-column gap-2">
-        <label for="cantidadDisponible" class="label-blanco">Stock Físico</label>
+        <label for="cantidadDisponible" class="label-blanco">{{ t('formulario_herramientas.stock_fisico') }}</label>
         <InputNumber inputId="cantidadDisponible" name="cantidadDisponible" v-model="herramienta.cantidadDisponible" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>
     </div>
 
     <template #footer>
       <div class="flex justify-content-end gap-2 mt-3">
-          <Button label="Cancelar" icon="pi pi-times" class="btn-cancelar" @click="cerrar" />
-          <!-- Usamos la clase global .btn-nuevo -->
-          <Button label="Guardar" icon="pi pi-check" class="btn-nuevo" @click="guardar" />
+          <Button :label="t('formulario_herramientas.btn_cancelar')" icon="pi pi-times" class="btn-cancelar" @click="cerrar" />
+          <Button :label="t('formulario_herramientas.btn_guardar')" icon="pi pi-check" class="btn-nuevo" @click="guardar" />
       </div>
     </template>
   </Dialog>

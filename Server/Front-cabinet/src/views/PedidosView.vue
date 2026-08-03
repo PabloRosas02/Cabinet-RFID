@@ -3,11 +3,13 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
 import Toast from 'primevue/toast'; 
+import { useI18n } from 'vue-i18n'; 
 
 import CatalogoHerramientas from '../components/pedidos/CatalogoHerramientas.vue';
 import DetallePedido from '../components/pedidos/DetallePedido.vue';
 
 const toast = useToast(); 
+const { t } = useI18n();
 
 const trabajador = ref({
     numero: '',
@@ -59,8 +61,8 @@ const manejarAgregar = (herramienta) => {
             
             toast.add({ 
                 severity: 'warn', 
-                summary: 'Límite alcanzado', 
-                detail: 'Has alcanzado el límite de stock disponible para esta herramienta.', 
+                summary: t('view_pedidos.toast_limite_titulo'), 
+                detail: t('view_pedidos.toast_limite_detalle'), 
                 life: 3000 
             });
         }
@@ -79,7 +81,7 @@ const procesarPedido = async () => {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
-            throw new Error('No se encontró una sesión activa. Por favor, vuelve a iniciar sesión.');
+            throw new Error(t('view_pedidos.error_sesion'));
         }
 
         const payload = {
@@ -94,12 +96,12 @@ const procesarPedido = async () => {
 
         await axios.post('/api/pedidos', payload);
 
-        // TOAST DE ÉXITO (Aquí también podemos limpiar si hubiera errores previos atascados)
+        // TOAST DE ÉXITO 
         toast.removeAllGroups();
         toast.add({ 
             severity: 'success', 
-            summary: '¡Éxito!', 
-            detail: 'Pedido registrado exitosamente. El inventario ha sido actualizado.', 
+            summary: t('view_pedidos.toast_exito_titulo'), 
+            detail: t('view_pedidos.toast_exito_detalle'), 
             life: 3000 
         });
         
@@ -115,8 +117,8 @@ const procesarPedido = async () => {
         toast.removeAllGroups();
         toast.add({ 
             severity: 'error', 
-            summary: 'Error al registrar', 
-            detail: error.response?.data?.error || error.message || "Error de conexión con el servidor.", 
+            summary: t('view_pedidos.toast_error_titulo'), 
+            detail: error.response?.data?.error || error.message || t('view_pedidos.toast_error_detalle'), 
             life: 5000 
         });
     }

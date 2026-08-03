@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router'; 
 import { FilterMatchMode } from '@primevue/core/api';
 import { useHerramientas } from '@/composables/useHerramientas';
+import { useI18n } from 'vue-i18n'; 
 
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
@@ -15,6 +16,7 @@ import FormularioHerramienta from '@/components/herramientas/FormularioHerramien
 import DetalleHerramientas from '@/components/herramientas/DetalleHerramientas.vue';
 
 const router = useRouter(); 
+const { t } = useI18n(); 
 
 const { 
     herramientas, cargando, mostrarModal, herramientaActual, esEdicion, 
@@ -78,30 +80,29 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- Usamos .panel-principal del main.css -->
   <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     
     <Toast />
 
     <div class="flex justify-content-between align-items-center mb-4">
-      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Administración y Movimientos</h2>
+      <!-- Inyectamos la traducción del título -->
+      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_movimientos.titulo') }}</h2>
     </div>
 
-    <!-- toolbar-oscuro ya vive en main.css -->
     <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
 
       <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
-        <!-- btn-volver ya vive en main.css -->
+        <!-- Traducimos los botones -->
         <Button 
             icon="pi pi-arrow-left" 
-            label="Volver" 
+            :label="t('view_movimientos.btn_volver')" 
             class="btn-volver w-full sm:w-auto" 
             outlined 
             @click="volverAInventario" 
         />
 
         <Button 
-            label="Editar Seleccionado" 
+            :label="t('view_movimientos.btn_editar')" 
             icon="pi pi-pencil" 
             severity="info" 
             class="font-bold btn-editar w-full sm:w-auto" 
@@ -110,7 +111,7 @@ onMounted(() => {
         />
         
         <Button 
-            label="Dar de Baja" 
+            :label="t('view_movimientos.btn_eliminar')" 
             icon="pi pi-trash" 
             severity="danger" 
             class="font-bold btn-eliminar w-full sm:w-auto" 
@@ -126,7 +127,7 @@ onMounted(() => {
             id="buscador-movimientos" 
             name="buscador-movimientos" 
             v-model="filtros['global'].value" 
-            placeholder="Buscar para editar o ver..." 
+            :placeholder="t('view_movimientos.ph_buscar')" 
             class="input-oscuro w-full" 
             autocomplete="off" 
           />

@@ -1,7 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n'; 
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+
+const { t } = useI18n(); 
 
 const props = defineProps({
     datos: { type: Array, required: true },
@@ -12,7 +15,7 @@ const props = defineProps({
     llaveMemoria: { type: String, required: true },
     seleccionable: { type: Boolean, default: false },
     dataKey: { type: String, default: 'id' },
-    mensajeVacio: { type: String, default: 'No se encontraron registros.' },
+    mensajeVacio: { type: String, default: '' }, 
     iconoVacio: { type: String, default: 'pi-box' }
 });
 
@@ -28,6 +31,10 @@ const obtenerClaseFila = (data) => {
     }
     return '';
 };
+
+// Computado para el mensaje vacío: usa la prop (si se envía algo) o el diccionario traducido.
+const textoVacio = computed(() => props.mensajeVacio || t('tabla_generica.mensaje_vacio'));
+
 </script>
 
 <template>
@@ -50,13 +57,13 @@ const obtenerClaseFila = (data) => {
       :rowClass="obtenerClaseFila" 
       scrollable
       paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
-      :currentPageReportTemplate="`{first} al {last} de {totalRecords} registros`"
+      :currentPageReportTemplate="t('tabla_generica.reporte_paginacion', { first: '{first}', last: '{last}', totalRecords: '{totalRecords}' })"
     >
 
       <template #empty>
           <div class="flex flex-column align-items-center justify-content-center text-center w-full" style="min-height: 220px;">
               <i :class="['pi', iconoVacio, 'mb-3']" style="font-size: 3.5rem; color: #64748b;"></i>
-              <span class="text-xl font-medium" style="color: #64748b;">{{ mensajeVacio }}</span>
+              <span class="text-xl font-medium" style="color: #64748b;">{{ textoVacio }}</span>
           </div>
       </template>
 

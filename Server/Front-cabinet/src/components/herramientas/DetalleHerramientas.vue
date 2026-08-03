@@ -2,6 +2,7 @@
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
+import { useI18n } from 'vue-i18n'; 
 
 const props = defineProps({
     visible: Boolean,
@@ -9,6 +10,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:visible']);
+
+const { t } = useI18n();
 
 const cerrar = () => emit('update:visible', false);
 
@@ -19,11 +22,12 @@ const obtenerSeveridadStock = (h) => {
     return 'success';
 };
 
+// Traducimos las etiquetas de estado del stock en el código
 const obtenerTextoStock = (h) => {
     if (!h) return '';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'CRÍTICO';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'ALERTA';
-    return 'NORMAL';
+    if (h.cantidadDisponible < h.cantidadMinima) return t('detalle_herramientas.estado_critico');
+    if (h.cantidadDisponible === h.cantidadMinima) return t('detalle_herramientas.estado_alerta');
+    return t('detalle_herramientas.estado_normal');
 };
 </script>
 
@@ -33,7 +37,7 @@ const obtenerTextoStock = (h) => {
     @update:visible="(val) => emit('update:visible', val)"
     :style="{ width: '700px' }" 
     :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }" 
-    header="Detalles de la Herramienta" 
+    :header="t('detalle_herramientas.titulo')" 
     :modal="true"
     dismissableMask
     class="modal-oscuro-primeflex"
@@ -63,36 +67,37 @@ const obtenerTextoStock = (h) => {
       <!-- Grid de Datos -->
       <div class="grid">
           <div class="col-12 md:col-6 mb-3">
-              <span class="label-gris block mb-1">Código</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.codigo') }}</span>
               <span class="text-xl font-bold" style="color: #38bdf8;">{{ herramienta.codigo }}</span>
           </div>
           <div class="col-12 md:col-6 mb-3">
-              <span class="label-gris block mb-1">Nombre</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.nombre') }}</span>
               <span class="text-xl font-bold text-white">{{ herramienta.nombre }}</span>
           </div>
           
+          <!-- Se usa el || (OR) para colocar "N/A" si la base de datos no trae el dato -->
           <div class="col-12 md:col-6 mb-3">
-              <span class="label-gris block mb-1">Tipo / Categoría</span>
-              <span class="text-lg text-white">{{ herramienta.tipo || 'N/A' }}</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.tipo') }}</span>
+              <span class="text-lg text-white">{{ herramienta.tipo || t('detalle_herramientas.no_aplica') }}</span>
           </div>
           <div class="col-12 md:col-6 mb-3">
-              <span class="label-gris block mb-1">Ubicación Física</span>
-              <span class="text-lg text-white">{{ herramienta.ubicacion || 'N/A' }}</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.ubicacion') }}</span>
+              <span class="text-lg text-white">{{ herramienta.ubicacion || t('detalle_herramientas.no_aplica') }}</span>
           </div>
           
           <div class="col-12 md:col-6 mb-3">
-              <span class="label-gris block mb-1">Marca / Proveedor</span>
-              <span class="text-lg text-white">{{ herramienta.marca || 'S/M' }}</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.marca') }}</span>
+              <span class="text-lg text-white">{{ herramienta.marca || t('detalle_herramientas.sin_marca') }}</span>
           </div>
           <div class="col-12 md:col-6 mb-3">
-              <span class="label-gris block mb-1">Stock Actual vs Mínimo</span>
-              <span class="text-lg font-bold text-white">{{ herramienta.cantidadDisponible }} / {{ herramienta.cantidadMinima }} unidades</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.stock_vs_minimo') }}</span>
+              <span class="text-lg font-bold text-white">{{ herramienta.cantidadDisponible }} / {{ herramienta.cantidadMinima }} {{ t('detalle_herramientas.unidades') }}</span>
           </div>
           
           <div class="col-12 mb-3">
-              <span class="label-gris block mb-1">Descripción y Notas</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.descripcion') }}</span>
               <div class="caja-descripcion p-3 border-round text-base md:text-lg line-height-3">
-                  {{ herramienta.descripcion || 'Sin descripción o notas adicionales para esta herramienta.' }}
+                  {{ herramienta.descripcion || t('detalle_herramientas.sin_descripcion') }}
               </div>
           </div>
       </div>
@@ -102,7 +107,7 @@ const obtenerTextoStock = (h) => {
     <template #footer>
       <div class="flex justify-content-end mt-2 md:mt-3">
           <Button 
-            label="Cerrar" 
+            :label="t('detalle_herramientas.btn_cerrar')" 
             icon="pi pi-times" 
             class="btn-cancelar font-bold" 
             @click="cerrar" 

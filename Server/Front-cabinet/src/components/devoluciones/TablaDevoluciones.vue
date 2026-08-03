@@ -7,8 +7,10 @@ import InputIcon from 'primevue/inputicon';
 import InputText from 'primevue/inputtext';
 import { FilterMatchMode } from '@primevue/core/api';
 import TablaGenerica from '@/components/TablaGenerica.vue';
+import { useI18n } from 'vue-i18n';
+import { formatearFecha } from '@/utils/dateHelper';
 
-defineProps({
+const props = defineProps({
     pedidos: {
         type: Array,
         required: true
@@ -20,6 +22,9 @@ defineProps({
 });
 
 const emit = defineEmits(['revisar']);
+
+// Extraemos tanto la función de traducción (t) como el idioma actual (locale)
+const { t, locale } = useI18n();
 
 // =========================================================
 // LÓGICA RESPONSIVA DINÁMICA
@@ -34,28 +39,20 @@ onMounted(() => window.addEventListener('resize', actualizarVista));
 onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 
 // =====================================================
-// DEFINICIÓN DINÁMICA DE COLUMNAS (Reactivas al tamaño de pantalla)
+// DEFINICIÓN DINÁMICA DE COLUMNAS (Reactivas al tamaño de pantalla e idioma)
 // =====================================================
 const columnasPedidos = computed(() => [
-    { field: 'id', header: 'Folio Pedido', width: esMovil.value ? undefined : '15%', minWidth: '120px', slotName: 'folio' },
-    { field: 'trabajadorNumero', header: 'No. Empleado', width: esMovil.value ? undefined : '15%', minWidth: '140px' },
-    { field: 'trabajadorNombre', header: 'Nombre del Trabajador', width: esMovil.value ? undefined : '30%', minWidth: '220px' },
-    { field: 'fechaPedido', header: 'Fecha de Préstamo', width: esMovil.value ? undefined : '20%', minWidth: '160px', slotName: 'fecha' },
-    { header: 'Estado', width: esMovil.value ? undefined : '10%', minWidth: '120px', slotName: 'estado' },
-    { header: 'Acción', width: esMovil.value ? undefined : '10%', minWidth: '140px', slotName: 'accion' }
+    { field: 'id', header: t('tabla_devoluciones.folio_pedido'), width: esMovil.value ? undefined : '15%', minWidth: '120px', slotName: 'folio' },
+    { field: 'trabajadorNumero', header: t('tabla_devoluciones.no_empleado'), width: esMovil.value ? undefined : '15%', minWidth: '140px' },
+    { field: 'trabajadorNombre', header: t('tabla_devoluciones.nombre_trabajador'), width: esMovil.value ? undefined : '30%', minWidth: '220px' },
+    { field: 'fechaPedido', header: t('tabla_devoluciones.fecha_prestamo'), width: esMovil.value ? undefined : '20%', minWidth: '160px', slotName: 'fecha' },
+    { header: t('tabla_devoluciones.estado'), width: esMovil.value ? undefined : '10%', minWidth: '120px', slotName: 'estado' },
+    { header: t('tabla_devoluciones.accion'), width: esMovil.value ? undefined : '10%', minWidth: '140px', slotName: 'accion' }
 ]);
 
 const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
-
-const formatearFecha = (fechaString) => {
-    if (!fechaString) return 'N/A';
-    const fecha = new Date(fechaString);
-    return fecha.toLocaleDateString('es-MX', { 
-        year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
-    });
-};
 </script>
 
 <template>
@@ -67,9 +64,9 @@ const formatearFecha = (fechaString) => {
                 <InputText 
                     id="buscadorDevoluciones"
                     name="buscadorDevoluciones"
-                    aria-label="Buscar por folio o empleado"
+                    :aria-label="t('tabla_devoluciones.buscar_placeholder')"
                     v-model="filtros['global'].value" 
-                    placeholder="Buscar por folio o empleado..." 
+                    :placeholder="t('tabla_devoluciones.buscar_placeholder')" 
                     class="w-full input-oscuro" 
                     autocomplete="off"
                 />
@@ -85,28 +82,28 @@ const formatearFecha = (fechaString) => {
             llaveMemoria="pedidos_pendientes"
             dataKey="id"
             iconoVacio="pi-undo"
-            mensajeVacio="No hay devoluciones pendientes en este momento."
+            :mensajeVacio="t('tabla_devoluciones.mensaje_vacio')"
         >
             <!-- Slot Personalizado: Folio -->
             <template #folio="{ data }">
                 <span class="font-bold text-400">#{{ data.id }}</span>
             </template>
 
-            <!-- Slot Personalizado: Fecha -->
+            <!-- Slot Personalizado: Fecha (Usando el helper y 'locale') -->
             <template #fecha="{ data }">
-                {{ formatearFecha(data.fechaPedido) }}
+                {{ formatearFecha(data.fechaPedido, locale) }}
             </template>
 
             <!-- Slot Personalizado: Estado -->
             <template #estado>
-                <Tag severity="danger" value="Pendiente" class="px-3 py-1 bg-red-500 text-white font-bold" style="border-radius: 4px;" />
+                <Tag severity="danger" :value="t('tabla_devoluciones.estado_pendiente')" class="px-3 py-1 bg-red-500 text-white font-bold" style="border-radius: 4px;" />
             </template>
 
             <!-- Slot Personalizado: Acción -->
             <template #accion="{ data }">
                 <Button 
                     icon="pi pi-replay" 
-                    label="Devolver" 
+                    :label="t('tabla_devoluciones.btn_devolver')" 
                     class="btn-accion-devolver p-button-sm w-full sm:w-auto" 
                     @click="emit('revisar', data)" 
                 />

@@ -11,17 +11,28 @@ import { FilterMatchMode } from '@primevue/core/api';
 
 import { useToast } from 'primevue/usetoast';
 import Toast from 'primevue/toast';
+import { useI18n } from 'vue-i18n';
 
 import TablaHistorial from '@/components/historial/TablaHistorial.vue'; 
 import ModalDetallesPedido from '@/components/historial/ModalDetallesPedido.vue';
 import { useGestorArchivos } from '@/composables/useGestordeArchivos'; 
 
 const toast = useToast();
+const { t } = useI18n(); 
 
 const historial = ref([]);
 const cargando = ref(false);
 const filtros = ref({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
-const opcionesTiempo = ref(['Todos', 'Hoy', 'Esta Semana', 'Este Mes', 'Este Año']);
+
+// Modificamos opcionesTiempo para tener Label (Traducido) y Value (Estático para el código)
+const opcionesTiempo = computed(() => [
+    { label: t('view_historial.tiempo_todos'), value: 'Todos' },
+    { label: t('view_historial.tiempo_hoy'), value: 'Hoy' },
+    { label: t('view_historial.tiempo_semana'), value: 'Esta Semana' },
+    { label: t('view_historial.tiempo_mes'), value: 'Este Mes' },
+    { label: t('view_historial.tiempo_anio'), value: 'Este Año' }
+]);
+
 const filtroTiempo = ref('Todos');
 const filtroEstado = ref('Todos'); 
 
@@ -63,6 +74,7 @@ const historialFiltrado = computed(() => {
     inicioSemana.setDate(inicioSemana.getDate() - diff);
     inicioSemana.setHours(0, 0, 0, 0);
 
+    // Como usamos 'value' interno, el switch se queda exactamente igual
     return datos.filter(p => {
         const fecha = new Date(p.fechaPedido);
         switch (filtroTiempo.value) {
@@ -83,14 +95,15 @@ const abrirDetalles = (pedido) => {
 // =====================================================================
 // Opciones del Menú de Exportación
 // =====================================================================
-const opcionesExportar = ref([
+// Convertimos a computed para que reaccione al cambio de idioma
+const opcionesExportar = computed(() => [
     {
-        label: 'Exportar a CSV',
+        label: t('view_historial.exportar_csv'),
         icon: 'pi pi-file',
         command: () => realizarExportacion('csv')
     },
     {
-        label: 'Exportar a Excel (.xlsx)',
+        label: t('view_historial.exportar_excel'),
         icon: 'pi pi-file-excel',
         command: () => realizarExportacion('xlsx')
     }
@@ -103,9 +116,21 @@ const toggleExportar = (event) => {
 const realizarExportacion = (formato) => {
     try {
         exportarHistorialPedidos(historialFiltrado.value, filtroTiempo.value, formato);
-        toast.add({ severity: 'success', summary: 'Exportación Exitosa', detail: 'El archivo se ha generado correctamente.', life: 3000 });
+        
+        // Traducimos las notificaciones Toast
+        toast.add({ 
+            severity: 'success', 
+            summary: t('view_historial.toast_exito_titulo'), 
+            detail: t('view_historial.toast_exito_detalle'), 
+            life: 3000 
+        });
     } catch (error) {
-        toast.add({ severity: 'warn', summary: 'Sin datos', detail: error.message, life: 3000 });
+        toast.add({ 
+            severity: 'warn', 
+            summary: t('view_historial.toast_error_titulo'), 
+            detail: error.message, 
+            life: 3000 
+        });
     }
 };
 </script>
@@ -115,7 +140,7 @@ const realizarExportacion = (formato) => {
     <Toast />
 
     <div class="flex justify-content-between align-items-center mb-4">
-        <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">Historial y Reportes</h2>
+        <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_historial.titulo') }}</h2>
     </div>
 
     <div class="flex flex-column xl:flex-row justify-content-between mb-4 gap-3">
@@ -124,7 +149,7 @@ const realizarExportacion = (formato) => {
         <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
             <Button 
                 type="button" 
-                label="Exportar Historial" 
+                :label="t('view_historial.btn_exportar')" 
                 icon="pi pi-angle-down" 
                 iconPos="right"
                 class="btn-exportar w-full sm:w-auto"
@@ -134,8 +159,8 @@ const realizarExportacion = (formato) => {
             />
             <Menu ref="menuExportar" id="exportar_menu" :model="opcionesExportar" :popup="true" class="menu-oscuro" />
             
-            <Button label="Pendientes" icon="pi pi-exclamation-triangle" class="w-full sm:w-auto" :outlined="filtroEstado !== 'PENDIENTE'" severity="danger" @click="toggleFiltroEstado('PENDIENTE')" />
-            <Button label="Devueltos" icon="pi pi-check-circle" class="w-full sm:w-auto" :outlined="filtroEstado !== 'DEVUELTO'" severity="success" @click="toggleFiltroEstado('DEVUELTO')" />
+            <Button :label="t('view_historial.btn_pendientes')" icon="pi pi-exclamation-triangle" class="w-full sm:w-auto" :outlined="filtroEstado !== 'PENDIENTE'" severity="danger" @click="toggleFiltroEstado('PENDIENTE')" />
+            <Button :label="t('view_historial.btn_devueltos')" icon="pi pi-check-circle" class="w-full sm:w-auto" :outlined="filtroEstado !== 'DEVUELTO'" severity="success" @click="toggleFiltroEstado('DEVUELTO')" />
         </div>
 
         <!-- Grupo de Búsqueda y Filtros (Derecha) -->
@@ -145,20 +170,24 @@ const realizarExportacion = (formato) => {
                 <InputText 
                     id="buscadorHistorial"
                     name="buscadorHistorial"
-                    aria-label="Buscar por empleado o prestador"
+                    :aria-label="t('view_historial.ph_buscar')"
                     v-model="filtros['global'].value" 
-                    placeholder="Buscar por empleado o prestador..." 
+                    :placeholder="t('view_historial.ph_buscar')" 
                     class="w-full input-oscuro" 
                     autocomplete="off"
                 />
             </IconField>
+            
+            <!-- Agregamos optionLabel y optionValue al Select -->
             <Select 
                 inputId="filtroTiempoHistorial"
                 name="filtroTiempoHistorial"
-                aria-label="Filtrar por período de tiempo"
+                :aria-label="t('view_historial.ph_filtro_tiempo')"
                 v-model="filtroTiempo" 
                 :options="opcionesTiempo" 
-                placeholder="Filtrar por período" 
+                optionLabel="label"
+                optionValue="value"
+                :placeholder="t('view_historial.ph_filtro_tiempo')" 
                 class="w-full sm:w-15rem input-oscuro" 
                 overlayClass="menu-oscuro-global" 
                 panelClass="menu-oscuro-global" 

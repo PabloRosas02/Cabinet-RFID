@@ -6,8 +6,10 @@ import InputText from 'primevue/inputtext';
 import Password from 'primevue/password';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
+import { useI18n } from 'vue-i18n';
 
 const router = useRouter();
+const { t } = useI18n(); 
 
 const numTrabajador = ref(''); 
 const contrasena = ref('');
@@ -25,7 +27,7 @@ const iniciarSesion = async () => {
     errorMensaje.value = '';
 
     if (!numTrabajador.value.toString().trim() || !contrasena.value.trim()) {
-        errorMensaje.value = 'Por favor, ingresa tu número de trabajador y contraseña.';
+        errorMensaje.value = t('view_login.err_campos_vacios');
         return; 
     }
 
@@ -52,9 +54,10 @@ const iniciarSesion = async () => {
 
     } catch (error) {
         if (error.response && error.response.status === 401) {
-            errorMensaje.value = error.response.data.error || 'Credenciales incorrectas.';
+            // Mantenemos el error del backend si existe, sino usamos el nuestro traducido
+            errorMensaje.value = error.response.data.error || t('view_login.err_credenciales');
         } else {
-            errorMensaje.value = 'Error de conexión con el servidor. Verifica que el backend esté encendido.';
+            errorMensaje.value = t('view_login.err_red');
             console.error(error);
         }
     } finally {
@@ -67,18 +70,18 @@ const iniciarSesion = async () => {
     <div class="form-wrapper">
         <!-- <img src="/images/crissair_logo.webp" alt="Crissair Inc. Logo" class="logo" /> -->
         
-        <h1 class="title">Iniciar Sesión</h1>
-        <p class="subtitle">Ingresa tus credenciales corporativas para acceder al sistema.</p>
+        <h1 class="title">{{ t('view_login.titulo') }}</h1>
+        <p class="subtitle">{{ t('view_login.subtitulo') }}</p>
 
         <form @submit.prevent="iniciarSesion" class="form-content">
             <div class="field">
-                <label for="numTrabajador">Número de Trabajador</label>
+                <label for="numTrabajador">{{ t('view_login.label_num_empleado') }}</label>
                 <InputText 
                     id="numTrabajador" 
                     name="numTrabajador"
                     v-model="numTrabajador" 
                     type="number" 
-                    placeholder="Ej. 10452" 
+                    :placeholder="t('view_login.ph_num_empleado')" 
                     class="w-full input-premium sin-flechas" 
                     @keydown="prevenirCaracteresInvalidos"
                     autocomplete="username"
@@ -86,12 +89,12 @@ const iniciarSesion = async () => {
             </div>
             
             <div class="field">
-                <label for="contrasena">Contraseña</label>
+                <label for="contrasena">{{ t('view_login.label_pass') }}</label>
                 <Password 
                     inputId="contrasena" 
                     name="contrasena"
                     v-model="contrasena" 
-                    placeholder="Tu contraseña" 
+                    :placeholder="t('view_login.ph_pass')" 
                     :feedback="false" 
                     toggleMask 
                     class="w-full password-premium" 
@@ -102,7 +105,7 @@ const iniciarSesion = async () => {
 
             <div class="field-checkbox">
                 <Checkbox v-model="recordar" inputId="recordar" name="recordar" :binary="true" />
-                <label for="recordar" class="ml-2">Recordar mi sesión</label>
+                <label for="recordar" class="ml-2">{{ t('view_login.recordar_sesion') }}</label>
             </div>
 
             <p v-if="errorMensaje" class="error-text">
@@ -111,7 +114,7 @@ const iniciarSesion = async () => {
 
             <Button 
                 type="submit" 
-                :label="cargando ? 'Verificando...' : 'Ingresar'" 
+                :label="cargando ? t('view_login.btn_verificando') : t('view_login.btn_ingresar')" 
                 :icon="cargando ? 'pi pi-spinner pi-spin' : ''"
                 class="w-full btn-crissair mt-3" 
                 :disabled="cargando"

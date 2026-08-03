@@ -8,6 +8,7 @@ import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import { FilterMatchMode } from '@primevue/core/api';
 import TablaGenerica from '@/components/TablaGenerica.vue';
+import { useI18n } from 'vue-i18n'; 
 
 const props = defineProps({
     inventario: {
@@ -17,6 +18,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['agregar']);
+const { t } = useI18n(); 
 
 // =========================================================
 // LÓGICA RESPONSIVA DINÁMICA
@@ -33,11 +35,12 @@ onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 // =====================================================
 // DEFINICIÓN DINÁMICA DE COLUMNAS
 // =====================================================
+// Aplicamos la traducción a los encabezados
 const columnasCatalogo = computed(() => [
-    { field: 'codigo', header: 'Código', width: esMovil.value ? undefined : '20%', minWidth: '120px' },
-    { field: 'nombre', header: 'Nombre', width: esMovil.value ? undefined : '40%', minWidth: '200px' },
+    { field: 'codigo', header: t('catalogo_herramientas.col_codigo'), width: esMovil.value ? undefined : '20%', minWidth: '120px' },
+    { field: 'nombre', header: t('catalogo_herramientas.col_nombre'), width: esMovil.value ? undefined : '40%', minWidth: '200px' },
     { field: 'cantidadDisponible', header: 'Stock', width: esMovil.value ? undefined : '20%', minWidth: '90px' },
-    { header: 'Acción', width: esMovil.value ? undefined : '20%', minWidth: '120px', slotName: 'accion' }
+    { header: t('catalogo_herramientas.col_accion'), width: esMovil.value ? undefined : '20%', minWidth: '120px', slotName: 'accion' }
 ]);
 
 // Filtros nativos en lugar del filtrado manual
@@ -66,17 +69,18 @@ const obtenerSeveridadStock = (h) => {
     return 'success';
 };
 
+// Traducimos los estados del Stock
 const obtenerTextoStock = (h) => {
     if (!h) return '';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'CRÍTICO';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'ALERTA';
-    return 'NORMAL';
+    if (h.cantidadDisponible < h.cantidadMinima) return t('catalogo_herramientas.estado_critico');
+    if (h.cantidadDisponible === h.cantidadMinima) return t('catalogo_herramientas.estado_alerta');
+    return t('catalogo_herramientas.estado_normal');
 };
 </script>
 
 <template>
     <div class="panel-inventario p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo text-xl md:text-2xl font-bold" style="color: #5ab1ce;">Herramientas Disponibles</h3>
+        <h3 class="subtitulo text-xl md:text-2xl font-bold" style="color: #5ab1ce;">{{ t('catalogo_herramientas.titulo') }}</h3>
         
         <!-- Buscador -->
         <div class="buscador-container mb-4">
@@ -85,9 +89,9 @@ const obtenerTextoStock = (h) => {
                 <InputText 
                     id="buscadorHerramientas"
                     name="buscadorHerramientas"
-                    aria-label="Buscar herramienta"
+                    :aria-label="t('catalogo_herramientas.aria_buscar')"
                     v-model="filtros['global'].value" 
-                    placeholder="Buscar por código o nombre..." 
+                    :placeholder="t('catalogo_herramientas.ph_buscar')" 
                     class="w-full input-oscuro" 
                     autocomplete="off"
                 />
@@ -101,7 +105,7 @@ const obtenerTextoStock = (h) => {
             llaveMemoria="catalogo_herramientas"
             dataKey="id"
             iconoVacio="pi-box"
-            mensajeVacio="No hay herramientas disponibles en el catálogo."
+            :mensajeVacio="t('catalogo_herramientas.mensaje_vacio')"
             @doble-click="abrirDetalles"
         >
             <!-- Slot Personalizado: Acción -->
@@ -112,7 +116,7 @@ const obtenerTextoStock = (h) => {
                         icon="pi pi-eye" 
                         class="p-button-rounded p-button-info p-button-sm btn-ojito" 
                         @click.stop="abrirDetalles(data)" 
-                        aria-label="Ver detalles"
+                        :aria-label="t('catalogo_herramientas.aria_ver_detalles')"
                     />
                     
                     <Button 
@@ -120,7 +124,7 @@ const obtenerTextoStock = (h) => {
                         class="p-button-rounded p-button-success p-button-sm" 
                         @click.stop="emitirAgregar(data)" 
                         :disabled="data.cantidadDisponible <= 0"
-                        aria-label="Agregar al pedido"
+                        :aria-label="t('catalogo_herramientas.aria_agregar')"
                     />
                 </div>
             </template>
@@ -131,7 +135,7 @@ const obtenerTextoStock = (h) => {
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
             :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
-            header="Detalles de la Herramienta" 
+            :header="t('catalogo_herramientas.modal_titulo')" 
             :modal="true"
             dismissableMask
             class="modal-oscuro"
@@ -160,36 +164,36 @@ const obtenerTextoStock = (h) => {
                 <!-- Grid de Datos -->
                 <div class="grid">
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Código</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.col_codigo') }}</span>
                         <span class="text-xl font-bold" style="color: #2b7a8f;">{{ herramientaActual.codigo }}</span>
                     </div>
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Nombre</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.col_nombre') }}</span>
                         <span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span>
                     </div>
                     
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Tipo / Categoría</span>
-                        <span class="text-lg text-white">{{ herramientaActual.tipo || 'N/A' }}</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_tipo') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.tipo || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Ubicación Física</span>
-                        <span class="text-lg text-white">{{ herramientaActual.ubicacion || 'N/A' }}</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_ubicacion') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.ubicacion || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
                     
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Marca / Proveedor</span>
-                        <span class="text-lg text-white">{{ herramientaActual.marca || 'N/A' }}</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_marca') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.marca || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">Stock Actual vs Mínimo</span>
-                        <span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} unidades</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_stock_vs') }}</span>
+                        <span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} {{ t('catalogo_herramientas.modal_unidades') }}</span>
                     </div>
                     
                     <div class="col-12 mb-3">
-                        <span class="text-500 block mb-1">Descripción y Notas</span>
+                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_descripcion') }}</span>
                         <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
-                            {{ herramientaActual.descripcion || 'Sin descripción disponible.' }}
+                            {{ herramientaActual.descripcion || t('catalogo_herramientas.modal_sin_descripcion') }}
                         </div>
                     </div>
                 </div>
@@ -198,13 +202,13 @@ const obtenerTextoStock = (h) => {
             <template #footer>
                 <div class="flex flex-column-reverse sm:flex-row justify-content-end gap-2 mt-2 md:mt-3">
                     <Button 
-                        label="Cerrar" 
+                        :label="t('catalogo_herramientas.btn_cerrar')" 
                         icon="pi pi-times" 
                         class="btn-cancelar w-full sm:w-auto" 
                         @click="mostrarDetalles = false" 
                     />
                     <Button 
-                        label="Añadir al Pedido" 
+                        :label="t('catalogo_herramientas.btn_anadir')" 
                         icon="pi pi-plus" 
                         class="boton-anadir-verde w-full sm:w-auto" 
                         @click="() => { emitirAgregar(herramientaActual); mostrarDetalles = false; }" 

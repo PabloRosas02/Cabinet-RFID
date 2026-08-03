@@ -4,6 +4,7 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
     pedido: { type: Array, required: true },
@@ -12,6 +13,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['quitar', 'registrar']);
+const { t } = useI18n(); 
 
 const resultadosSugeridos = ref([]);
 
@@ -67,22 +69,22 @@ const obtenerSeveridadStock = (h) => {
 
 const obtenerTextoStock = (h) => {
     if (!h) return '';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'CRÍTICO';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'ALERTA';
-    return 'NORMAL';
+    if (h.cantidadDisponible < h.cantidadMinima) return t('detalle_pedido.estado_critico');
+    if (h.cantidadDisponible === h.cantidadMinima) return t('detalle_pedido.estado_alerta');
+    return t('detalle_pedido.estado_normal');
 };
 </script>
 
 <template>
     <div class="panel-principal flex flex-column h-full p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="m-0 mb-4 text-xl md:text-2xl font-bold text-white">Detalle del Pedido</h3>
+        <h3 class="m-0 mb-4 text-xl md:text-2xl font-bold text-white">{{ t('detalle_pedido.titulo') }}</h3>
 
         <!-- Formulario del Trabajador -->
         <div class="formulario-trabajador mb-4">
             
             <!-- Búsqueda por Número -->
             <div class="field mb-3">
-                <label for="buscarNumEmpleado" class="label-blanco">No. de Empleado (Buscar o Escribir)</label>
+                <label for="buscarNumEmpleado" class="label-blanco">{{ t('detalle_pedido.label_num_empleado') }}</label>
                 <AutoComplete 
                     inputId="buscarNumEmpleado"
                     v-model="trabajador.numero" 
@@ -90,7 +92,7 @@ const obtenerTextoStock = (h) => {
                     @complete="buscarUsuario" 
                     @item-select="seleccionarUsuario"
                     field="numTrabajador"
-                    placeholder="Ej. 1045..." 
+                    :placeholder="t('detalle_pedido.ph_num_empleado')" 
                     class="w-full"
                     inputClass="w-full input-oscuro"
                     panelClass="panel-autocomplete-oscuro"
@@ -107,7 +109,7 @@ const obtenerTextoStock = (h) => {
             
             <!-- Búsqueda por Nombre -->
             <div class="field">
-                <label for="buscarNomEmpleado" class="label-blanco">Nombre del Trabajador</label>
+                <label for="buscarNomEmpleado" class="label-blanco">{{ t('detalle_pedido.label_nom_empleado') }}</label>
                 <AutoComplete 
                     inputId="buscarNomEmpleado"
                     v-model="trabajador.nombre" 
@@ -115,7 +117,7 @@ const obtenerTextoStock = (h) => {
                     @complete="buscarUsuario" 
                     @item-select="seleccionarUsuario"
                     field="nombre"
-                    placeholder="Ej. Eduardo Cruz..." 
+                    :placeholder="t('detalle_pedido.ph_nom_empleado')" 
                     class="w-full"
                     inputClass="w-full input-oscuro"
                     panelClass="panel-autocomplete-oscuro"
@@ -133,9 +135,9 @@ const obtenerTextoStock = (h) => {
         </div>
 
         <!-- Lista de Herramientas Seleccionadas -->
-        <h4 class="text-300 text-lg mt-4 border-top-1 border-gray-600 pt-3">Herramientas a entregar:</h4>
+        <h4 class="text-300 text-lg mt-4 border-top-1 border-gray-600 pt-3">{{ t('detalle_pedido.titulo_herramientas') }}</h4>
         
-        <div v-if="pedido.length === 0" class="mensaje-vacio">Aún no has agregado herramientas.</div>
+        <div v-if="pedido.length === 0" class="mensaje-vacio">{{ t('detalle_pedido.mensaje_vacio') }}</div>
 
         <ul v-else class="lista-pedido">
             <li v-for="item in pedido" :key="item.id" class="item-pedido flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-3 sm:gap-0">
@@ -146,33 +148,33 @@ const obtenerTextoStock = (h) => {
                 </div>
 
                 <div class="item-acciones w-full sm:w-7 flex justify-content-between sm:justify-content-end align-items-center">
-                    <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" aria-label="Ver Detalles" />
+                    <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" :aria-label="t('detalle_pedido.aria_ver_detalles')" />
                     
                     <div class="control-cantidad">
-                        <span class="etiqueta-cant">Cant:</span>
+                        <span class="etiqueta-cant">{{ t('detalle_pedido.etiqueta_cant') }}</span>
                         <input 
                             type="number" 
                             v-model.number="item.cantidadLlevada" 
                             min="1" 
                             :max="item.cantidadDisponible" 
                             class="input-oscuro input-numero" 
-                            aria-label="Cantidad a llevar"
+                            :aria-label="t('detalle_pedido.aria_cantidad')"
                         />
                         <span class="etiqueta-stock">/ {{ item.cantidadDisponible }}</span>
                     </div>
                     
-                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" aria-label="Quitar" />
+                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" :aria-label="t('detalle_pedido.aria_quitar')" />
                 </div>
             </li>
         </ul>
 
         <div class="mt-4">
             <div v-if="(trabajador.numero || trabajador.nombre) && !trabajadorValido" class="text-red-400 text-sm mb-3 flex align-items-center font-semibold">
-                <i class="pi pi-exclamation-triangle mr-2"></i> Selecciona un trabajador válido de la lista.
+                <i class="pi pi-exclamation-triangle mr-2"></i> {{ t('detalle_pedido.error_trabajador') }}
             </div>
             
             <Button 
-                label="Registrar Pedido" 
+                :label="t('detalle_pedido.btn_registrar')" 
                 icon="pi pi-check" 
                 class="w-full boton-registrar" 
                 @click="emit('registrar')" 
@@ -184,7 +186,7 @@ const obtenerTextoStock = (h) => {
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
             :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
-            header="Detalles de la Herramienta" 
+            :header="t('detalle_pedido.modal_titulo')" 
             :modal="true" 
             dismissableMask 
             class="modal-oscuro"
@@ -197,18 +199,18 @@ const obtenerTextoStock = (h) => {
                 </div>
 
                 <div class="grid">
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Código</span><span class="text-xl font-bold" style="color: #38bdf8;">{{ herramientaActual.codigo }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Nombre</span><span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Tipo / Categoría</span><span class="text-lg text-white">{{ herramientaActual.tipo || 'N/A' }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Ubicación Física</span><span class="text-lg text-white">{{ herramientaActual.ubicacion || 'N/A' }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Marca / Proveedor</span><span class="text-lg text-white">{{ herramientaActual.marca || 'N/A' }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">Stock Actual vs Mínimo</span><span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} unidades</span></div>
-                    <div class="col-12 mb-3"><span class="text-500 block mb-1">Descripción y Notas</span><div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">{{ herramientaActual.descripcion || 'Sin descripción disponible.' }}</div></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.col_codigo') }}</span><span class="text-xl font-bold" style="color: #38bdf8;">{{ herramientaActual.codigo }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.col_nombre') }}</span><span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_tipo') }}</span><span class="text-lg text-white">{{ herramientaActual.tipo || t('detalle_pedido.no_aplica') }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_ubicacion') }}</span><span class="text-lg text-white">{{ herramientaActual.ubicacion || t('detalle_pedido.no_aplica') }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_marca') }}</span><span class="text-lg text-white">{{ herramientaActual.marca || t('detalle_pedido.no_aplica') }}</span></div>
+                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }}</span><span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} {{ t('detalle_pedido.modal_unidades') }}</span></div>
+                    <div class="col-12 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_descripcion') }}</span><div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">{{ herramientaActual.descripcion || t('detalle_pedido.modal_sin_descripcion') }}</div></div>
                 </div>
             </div>
             <template #footer>
                 <div class="flex justify-content-end mt-2 md:mt-3">
-                    <Button label="Cerrar" icon="pi pi-times" class="btn-cancelar font-bold w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
+                    <Button :label="t('detalle_pedido.btn_cerrar')" icon="pi pi-times" class="btn-cancelar font-bold w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
                 </div>
             </template>
         </Dialog>

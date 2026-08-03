@@ -2,9 +2,12 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import Message from 'primevue/message';
+import { useI18n } from 'vue-i18n'; 
 
 import TablaPedidos from '@/components/devoluciones/TablaDevoluciones.vue';
 import ModalDevolucion from '@/components/devoluciones/ModalDevolucion.vue';
+
+const { t } = useI18n();
 
 const pedidosPendientes = ref([]);
 const cargando = ref(false);
@@ -50,7 +53,8 @@ const confirmarDevolucion = async (pedidoModificado) => {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
-            throw new Error('No se encontró una sesión activa. Por favor, vuelve a iniciar sesión.');
+            // Traducimos el error de sesión
+            throw new Error(t('view_devoluciones.error_sesion'));
         }
 
         const payload = {
@@ -64,12 +68,14 @@ const confirmarDevolucion = async (pedidoModificado) => {
         };
 
         if (payload.herramientasDevueltas.length === 0) {
-            throw new Error('Debes seleccionar al menos una herramienta válida para devolver.');
+            // Traducimos el error de herramienta inválida
+            throw new Error(t('view_devoluciones.error_herramienta_invalida'));
         }
 
         await axios.put(`/api/pedidos/${pedidoModificado.id}/devolver`, payload);
         
-        mensajeFeedback.value = { visible: true, texto: '¡Devolución registrada con éxito!', tipo: 'success' };
+        // Traducimos el mensaje de éxito
+        mensajeFeedback.value = { visible: true, texto: t('view_devoluciones.exito_devolucion'), tipo: 'success' };
         mostrarModal.value = false;
         
         await cargarPedidosPendientes();
@@ -78,9 +84,11 @@ const confirmarDevolucion = async (pedidoModificado) => {
 
     } catch (error) {
         console.error("Error al procesar la devolución:", error);
+        
+        // Traducimos el mensaje de error del catch (si el backend no mandó un error específico)
         mensajeFeedback.value = { 
             visible: true, 
-            texto: error.response?.data?.error || error.message || 'Error al procesar la devolución.', 
+            texto: error.response?.data?.error || error.message || t('view_devoluciones.error_procesar'), 
             tipo: 'error' 
         };
         setTimeout(() => { mensajeFeedback.value.visible = false; }, 4000);
@@ -93,7 +101,8 @@ const confirmarDevolucion = async (pedidoModificado) => {
 <template>
   <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
-        <h2 class="text-xl md:text-2xl font-bold m-0" style="color: #5ab1ce;">Devolución de Herramientas</h2>
+        <!-- Traducimos el título principal -->
+        <h2 class="text-xl md:text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_devoluciones.titulo') }}</h2>
     </div>
 
     <!-- Mensaje de éxito/error -->

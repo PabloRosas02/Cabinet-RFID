@@ -5,6 +5,7 @@ import Textarea from 'primevue/textarea';
 import InputNumber from 'primevue/inputnumber';
 import Button from 'primevue/button';
 import { useToast } from 'primevue/usetoast'; 
+import { useI18n } from 'vue-i18n';
 import { comprimirImagenWebP } from '@/utils/imageHelper';
 
 const props = defineProps({
@@ -16,6 +17,7 @@ const props = defineProps({
 
 const emit = defineEmits(['guardar', 'error', 'limpiar-mensajes']);
 const toast = useToast(); 
+const { t } = useI18n(); 
 
 const formularioBasico = {
     codigo: '', nombre: '', tipo: '', ubicacion: '',
@@ -37,7 +39,7 @@ const procesarImagen = async (evento) => {
         herramienta.value.imagen = await comprimirImagenWebP(archivo);
     } catch (mensajeError) {
         toast.removeAllGroups();
-        toast.add({ severity: 'error', summary: 'Error de Imagen', detail: mensajeError, life: 5000 });
+        toast.add({ severity: 'error', summary: t('formulario_producto.toast_error_imagen'), detail: mensajeError, life: 5000 });
         evento.target.value = ''; 
     }
 };
@@ -57,8 +59,8 @@ const intentarGuardar = () => {
         camposInvalidos.value = true;
         toast.add({ 
             severity: 'warn', 
-            summary: 'Campos Obligatorios', 
-            detail: 'El Código y el Nombre son obligatorios para registrar el producto.', 
+            summary: t('formulario_producto.toast_campos_obligatorios'), 
+            detail: t('formulario_producto.toast_campos_detalle'), 
             life: 4000 
         });
         return; 
@@ -77,13 +79,13 @@ defineExpose({ limpiar });
             
             <div class="col-12 lg:col-8 grid m-0 p-0">
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="codigoProducto" class="font-bold label-blanco">Código *</label>
+                    <label for="codigoProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_codigo') }}</label>
                     <InputText 
                         id="codigoProducto" 
                         name="codigoProducto" 
                         v-model="herramienta.codigo" 
                         required 
-                        placeholder="Código único del producto" 
+                        :placeholder="t('formulario_producto.ph_codigo')" 
                         autocomplete="off" 
                         class="input-oscuro"
                         :class="{'p-invalid': camposInvalidos && !herramienta.codigo?.trim()}" 
@@ -91,13 +93,13 @@ defineExpose({ limpiar });
                 </div>
                 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="nombreProducto" class="font-bold label-blanco">Nombre *</label>
+                    <label for="nombreProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_nombre') }}</label>
                     <InputText 
                         id="nombreProducto" 
                         name="nombreProducto" 
                         v-model="herramienta.nombre" 
                         required 
-                        placeholder="Nombre del producto" 
+                        :placeholder="t('formulario_producto.ph_nombre')" 
                         autocomplete="off" 
                         class="input-oscuro"
                         :class="{'p-invalid': camposInvalidos && !herramienta.nombre?.trim()}"
@@ -105,33 +107,33 @@ defineExpose({ limpiar });
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="tipoProducto" class="font-bold label-blanco">Tipo / Categoría</label>
-                    <InputText id="tipoProducto" name="tipoProducto" v-model="herramienta.tipo" placeholder="Ej. Eléctrica" autocomplete="off" class="input-oscuro" />
+                    <label for="tipoProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_tipo') }}</label>
+                    <InputText id="tipoProducto" name="tipoProducto" v-model="herramienta.tipo" :placeholder="t('formulario_producto.ph_tipo')" autocomplete="off" class="input-oscuro" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="marcaProducto" class="font-bold label-blanco">Marca / Proveedor</label>
-                    <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" placeholder="Ej. Truper" autocomplete="off" class="input-oscuro" />
+                    <label for="marcaProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_marca') }}</label>
+                    <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" :placeholder="t('formulario_producto.ph_marca')" autocomplete="off" class="input-oscuro" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="stockFisico" class="font-bold label-blanco">Stock Físico Inicial</label>
+                    <label for="stockFisico" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_fisico') }}</label>
                     <InputNumber inputId="stockFisico" name="stockFisico" v-model="herramienta.cantidadDisponible" integeronly inputClass="input-oscuro" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="stockMinimo" class="font-bold label-blanco">Stock Mínimo (Alerta)</label>
+                    <label for="stockMinimo" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_minimo') }}</label>
                     <InputNumber inputId="stockMinimo" name="stockMinimo" v-model="herramienta.cantidadMinima" integeronly inputClass="input-oscuro" />
                 </div>
 
                 <div class="col-12 mb-3 flex flex-column gap-2">
-                    <label for="ubicacionFisica" class="font-bold label-blanco">Ubicación Física</label>
-                    <InputText id="ubicacionFisica" name="ubicacionFisica" v-model="herramienta.ubicacion" placeholder="Ej. Gabinete A" autocomplete="off" class="input-oscuro" />
+                    <label for="ubicacionFisica" class="font-bold label-blanco">{{ t('formulario_producto.label_ubicacion') }}</label>
+                    <InputText id="ubicacionFisica" name="ubicacionFisica" v-model="herramienta.ubicacion" :placeholder="t('formulario_producto.ph_ubicacion')" autocomplete="off" class="input-oscuro" />
                 </div>
             </div>
 
             <div class="col-12 lg:col-4 mb-3 flex flex-column gap-2">
-                <label for="inputFileImagen" class="font-bold label-blanco">Fotografía</label>
+                <label for="inputFileImagen" class="font-bold label-blanco">{{ t('formulario_producto.label_fotografia') }}</label>
                 <div class="area-imagen flex flex-column align-items-center justify-content-center p-3 border-round shadow-1 w-full h-full" style="min-height: 250px;">
                     
                     <img v-if="herramienta.imagen" 
@@ -157,14 +159,14 @@ defineExpose({ limpiar });
 
             <!-- Descripción -->
             <div class="col-12 mb-4 flex flex-column gap-2">
-                <label for="descripcionProducto" class="font-bold label-blanco">Descripción / Detalles</label>
-                <Textarea id="descripcionProducto" name="descripcionProducto" v-model="herramienta.descripcion" rows="3" placeholder="Especificaciones adicionales..." class="input-oscuro" />
+                <label for="descripcionProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_descripcion') }}</label>
+                <Textarea id="descripcionProducto" name="descripcionProducto" v-model="herramienta.descripcion" rows="3" :placeholder="t('formulario_producto.ph_descripcion')" class="input-oscuro" />
             </div>
             
             <!-- Botones de Acción -->
             <div class="col-12 flex flex-column sm:flex-row gap-3 mt-2">
-                <Button label="Registrar Producto" icon="pi pi-check" @click="intentarGuardar" :loading="cargando" class="boton-anadir-verde px-4 w-full sm:w-auto" />
-                <Button label="Limpiar" icon="pi pi-eraser" severity="secondary" @click="limpiar" class="btn-limpiar w-full sm:w-auto" />
+                <Button :label="t('formulario_producto.btn_registrar')" icon="pi pi-check" @click="intentarGuardar" :loading="cargando" class="boton-anadir-verde px-4 w-full sm:w-auto" />
+                <Button :label="t('formulario_producto.btn_limpiar')" icon="pi pi-eraser" severity="secondary" @click="limpiar" class="btn-limpiar w-full sm:w-auto" />
             </div>
         </div>
     </div>
