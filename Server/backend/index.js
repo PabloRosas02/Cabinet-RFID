@@ -17,13 +17,11 @@ app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/herramientas', herramientasRoutes);
 app.use('/api/pedidos', pedidosRoutes);
 
-
-// Solo levantamos el servidor en el puerto si estamos en nuestra computadora (desarrollo local)
 if (process.env.NODE_ENV !== 'production') {
+    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
         console.log(`Servidor Backend corriendo en http://localhost:${PORT}`);
     });
 }
 
-// Vercel necesita que exportemos la app en lugar de hacer app.listen()
 export default app;
