@@ -1,4 +1,3 @@
-// backend/middlewares/auth.js
 import jwt from 'jsonwebtoken';
 
 const getSecretKey = () => {
