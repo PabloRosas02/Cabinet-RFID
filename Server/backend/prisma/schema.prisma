@@ -9,6 +9,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ------------------------------------------------------
@@ -40,7 +41,7 @@ enum TipoAccion {
   ELIMINACION 
 }
 
-enum EstadoPedido {
+enum EstadoSalida {
   PENDIENTE
   DEVUELTO
 }
@@ -59,9 +60,9 @@ model Usuario {
   tarjetaRfid   Int?         @unique 
   creadoEn      DateTime     @default(now())
 
-  movimientos        HistorialHerramienta[]
-  pedidosPrestados   Pedido[] @relation("PrestadorPedido")
-  pedidosRecibidos   Pedido[] @relation("ReceptorPedido")
+  movimientos          HistorialHerramienta[]
+  salidasPrestadas     Salida[] @relation("PrestadorSalida")
+  salidasRecibidas     Salida[] @relation("ReceptorSalida")
   
   recepcionesParciales DevolucionParcial[] @relation("RecepcionesParciales")
 }
@@ -87,7 +88,7 @@ model Herramienta {
   ubicacion          String?   
 
   historial          HistorialHerramienta[]
-  detallesPedido     DetallePedido[]
+  detallesSalida     DetalleSalida[]
 }
 
 model HistorialHerramienta {
@@ -104,31 +105,34 @@ model HistorialHerramienta {
   usuario       Usuario      @relation(fields: [usuarioId], references: [id])
 }
 
-model Pedido {
+model Salida {
   id               Int          @id @default(autoincrement())
   
   trabajadorNumero String       
   trabajadorNombre String
 
+  numeroOrden      String?      // String por si la orden lleva letras (ej. OT-123)
+  numeroMaquina    String?      // String por si la máquina es (ej. CNC-04)
+
   prestadorId      Int
-  prestador        Usuario      @relation("PrestadorPedido", fields: [prestadorId], references: [id])
+  prestador        Usuario      @relation("PrestadorSalida", fields: [prestadorId], references: [id])
 
   receptorId       Int?
-  receptor         Usuario?     @relation("ReceptorPedido", fields: [receptorId], references: [id])
+  receptor         Usuario?     @relation("ReceptorSalida", fields: [receptorId], references: [id])
 
-  fechaPedido      DateTime     @default(now())
+  fechaSalida      DateTime     @default(now()) // CAMBIO: de fechaPedido a fechaSalida
   fechaDevolucion  DateTime?    
   
-  estado           EstadoPedido @default(PENDIENTE)
+  estado           EstadoSalida @default(PENDIENTE)
 
-  detalles         DetallePedido[]
+  detalles         DetalleSalida[]
 }
 
-model DetallePedido {
+model DetalleSalida {
   id                Int          @id @default(autoincrement())
   
-  pedidoId          Int
-  pedido            Pedido       @relation(fields: [pedidoId], references: [id])
+  salidaId          Int          // CAMBIO: de pedidoId a salidaId
+  salida            Salida       @relation(fields: [salidaId], references: [id])
   
   herramientaId     Int
   herramienta       Herramienta  @relation(fields: [herramientaId], references: [id])
@@ -136,7 +140,6 @@ model DetallePedido {
   cantidadPrestada  Int
   cantidadRegresada Int          @default(0)
 
-  // NUEVA RELACIÓN: El historial de recepciones de esta herramienta específica
   devoluciones      DevolucionParcial[]
 }
 
@@ -144,7 +147,7 @@ model DevolucionParcial {
   id               Int           @id @default(autoincrement())
   
   detalleId        Int
-  detalle          DetallePedido @relation(fields: [detalleId], references: [id])
+  detalle          DetalleSalida @relation(fields: [detalleId], references: [id])
   
   receptorId       Int
   receptor         Usuario       @relation("RecepcionesParciales", fields: [receptorId], references: [id])

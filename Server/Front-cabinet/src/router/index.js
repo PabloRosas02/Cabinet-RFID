@@ -45,9 +45,9 @@ const router = createRouter({
       meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] }
     },
     { 
-      path: '/pedidos', 
-      name: 'pedidos', 
-      component: () => import('../views/PedidosView.vue'),
+      path: '/salidas', 
+      name: 'salidas', 
+      component: () => import('../views/SalidasView.vue'),
       meta: { requiresAuth: true, rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] }
     },
     { 
@@ -82,7 +82,7 @@ router.beforeEach((to, from) => {
 
   const obtenerRutaPorDefecto = (rol) => {
     if (rol === 'ADMINISTRADOR' || rol === 'SUPERVISOR_ALMACEN') return '/inventario';
-    if (rol === 'ALMACENISTA') return '/pedidos';
+    if (rol === 'ALMACENISTA') return '/salidas';
     if (rol === 'OPERADOR') return '/historial';
     return '/login'; 
   };

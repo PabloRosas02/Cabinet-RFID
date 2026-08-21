@@ -4,17 +4,30 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
+import InputText from 'primevue/inputtext';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
-    pedido: { type: Array, required: true },
-    trabajador: { type: Object, required: true },
-    listaUsuarios: { type: Array, default: () => [] } 
+    pedido: { 
+        type: Array, 
+        required: true 
+    },
+    trabajador: { 
+        type: Object, 
+        required: true 
+    },
+    listaUsuarios: { 
+        type: Array, 
+        default: () => [] 
+    } 
 });
 
 const emit = defineEmits(['quitar', 'registrar']);
 const { t } = useI18n(); 
 
+// =====================================================================
+// LÓGICA DE BÚSQUEDA Y VALIDACIÓN DE TRABAJADOR
+// =====================================================================
 const resultadosSugeridos = ref([]);
 
 const buscarUsuario = (event) => {
@@ -30,6 +43,7 @@ const buscarUsuario = (event) => {
 
 const seleccionarUsuario = (event) => {
     const usuario = event.value;
+    // PrimeVue devuelve el objeto completo al seleccionar
     if (usuario && typeof usuario === 'object') {
         props.trabajador.numero = usuario.numTrabajador;
         props.trabajador.nombre = usuario.nombre;
@@ -37,21 +51,22 @@ const seleccionarUsuario = (event) => {
 };
 
 const trabajadorValido = computed(() => {
-    // Si no hay datos o la lista está vacía, no es válido
-    if (!props.trabajador.numero || !props.trabajador.nombre || !props.listaUsuarios) return false;
+    // Verificamos que existan el número, nombre, orden y máquina
+    if (!props.trabajador.numero || !props.trabajador.nombre || !props.trabajador.orden || !props.trabajador.maquina || !props.listaUsuarios) return false;
     
     const numIngresado = props.trabajador.numero.toString().trim();
     const nomIngresado = props.trabajador.nombre.toString().trim().toLowerCase();
 
-    // Verificamos que exista un usuario en la base de datos que coincida 
-    // Exactamente con el número y el nombre ingresados
+    // Verificamos que exista un usuario en la BD que coincida con ambos campos
     return props.listaUsuarios.some(u => 
         u.numTrabajador?.toString() === numIngresado && 
         u.nombre?.toString().toLowerCase() === nomIngresado
     );
 });
-// =====================================================================
 
+// =====================================================================
+// LÓGICA DEL MODAL DE DETALLES Y STOCK
+// =====================================================================
 const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
 
@@ -60,8 +75,10 @@ const verDetalles = (item) => {
     mostrarDetalles.value = true;
 };
 
+// Se agregó la condición de <= 0 para mantener consistencia con el catálogo
 const obtenerSeveridadStock = (h) => {
     if (!h) return 'success';
+    if (h.cantidadDisponible <= 0) return 'danger';
     if (h.cantidadDisponible < h.cantidadMinima) return 'danger';
     if (h.cantidadDisponible === h.cantidadMinima) return 'warning';
     return 'success';
@@ -69,6 +86,7 @@ const obtenerSeveridadStock = (h) => {
 
 const obtenerTextoStock = (h) => {
     if (!h) return '';
+    if (h.cantidadDisponible <= 0) return t('detalle_pedido.estado_agotado');
     if (h.cantidadDisponible < h.cantidadMinima) return t('detalle_pedido.estado_critico');
     if (h.cantidadDisponible === h.cantidadMinima) return t('detalle_pedido.estado_alerta');
     return t('detalle_pedido.estado_normal');
@@ -77,7 +95,9 @@ const obtenerTextoStock = (h) => {
 
 <template>
     <div class="panel-principal flex flex-column h-full p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="m-0 mb-4 text-xl md:text-2xl font-bold text-white">{{ t('detalle_pedido.titulo') }}</h3>
+        <h3 class="m-0 mb-4 text-xl md:text-2xl font-bold text-white">
+            {{ t('detalle_pedido.titulo') }}
+        </h3>
 
         <!-- Formulario del Trabajador -->
         <div class="formulario-trabajador mb-4">
@@ -108,7 +128,7 @@ const obtenerTextoStock = (h) => {
             </div>
             
             <!-- Búsqueda por Nombre -->
-            <div class="field">
+            <div class="field mb-3">
                 <label for="buscarNomEmpleado" class="label-blanco">{{ t('detalle_pedido.label_nom_empleado') }}</label>
                 <AutoComplete 
                     inputId="buscarNomEmpleado"
@@ -131,13 +151,39 @@ const obtenerTextoStock = (h) => {
                     </template>
                 </AutoComplete>
             </div>
+
+            <!-- Orden de Trabajo (NUEVO) -->
+            <div class="field mb-3">
+                <label for="ordenTrabajo" class="label-blanco">No. de Orden</label>
+                <InputText 
+                    id="ordenTrabajo"
+                    v-model="trabajador.orden" 
+                    placeholder="Ej. OT-1024..." 
+                    class="w-full input-oscuro" 
+                />
+            </div>
+
+            <!-- Máquina / Equipo (NUEVO) -->
+            <div class="field mb-3">
+                <label for="maquinaTrabajo" class="label-blanco">Máquina / Equipo</label>
+                <InputText 
+                    id="maquinaTrabajo"
+                    v-model="trabajador.maquina" 
+                    placeholder="Ej. CNC-02..." 
+                    class="w-full input-oscuro" 
+                />
+            </div>
             
         </div>
 
         <!-- Lista de Herramientas Seleccionadas -->
-        <h4 class="text-300 text-lg mt-4 border-top-1 border-gray-600 pt-3">{{ t('detalle_pedido.titulo_herramientas') }}</h4>
+        <h4 class="text-300 text-lg mt-4 border-top-1 border-gray-600 pt-3">
+            {{ t('detalle_pedido.titulo_herramientas') }}
+        </h4>
         
-        <div v-if="pedido.length === 0" class="mensaje-vacio">{{ t('detalle_pedido.mensaje_vacio') }}</div>
+        <div v-if="pedido.length === 0" class="mensaje-vacio">
+            {{ t('detalle_pedido.mensaje_vacio') }}
+        </div>
 
         <ul v-else class="lista-pedido">
             <li v-for="item in pedido" :key="item.id" class="item-pedido flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-3 sm:gap-0">
@@ -148,7 +194,12 @@ const obtenerTextoStock = (h) => {
                 </div>
 
                 <div class="item-acciones w-full sm:w-7 flex justify-content-between sm:justify-content-end align-items-center">
-                    <Button icon="pi pi-eye" class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" @click="verDetalles(item)" :aria-label="t('detalle_pedido.aria_ver_detalles')" />
+                    <Button 
+                        icon="pi pi-eye" 
+                        class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" 
+                        @click="verDetalles(item)" 
+                        :aria-label="t('detalle_pedido.aria_ver_detalles')" 
+                    />
                     
                     <div class="control-cantidad">
                         <span class="etiqueta-cant">{{ t('detalle_pedido.etiqueta_cant') }}</span>
@@ -163,11 +214,17 @@ const obtenerTextoStock = (h) => {
                         <span class="etiqueta-stock">/ {{ item.cantidadDisponible }}</span>
                     </div>
                     
-                    <Button icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" @click="emit('quitar', item.id)" :aria-label="t('detalle_pedido.aria_quitar')" />
+                    <Button 
+                        icon="pi pi-trash" 
+                        class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" 
+                        @click="emit('quitar', item.id)" 
+                        :aria-label="t('detalle_pedido.aria_quitar')" 
+                    />
                 </div>
             </li>
         </ul>
 
+        <!-- Botón de Registro y Validaciones -->
         <div class="mt-4">
             <div v-if="(trabajador.numero || trabajador.nombre) && !trabajadorValido" class="text-red-400 text-sm mb-3 flex align-items-center font-semibold">
                 <i class="pi pi-exclamation-triangle mr-2"></i> {{ t('detalle_pedido.error_trabajador') }}
@@ -182,6 +239,7 @@ const obtenerTextoStock = (h) => {
             />
         </div>
 
+        <!-- Modal de Detalles (Idéntico al Catálogo) -->
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
@@ -193,9 +251,19 @@ const obtenerTextoStock = (h) => {
         >
             <div v-if="herramientaActual" class="p-2 md:p-4">
                 <div class="flex flex-column align-items-center mb-5">
-                    <img v-if="herramientaActual.imagen" :src="herramientaActual.imagen" @error="$event.target.src='https://via.placeholder.com/250x150/1e252d/ffffff?text=Error'" class="shadow-3 border-round" style="max-width: 100%; max-height: 300px; object-fit: contain;" />
-                    <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 100%; max-width: 200px; height: 200px;"><i class="pi pi-image text-7xl text-400"></i></div>
-                    <div class="mt-4"><Tag class="text-lg md:text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramientaActual)" :value="obtenerTextoStock(herramientaActual)" /></div>
+                    <img 
+                        v-if="herramientaActual.imagen" 
+                        :src="herramientaActual.imagen" 
+                        @error="$event.target.src='https://via.placeholder.com/250x150/1e252d/ffffff?text=Error'" 
+                        class="shadow-3 border-round" 
+                        style="max-width: 100%; max-height: 300px; object-fit: contain;" 
+                    />
+                    <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 100%; max-width: 200px; height: 200px;">
+                        <i class="pi pi-image text-7xl text-400"></i>
+                    </div>
+                    <div class="mt-4">
+                        <Tag class="text-lg md:text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramientaActual)" :value="obtenerTextoStock(herramientaActual)" />
+                    </div>
                 </div>
 
                 <div class="grid">
@@ -208,9 +276,16 @@ const obtenerTextoStock = (h) => {
                     <div class="col-12 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_descripcion') }}</span><div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">{{ herramientaActual.descripcion || t('detalle_pedido.modal_sin_descripcion') }}</div></div>
                 </div>
             </div>
+            
             <template #footer>
                 <div class="flex justify-content-end mt-2 md:mt-3">
-                    <Button :label="t('detalle_pedido.btn_cerrar')" icon="pi pi-times" class="btn-cancelar font-bold w-full sm:w-auto" @click="mostrarDetalles = false" autofocus />
+                    <Button 
+                        :label="t('detalle_pedido.btn_cerrar')" 
+                        icon="pi pi-times" 
+                        class="btn-cancelar font-bold w-full sm:w-auto" 
+                        @click="mostrarDetalles = false" 
+                        autofocus 
+                    />
                 </div>
             </template>
         </Dialog>
@@ -221,6 +296,14 @@ const obtenerTextoStock = (h) => {
 /* =========================================================
    ESTILOS EXCLUSIVOS DE ESTA VISTA (CARRITO)
    ========================================================= */
+.label-blanco {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #cbd5e1;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
 .mensaje-vacio { color: #94a3b8; font-style: italic; text-align: center; padding: 1rem 0; }
 .lista-pedido { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; max-height: 350px; }
 .item-pedido { padding: 0.75rem; background-color: #1e252d; border: 1px solid #4a5568; border-radius: 8px; margin-bottom: 0.5rem; }
@@ -232,7 +315,7 @@ const obtenerTextoStock = (h) => {
 .item-acciones { display: flex; }
 .control-cantidad { display: flex; align-items: center; background-color: #2a323d; padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid #3f4b5b; }
 .etiqueta-cant, .etiqueta-stock { color: #94a3b8; font-size: 0.85rem; }
-.input-numero { width: 50px; text-align: center; margin: 0 0.5rem; padding: 0.3rem; border-radius: 4px; }
+.input-numero { width: 50px; text-align: center; margin: 0 0.5rem; padding: 0.3rem; border-radius: 4px; color: #ffffff; }
 .input-numero::-webkit-outer-spin-button, .input-numero::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .input-numero[type=number] { -moz-appearance: textfield; appearance: textfield; }
 
@@ -246,7 +329,7 @@ const obtenerTextoStock = (h) => {
 </style>
 
 <style>
-/* Estilos globales obligatorios para el AutoComplete de PrimeVue */
+/* Estilos globales para el AutoComplete de PrimeVue */
 .panel-autocomplete-oscuro {
     background-color: #1e252d !important;
     border: 1px solid #4a5568 !important;

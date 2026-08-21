@@ -24,7 +24,7 @@ const cargarPedidosPendientes = async () => {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
 
         // Añadimos los parámetros para que el backend filtre según el rol
-        const response = await axios.get('/api/pedidos/pendientes', {
+        const response = await axios.get('/api/salidas/pendientes', {
             params: {
                 usuarioId: usuarioSesion?.id,
                 rol: usuarioSesion?.rol
@@ -32,7 +32,7 @@ const cargarPedidosPendientes = async () => {
         }); 
         pedidosPendientes.value = response.data;
     } catch (error) {
-        console.error("Error al cargar pedidos pendientes:", error);
+        console.error("Error al cargar las salidas pendientes:", error);
     } finally {
         cargando.value = false;
     }
@@ -72,7 +72,7 @@ const confirmarDevolucion = async (pedidoModificado) => {
             throw new Error(t('view_devoluciones.error_herramienta_invalida'));
         }
 
-        await axios.put(`/api/pedidos/${pedidoModificado.id}/devolver`, payload);
+        await axios.put(`/api/salidas/${pedidoModificado.id}/devolver`, payload);
         
         // Traducimos el mensaje de éxito
         mensajeFeedback.value = { visible: true, texto: t('view_devoluciones.exito_devolucion'), tipo: 'success' };
@@ -111,7 +111,7 @@ const confirmarDevolucion = async (pedidoModificado) => {
     </Message>
 
     <TablaPedidos 
-        :pedidos="pedidosPendientes" 
+        :salidas="pedidosPendientes" 
         :cargando="cargando"
         @revisar="revisarDevolucion" 
     />

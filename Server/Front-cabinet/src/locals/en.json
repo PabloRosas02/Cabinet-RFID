@@ -1,6 +1,6 @@
 {
   "menu": {
-    "pedidos": "Orders",
+    "salidas": "Orders",
     "devoluciones": "Returns",
     "historial": "History",
     "nuevo_producto": "New Product",
@@ -32,16 +32,18 @@
     "btn_confirmar": "Confirm Return"
   },
   "tabla_devoluciones": {
-    "folio_pedido": "Order ID",
+    "folio_salida": "Order ID",
     "no_empleado": "Employee No.",
     "nombre_trabajador": "Employee Name",
-    "fecha_prestamo": "Loan Date",
+    "fecha_salida": "Loan Date",
     "estado": "Status",
     "accion": "Action",
     "buscar_placeholder": "Search by ID or employee...",
     "mensaje_vacio": "There are no pending returns at this time.",
     "estado_pendiente": "Pending",
-    "btn_devolver": "Return"
+    "btn_devolver": "Return",
+    "num_orden": "Order",
+    "num_maquina": "Machine Number"
   },
   "view_devoluciones": {
     "titulo": "Tool Returns",
@@ -145,7 +147,6 @@
     "presto": "Lent by (Warehouse)",
     "recibio": "Received by / Return",
     "solicito": "Requested by (Employee)",
-    "fecha_prestamo": "Loan Date",
     "fecha_devolucion": "Return Date",
     "herramientas": "Tools",
     "estado": "Status",
@@ -156,7 +157,10 @@
     "estado_pendiente": "PENDING",
     "estado_devuelto": "RETURNED",
     "pendiente_curso": "Pending / In progress",
-    "pendiente_fecha": "Pending"
+    "pendiente_fecha": "Pending",
+    "num_orden": "Order",
+    "num_maquina": "Machine Number",
+    "fecha_salida": "Loan Date"
   },
   "view_historial": {
     "titulo": "History and Reports",
@@ -254,7 +258,8 @@
     "modal_sin_descripcion": "No description available.",
     "no_aplica": "N/A",
     "btn_cerrar": "Close",
-    "btn_anadir": "Add to Order"
+    "btn_anadir": "Add to Order",
+    "estado_agotado": "Sold Out"
   },
   "detalle_pedido": {
     "titulo": "Order Details",
@@ -284,9 +289,10 @@
     "modal_descripcion": "Description and Notes",
     "modal_sin_descripcion": "No description available.",
     "no_aplica": "N/A",
-    "btn_cerrar": "Close"
+    "btn_cerrar": "Close",
+    "estado_agotado":"Sold Out"
   },
-  "view_pedidos": {
+  "view_salidas": {
     "toast_limite_titulo": "Limit reached",
     "toast_limite_detalle": "You have reached the available stock limit for this tool.",
     "error_sesion": "No active session found. Please log in again.",
@@ -426,7 +432,9 @@
     "folio": "Folio",
     "autorizo": "Authorized By",
     "solicito": "Requested By",
-    "fecha_prestamo": "Checkout Date",
+    "numero_orden": "Order Number",
+    "numero_maquina": "Machine Number",
+    "fecha_salida": "Checkout Date",
     "fecha_devolucion": "Return Date",
     "resumen_herr": "Tools Summary",
     "observaciones": "Notes (Partial Tracking)",

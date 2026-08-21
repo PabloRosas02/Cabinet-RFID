@@ -1,10 +1,12 @@
 import express from 'express';
 import cors from 'cors'; 
-import path from 'path';                                  
-import { fileURLToPath } from 'url';            
+import path from 'path';                                   
+import { fileURLToPath } from 'url';          
 import usuariosRoutes from './routes/usuarios.js';
 import herramientasRoutes from './routes/herramientas.js';
-import pedidosRoutes from './routes/pedidos.js';
+import salidasRoutes from './routes/salidas.js';
+import configRoutes from './routes/configRoutes.js';
+import { configurarCronNotificaciones } from './jobs/cronPendientes.js'; 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -15,10 +17,12 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/herramientas', herramientasRoutes);
-app.use('/api/pedidos', pedidosRoutes);
+app.use('/api/salidas', salidasRoutes);
+app.use('/api', configRoutes);
+
+configurarCronNotificaciones();
 
 if (process.env.NODE_ENV !== 'production') {
-    const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
         console.log(`Servidor Backend corriendo en http://localhost:${PORT}`);
     });

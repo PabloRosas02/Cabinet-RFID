@@ -47,7 +47,7 @@ const iniciarSesion = async () => {
         localStorage.setItem('usuarioActivo', JSON.stringify(usuarioLogueado));
 
         if (usuarioLogueado.rol === 'ALMACENISTA') {
-            router.push('/pedidos'); // Pantalla de inicio para Almacenistas
+            router.push('/salidas'); // Pantalla de inicio para Almacenistas
         } else {
             router.push('/inventario'); // Pantalla de inicio para Administrador/Supervisor
         }

@@ -5,15 +5,17 @@ import { useToast } from 'primevue/usetoast';
 import Toast from 'primevue/toast'; 
 import { useI18n } from 'vue-i18n'; 
 
-import CatalogoHerramientas from '../components/pedidos/CatalogoHerramientas.vue';
-import DetallePedido from '../components/pedidos/DetallePedido.vue';
+import CatalogoHerramientas from '../components/salidas/CatalogoHerramientas.vue';
+import DetallePedido from '../components/salidas/DetalleSalidas.vue';
 
 const toast = useToast(); 
 const { t } = useI18n();
 
 const trabajador = ref({
     numero: '',
-    nombre: ''
+    nombre: '',
+    orden: '',  
+    maquina: ''  
 });
 
 const inventario = ref([]);
@@ -61,8 +63,8 @@ const manejarAgregar = (herramienta) => {
             
             toast.add({ 
                 severity: 'warn', 
-                summary: t('view_pedidos.toast_limite_titulo'), 
-                detail: t('view_pedidos.toast_limite_detalle'), 
+                summary: t('view_salidas.toast_limite_titulo'), 
+                detail: t('view_salidas.toast_limite_detalle'), 
                 life: 3000 
             });
         }
@@ -81,12 +83,14 @@ const procesarPedido = async () => {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
-            throw new Error(t('view_pedidos.error_sesion'));
+            throw new Error(t('view_salidas.error_sesion'));
         }
 
         const payload = {
             trabajadorNumero: trabajador.value.numero,
             trabajadorNombre: trabajador.value.nombre,
+            numeroOrden: trabajador.value.orden,      
+            numeroMaquina: trabajador.value.maquina,  
             prestadorId: usuarioSesion.id, 
             herramientas: pedidoActual.value.map(item => ({
                 id: item.id,
@@ -94,20 +98,20 @@ const procesarPedido = async () => {
             }))
         };
 
-        await axios.post('/api/pedidos', payload);
+        await axios.post('/api/salidas', payload);
 
         // TOAST DE ÉXITO 
         toast.removeAllGroups();
         toast.add({ 
             severity: 'success', 
-            summary: t('view_pedidos.toast_exito_titulo'), 
-            detail: t('view_pedidos.toast_exito_detalle'), 
+            summary: t('view_salidas.toast_exito_titulo'), 
+            detail: t('view_salidas.toast_exito_detalle'), 
             life: 3000 
         });
         
         await cargarInventario();
         
-        trabajador.value = { numero: '', nombre: '' };
+        trabajador.value = { numero: '', nombre: '', orden: '', maquina: '' };
         pedidoActual.value = [];
 
     } catch (error) {
@@ -117,8 +121,8 @@ const procesarPedido = async () => {
         toast.removeAllGroups();
         toast.add({ 
             severity: 'error', 
-            summary: t('view_pedidos.toast_error_titulo'), 
-            detail: error.response?.data?.error || error.message || t('view_pedidos.toast_error_detalle'), 
+            summary: t('view_salidas.toast_error_titulo'), 
+            detail: error.response?.data?.error || error.message || t('view_salidas.toast_error_detalle'), 
             life: 5000 
         });
     }

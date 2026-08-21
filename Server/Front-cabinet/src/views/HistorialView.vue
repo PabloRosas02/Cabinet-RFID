@@ -14,7 +14,7 @@ import Toast from 'primevue/toast';
 import { useI18n } from 'vue-i18n';
 
 import TablaHistorial from '@/components/historial/TablaHistorial.vue'; 
-import ModalDetallesPedido from '@/components/historial/ModalDetallesPedido.vue';
+import ModalDetallesSalida from '@/components/historial/ModalDetallesSalidas.vue';
 import { useGestorArchivos } from '@/composables/useGestordeArchivos'; 
 
 const toast = useToast();
@@ -24,7 +24,6 @@ const historial = ref([]);
 const cargando = ref(false);
 const filtros = ref({ global: { value: null, matchMode: FilterMatchMode.CONTAINS } });
 
-// Modificamos opcionesTiempo para tener Label (Traducido) y Value (Estático para el código)
 const opcionesTiempo = computed(() => [
     { label: t('view_historial.tiempo_todos'), value: 'Todos' },
     { label: t('view_historial.tiempo_hoy'), value: 'Hoy' },
@@ -37,16 +36,18 @@ const filtroTiempo = ref('Todos');
 const filtroEstado = ref('Todos'); 
 
 const mostrarModal = ref(false);
-const pedidoSeleccionado = ref(null);
+const salidaSeleccionada = ref(null); 
 const menuExportar = ref(null);
 
-const { exportarHistorialPedidos } = useGestorArchivos();
+// CAMBIO: Se importa la nueva función del composable
+const { exportarHistorialSalidas } = useGestorArchivos();
 
 const cargarHistorial = async () => {
     cargando.value = true;
     try {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
-        const response = await axios.get('/api/pedidos/historial', {
+        // CAMBIO: Endpoint actualizado a /api/salidas/historial
+        const response = await axios.get('/api/salidas/historial', {
             params: { usuarioId: usuarioSesion?.id, rol: usuarioSesion?.rol, numTrabajador: usuarioSesion?.numTrabajador }
         });
         historial.value = response.data;
@@ -74,9 +75,9 @@ const historialFiltrado = computed(() => {
     inicioSemana.setDate(inicioSemana.getDate() - diff);
     inicioSemana.setHours(0, 0, 0, 0);
 
-    // Como usamos 'value' interno, el switch se queda exactamente igual
     return datos.filter(p => {
-        const fecha = new Date(p.fechaPedido);
+        // CAMBIO: fechaPedido -> fechaSalida
+        const fecha = new Date(p.fechaSalida);
         switch (filtroTiempo.value) {
             case 'Hoy': return fecha.getDate() === hoy.getDate() && fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear();
             case 'Esta Semana': return fecha >= inicioSemana;
@@ -87,15 +88,14 @@ const historialFiltrado = computed(() => {
     });
 });
 
-const abrirDetalles = (pedido) => {
-    pedidoSeleccionado.value = pedido;
+const abrirDetalles = (salida) => {
+    salidaSeleccionada.value = salida;
     mostrarModal.value = true;
 };
 
 // =====================================================================
 // Opciones del Menú de Exportación
 // =====================================================================
-// Convertimos a computed para que reaccione al cambio de idioma
 const opcionesExportar = computed(() => [
     {
         label: t('view_historial.exportar_csv'),
@@ -115,9 +115,8 @@ const toggleExportar = (event) => {
 
 const realizarExportacion = (formato) => {
     try {
-        exportarHistorialPedidos(historialFiltrado.value, filtroTiempo.value, formato);
+        exportarHistorialSalidas(historialFiltrado.value, filtroTiempo.value, formato);
         
-        // Traducimos las notificaciones Toast
         toast.add({ 
             severity: 'success', 
             summary: t('view_historial.toast_exito_titulo'), 
@@ -178,7 +177,6 @@ const realizarExportacion = (formato) => {
                 />
             </IconField>
             
-            <!-- Agregamos optionLabel y optionValue al Select -->
             <Select 
                 inputId="filtroTiempoHistorial"
                 name="filtroTiempoHistorial"
@@ -197,9 +195,9 @@ const realizarExportacion = (formato) => {
 
     <TablaHistorial :historial="historialFiltrado" :cargando="cargando" :filtros="filtros" @doble-click="abrirDetalles" />
 
-    <ModalDetallesPedido 
+    <ModalDetallesSalida 
         :mostrar="mostrarModal" 
-        :pedido="pedidoSeleccionado" 
+        :salida="salidaSeleccionada" 
         @cerrar="mostrarModal = false" 
     />
   </div>

@@ -6,10 +6,10 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // =====================================================================
-// 1. POST /api/pedidos -> Crear un nuevo pedido (Préstamo) 
+// 1. POST /api/salidas -> Crear una nueva Salida (Antes Pedido) 
 // =====================================================================
 router.post('/', verificarToken, async (req, res) => {
-    const { trabajadorNumero, trabajadorNombre, prestadorId, herramientas } = req.body;
+    const { trabajadorNumero, trabajadorNombre, prestadorId, numeroOrden, numeroMaquina, herramientas } = req.body;
 
     try {
         if (!prestadorId) {
@@ -17,11 +17,13 @@ router.post('/', verificarToken, async (req, res) => {
         }
 
         await prisma.$transaction(async (tx) => {
-            await tx.pedido.create({
+            await tx.salida.create({
                 data: {
                     trabajadorNumero: trabajadorNumero.toString(),
                     trabajadorNombre,
                     prestadorId: parseInt(prestadorId, 10), 
+                    numeroOrden: numeroOrden || null,    
+                    numeroMaquina: numeroMaquina || null,
                     detalles: {
                         create: herramientas.map((h) => ({
                             herramientaId: h.id,
@@ -46,15 +48,15 @@ router.post('/', verificarToken, async (req, res) => {
             }
         });
 
-        res.status(201).json({ mensaje: 'Pedido registrado con éxito' });
+        res.status(201).json({ mensaje: 'Salida registrada con éxito' });
     } catch (error) {
-        console.error('Error al crear pedido:', error);
-        res.status(400).json({ error: error.message || 'Error al procesar el pedido' });
+        console.error('Error al crear salida:', error);
+        res.status(400).json({ error: error.message || 'Error al procesar la salida' });
     }
 });
 
 // =====================================================================
-// 2. GET /api/pedidos/pendientes (BLINDADO CONTRA ERROR 500)
+// 2. GET /api/salidas/pendientes
 // =====================================================================
 router.get('/pendientes', verificarToken, async (req, res) => {
     try {
@@ -68,12 +70,11 @@ router.get('/pendientes', verificarToken, async (req, res) => {
             }
         };
 
-        // Si es OPERADOR, por seguridad, solo ve sus propios préstamos pendientes.
         if (rol === 'OPERADOR' && numTrabajador) {
             filtrosConsulta.trabajadorNumero = numTrabajador.toString();
         }
 
-        const pedidos = await prisma.pedido.findMany({
+        const salidas = await prisma.salida.findMany({
             where: filtrosConsulta,
             include: {
                 prestador: true, 
@@ -82,19 +83,21 @@ router.get('/pendientes', verificarToken, async (req, res) => {
                     include: { herramienta: true }
                 }
             },
-            orderBy: { fechaPedido: 'desc' }
+            orderBy: { fechaSalida: 'desc' } 
         });
 
-        const respuestaFormateada = pedidos.map(pedido => ({
-            id: pedido.id,
-            trabajadorNumero: pedido.trabajadorNumero,
-            trabajadorNombre: pedido.trabajadorNombre,
-            prestadorNombre: pedido.prestador ? pedido.prestador.nombre : 'Desconocido',
-            receptorNombre: pedido.receptor ? pedido.receptor.nombre : null,
-            fechaPedido: pedido.fechaPedido,
-            fechaDevolucion: pedido.fechaDevolucion,
-            estado: pedido.estado,
-            herramientas: pedido.detalles.map(detalle => ({
+        const respuestaFormateada = salidas.map(salida => ({
+            id: salida.id,
+            trabajadorNumero: salida.trabajadorNumero,
+            trabajadorNombre: salida.trabajadorNombre,
+            numeroOrden: salida.numeroOrden,     
+            numeroMaquina: salida.numeroMaquina,
+            prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
+            receptorNombre: salida.receptor ? salida.receptor.nombre : null,
+            fechaSalida: salida.fechaSalida,    
+            fechaDevolucion: salida.fechaDevolucion,
+            estado: salida.estado,
+            herramientas: salida.detalles.map(detalle => ({
                 detalleId: detalle.id,
                 herramientaId: detalle.herramientaId,
                 codigo: detalle.herramienta?.codigo || 'N/A',
@@ -106,16 +109,16 @@ router.get('/pendientes', verificarToken, async (req, res) => {
 
         res.json(respuestaFormateada);
     } catch (error) {
-        console.error('Error al obtener pedidos pendientes:', error);
+        console.error('Error al obtener salidas pendientes:', error);
         res.status(500).json({ error: 'Error interno del servidor al obtener devoluciones pendientes.' });
     }
 });
 
 // =====================================================================
-// 3. PUT /api/pedidos/:id/devolver -> Procesar Devolución 
+// 3. PUT /api/salidas/:id/devolver -> Procesar Devolución 
 // =====================================================================
 router.put('/:id/devolver', verificarToken, async (req, res) => {
-    const pedidoId = parseInt(req.params.id);
+    const salidaId = parseInt(req.params.id);
     let { herramientasDevueltas, receptorId } = req.body; 
 
     try {
@@ -130,24 +133,24 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
         }
 
         await prisma.$transaction(async (tx) => {
-            const pedido = await tx.pedido.findUnique({
-                where: { id: pedidoId },
+            const salida = await tx.salida.findUnique({
+                where: { id: salidaId },
                 include: { detalles: true }
             });
 
-            if (!pedido || pedido.estado === 'DEVUELTO') {
-                throw new Error('El pedido no existe o ya fue cerrado');
+            if (!salida || salida.estado === 'DEVUELTO') {
+                throw new Error('La salida no existe o ya fue cerrada');
             }
 
             for (const item of herramientasDevueltas) {
-                const detalle = pedido.detalles.find(d => d.id === item.detalleId);
-                if (!detalle) throw new Error(`Detalle ID ${item.detalleId} no encontrado en este pedido`);
+                const detalle = salida.detalles.find(d => d.id === item.detalleId);
+                if (!detalle) throw new Error(`Detalle ID ${item.detalleId} no encontrado en esta salida`);
 
                 if ((detalle.cantidadRegresada + item.cantidad) > detalle.cantidadPrestada) {
                     throw new Error(`La cantidad total devuelta excede lo prestado.`);
                 }
 
-                await tx.detallePedido.update({
+                await tx.detalleSalida.update({
                     where: { id: detalle.id },
                     data: { cantidadRegresada: { increment: item.cantidad } }
                 });
@@ -166,19 +169,19 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
                 });
             }
 
-            const pedidoActualizado = await tx.pedido.findUnique({
-                where: { id: pedidoId },
+            const salidaActualizada = await tx.salida.findUnique({
+                where: { id: salidaId },
                 include: { detalles: true }
             });
 
-            const todasDevueltas = pedidoActualizado.detalles.every(
+            const todasDevueltas = salidaActualizada.detalles.every(
                 d => d.cantidadRegresada >= d.cantidadPrestada
             );
 
-            await tx.pedido.update({
-                where: { id: pedidoId },
+            await tx.salida.update({
+                where: { id: salidaId },
                 data: { 
-                    estado: todasDevueltas ? 'DEVUELTO' : pedido.estado, 
+                    estado: todasDevueltas ? 'DEVUELTO' : salida.estado, 
                     receptorId: parseInt(receptorId, 10),
                     fechaDevolucion: new Date() 
                 }
@@ -187,13 +190,13 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
 
         res.json({ mensaje: 'Devolución procesada correctamente' });
     } catch (error) {
-        console.error('Error al devolver pedido:', error);
+        console.error('Error al devolver salida:', error);
         res.status(400).json({ error: error.message || 'Error al procesar la devolución' });
     }
 });
 
 // =====================================================================
-// 4. GET /api/pedidos/historial -> Traer historial para reportes 
+// 4. GET /api/salidas/historial -> Traer historial para reportes 
 // =====================================================================
 router.get('/historial', verificarToken, async (req, res) => {
     try {
@@ -203,14 +206,14 @@ router.get('/historial', verificarToken, async (req, res) => {
 
         let filtrosConsulta = {};
 
-        // Los operadores solo ven los pedidos que ellos mismos solicitaron.
         if (rol === 'OPERADOR' && numTrabajador) {
             filtrosConsulta = {
                 trabajadorNumero: numTrabajador.toString() 
             };
         }
 
-        const pedidos = await prisma.pedido.findMany({
+        // CAMBIO: prisma.pedido.findMany -> prisma.salida.findMany
+        const salidas = await prisma.salida.findMany({
             where: filtrosConsulta,
             include: {
                 prestador: true,
@@ -224,19 +227,21 @@ router.get('/historial', verificarToken, async (req, res) => {
                     }
                 }
             },
-            orderBy: { fechaPedido: 'desc' }
+            orderBy: { fechaSalida: 'desc' } 
         });
 
-        const respuestaFormateada = pedidos.map(pedido => ({
-            id: pedido.id,
-            trabajadorNumero: pedido.trabajadorNumero,
-            trabajadorNombre: pedido.trabajadorNombre,
-            prestadorNombre: pedido.prestador ? pedido.prestador.nombre : 'Desconocido',
-            receptorNombre: pedido.receptor ? pedido.receptor.nombre : 'Pendiente / En curso',
-            fechaPedido: pedido.fechaPedido,
-            fechaDevolucion: pedido.fechaDevolucion,
-            estado: pedido.estado,
-            herramientas: pedido.detalles.map(detalle => ({
+        const respuestaFormateada = salidas.map(salida => ({
+            id: salida.id,
+            trabajadorNumero: salida.trabajadorNumero,
+            trabajadorNombre: salida.trabajadorNombre,
+            numeroOrden: salida.numeroOrden,    
+            numeroMaquina: salida.numeroMaquina, 
+            prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
+            receptorNombre: salida.receptor ? salida.receptor.nombre : 'Pendiente / En curso',
+            fechaSalida: salida.fechaSalida,   
+            fechaDevolucion: salida.fechaDevolucion,
+            estado: salida.estado,
+            herramientas: salida.detalles.map(detalle => ({
                 codigo: detalle.herramienta?.codigo || 'N/A',
                 nombre: detalle.herramienta?.nombre || 'Herramienta eliminada',
                 cantidadPrestada: detalle.cantidadPrestada,

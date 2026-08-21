@@ -100,7 +100,7 @@ router.delete('/:id', verificarToken, async (req, res) => {
     console.error(error);
     if (error.code === 'P2003') {
       return res.status(400).json({
-        error: 'No se puede eliminar: Este usuario tiene historial de pedidos asociado en el sistema.'
+        error: 'No se puede eliminar: Este usuario tiene historial de salidas asociado en el sistema.'
       });
     }
     res.status(500).json({ error: 'Error al eliminar el usuario' });

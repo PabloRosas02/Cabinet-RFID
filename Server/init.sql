@@ -6,7 +6,7 @@ CREATE TYPE "Departamento" AS ENUM ('INGENIERIA', 'MANTENIMIENTO', 'ADMINISTRACI
 CREATE TYPE "RolUsuario" AS ENUM ('ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA', 'OPERADOR');
 CREATE TYPE "EstadoHerramienta" AS ENUM ('ACTIVA', 'EN_MANTENIMIENTO', 'DADA_DE_BAJA');
 CREATE TYPE "TipoAccion" AS ENUM ('CREACION', 'MODIFICACION', 'ELIMINACION');
-CREATE TYPE "EstadoPedido" AS ENUM ('PENDIENTE', 'DEVUELTO');
+CREATE TYPE "EstadoSalida" AS ENUM ('PENDIENTE', 'DEVUELTO');
 
 -- ------------------------------------------------------
 -- TABLAS
@@ -55,27 +55,29 @@ CREATE TABLE "HistorialHerramienta" (
     CONSTRAINT "HistorialHerramienta_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "Pedido" (
+CREATE TABLE "Salida" (
     "id" SERIAL NOT NULL,
     "trabajadorNumero" TEXT NOT NULL,
     "trabajadorNombre" TEXT NOT NULL,
+    "numeroOrden" TEXT,
+    "numeroMaquina" TEXT,
     "prestadorId" INTEGER NOT NULL,
     "receptorId" INTEGER,
-    "fechaPedido" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "fechaSalida" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "fechaDevolucion" TIMESTAMP(3),
-    "estado" "EstadoPedido" NOT NULL DEFAULT 'PENDIENTE',
+    "estado" "EstadoSalida" NOT NULL DEFAULT 'PENDIENTE',
 
-    CONSTRAINT "Pedido_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Salida_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE "DetallePedido" (
+CREATE TABLE "DetalleSalida" (
     "id" SERIAL NOT NULL,
-    "pedidoId" INTEGER NOT NULL,
+    "salidaId" INTEGER NOT NULL,
     "herramientaId" INTEGER NOT NULL,
     "cantidadPrestada" INTEGER NOT NULL,
     "cantidadRegresada" INTEGER NOT NULL DEFAULT 0,
 
-    CONSTRAINT "DetallePedido_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "DetalleSalida_pkey" PRIMARY KEY ("id")
 );
 
 CREATE TABLE "DevolucionParcial" (
@@ -103,20 +105,19 @@ CREATE UNIQUE INDEX "Herramienta_codigo_key" ON "Herramienta"("codigo");
 ALTER TABLE "HistorialHerramienta" ADD CONSTRAINT "HistorialHerramienta_herramientaId_fkey" FOREIGN KEY ("herramientaId") REFERENCES "Herramienta"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE "HistorialHerramienta" ADD CONSTRAINT "HistorialHerramienta_usuarioId_fkey" FOREIGN KEY ("usuarioId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-ALTER TABLE "Pedido" ADD CONSTRAINT "Pedido_prestadorId_fkey" FOREIGN KEY ("prestadorId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "Pedido" ADD CONSTRAINT "Pedido_receptorId_fkey" FOREIGN KEY ("receptorId") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "Salida" ADD CONSTRAINT "Salida_prestadorId_fkey" FOREIGN KEY ("prestadorId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Salida" ADD CONSTRAINT "Salida_receptorId_fkey" FOREIGN KEY ("receptorId") REFERENCES "Usuario"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
-ALTER TABLE "DetallePedido" ADD CONSTRAINT "DetallePedido_pedidoId_fkey" FOREIGN KEY ("pedidoId") REFERENCES "Pedido"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-ALTER TABLE "DetallePedido" ADD CONSTRAINT "DetallePedido_herramientaId_fkey" FOREIGN KEY ("herramientaId") REFERENCES "Herramienta"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DetalleSalida" ADD CONSTRAINT "DetalleSalida_salidaId_fkey" FOREIGN KEY ("salidaId") REFERENCES "Salida"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DetalleSalida" ADD CONSTRAINT "DetalleSalida_herramientaId_fkey" FOREIGN KEY ("herramientaId") REFERENCES "Herramienta"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
-ALTER TABLE "DevolucionParcial" ADD CONSTRAINT "DevolucionParcial_detalleId_fkey" FOREIGN KEY ("detalleId") REFERENCES "DetallePedido"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "DevolucionParcial" ADD CONSTRAINT "DevolucionParcial_detalleId_fkey" FOREIGN KEY ("detalleId") REFERENCES "DetalleSalida"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "DevolucionParcial" ADD CONSTRAINT "DevolucionParcial_receptorId_fkey" FOREIGN KEY ("receptorId") REFERENCES "Usuario"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- ------------------------------------------------------
 -- DATOS INICIALES (SEED)
 -- ------------------------------------------------------
 
--- 1. CARGAR 10 USUARIOS (Contraseña encriptada para todos: 123456)
 INSERT INTO "Usuario" ("numTrabajador", "nombre", "contrasena", "depart", "rol", "tarjetaRfid") VALUES
 (1000, 'Admin Principal', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'ADMINISTRACION', 'ADMINISTRADOR', 100001),
 (1001, 'Supervisor Almacén', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'INGENIERIA', 'SUPERVISOR_ALMACEN', 100002),
@@ -130,7 +131,6 @@ INSERT INTO "Usuario" ("numTrabajador", "nombre", "contrasena", "depart", "rol",
 (1009, 'Operador Zeta', '$2b$12$CXuyI7fzGmdjgm5Cm1GIZusRiVDQsINuDU8L3xz8kQEHFQcO5Ky8e', 'MANTENIMIENTO', 'OPERADOR', NULL)
 ON CONFLICT ("numTrabajador") DO NOTHING;
 
--- 2. CARGAR 20 HERRAMIENTAS
 INSERT INTO "Herramienta" ("codigo", "nombre", "marca", "cantidad", "cantidadDisponible", "cantidadMinima", "tipo", "ubicacion", "estado", "actualizadoEn") VALUES
 ('HERR-001', 'Taladro Inalámbrico 20V', 'DeWalt', 5, 5, 2, 'Eléctrica', 'Estante A1', 'ACTIVA', CURRENT_TIMESTAMP),
 ('HERR-002', 'Multímetro Digital', 'Fluke', 3, 3, 2, 'Medición', 'Estante A2', 'ACTIVA', CURRENT_TIMESTAMP),
@@ -153,4 +153,3 @@ INSERT INTO "Herramienta" ("codigo", "nombre", "marca", "cantidad", "cantidadDis
 ('HERR-019', 'Extractor de Soldadura', 'Steren', 10, 10, 2, 'Soldadura', 'Estante B1', 'ACTIVA', CURRENT_TIMESTAMP),
 ('HERR-020', 'Lámpara de Trabajo LED', 'Milwaukee', 6, 6, 2, 'Iluminación', 'Estante E1', 'ACTIVA', CURRENT_TIMESTAMP)
 ON CONFLICT ("codigo") DO NOTHING;
-

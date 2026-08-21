@@ -112,7 +112,6 @@ export function useGestorArchivos() {
                 const obj = {};
                 cabeceras.forEach((cabecera, index) => {
                     let valor = valores[index] || '';
-                    // Soporte bilingüe para la importación
                     if (cabecera.includes('codigo') || cabecera.includes('code')) obj.codigo = valor;
                     if (cabecera.includes('nombre') || cabecera.includes('name')) obj.nombre = valor;
                     if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
@@ -155,7 +154,6 @@ export function useGestorArchivos() {
                     }
                     valor = valor.trim();
 
-                    // Soporte bilingüe
                     if (cabecera.includes('codigo') || cabecera.includes('code')) obj.codigo = valor;
                     if (cabecera.includes('nombre') || cabecera.includes('name')) obj.nombre = valor;
                     if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
@@ -208,7 +206,6 @@ export function useGestorArchivos() {
             });
         };
 
-        // INTERCEPTOR PARA TRADUCIR ACCIONES DE LA BD
         const traducirAccion = (accion) => {
             if (accion === 'CREACION') return t('export.accion_creacion');
             if (accion === 'MODIFICACION') return t('export.accion_modificacion');
@@ -225,7 +222,7 @@ export function useGestorArchivos() {
         } else {
             const datosExcel = bitacoraDatos.map(b => ({
                 [t('export.fecha')]: formatearFechaReporte(b.fecha),
-                [t('export.accion')]: traducirAccion(b.accion), // Usando el interceptor
+                [t('export.accion')]: traducirAccion(b.accion),
                 [t('export.col_codigo_herr')]: b.herramienta?.codigo || t('export.na'),
                 [t('export.col_nombre_herr')]: b.herramienta?.nombre || t('export.desconocido'),
                 [t('export.usuario_autor')]: b.usuario?.nombre || t('export.na'),
@@ -268,9 +265,9 @@ export function useGestorArchivos() {
     };
 
     // =======================================================
-    // 7. Exportar Historial de Pedidos
+    // 7. Exportar Historial de Salidas
     // =======================================================
-    const exportarHistorialPedidos = (historialFiltrado, filtroTiempo, formato) => {
+    const exportarHistorialSalidas = (historialFiltrado, filtroTiempo, formato) => {
         if (!historialFiltrado || historialFiltrado.length === 0) {
             throw new Error(t('export.alerta_sin_datos'));
         }
@@ -293,7 +290,6 @@ export function useGestorArchivos() {
             return new Date(fechaString).toLocaleDateString(strLocale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         };
 
-        // INTERCEPTOR PARA TRADUCIR ESTADOS DE LA BD
         const traducirEstado = (estado) => {
             if (estado === 'PENDIENTE') return t('export.estado_pendiente');
             if (estado === 'DEVUELTO') return t('export.estado_devuelto');
@@ -301,15 +297,22 @@ export function useGestorArchivos() {
         };
 
         if (formato === 'csv') {
-            const cabeceras = [t('export.folio'), t('export.autorizo'), t('export.solicito'), t('export.fecha_prestamo'), t('export.fecha_devolucion'), t('export.resumen_herr'), t('export.observaciones'), t('export.estado')];
+            const cabeceras = [
+                t('export.folio'), t('export.autorizo'), t('export.solicito'), 
+                t('export.numero_orden'), t('export.numero_maquina'),
+                t('export.fecha_salida'), t('export.fecha_devolucion'), 
+                t('export.resumen_herr'), t('export.observaciones'), t('export.estado')
+            ];
 
-            const filas = historialFiltrado.map(pedido => {
-                const folio = `#${pedido.id}`;
-                const autorizo = pedido.prestadorNombre || t('export.na');
-                const solicito = `${pedido.trabajadorNumero} - ${pedido.trabajadorNombre}`;
-                const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
+            const filas = historialFiltrado.map(salida => {
+                const folio = `#${salida.id}`;
+                const autorizo = salida.prestadorNombre || t('export.na');
+                const solicito = `${salida.trabajadorNumero} - ${salida.trabajadorNombre}`;
+                const numeroOrden = salida.numeroOrden || t('export.na');     
+                const numeroMaquina = salida.numeroMaquina || t('export.na');
+                const herramientas = salida.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
 
-                const observaciones = pedido.herramientas.map(h => {
+                const observaciones = salida.herramientas.map(h => {
                     if (h.historialDevoluciones?.length > 0) {
                         const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
                         if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x ${t('export.recibidas_por')} ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
@@ -317,17 +320,23 @@ export function useGestorArchivos() {
                     return null;
                 }).filter(Boolean).join(' || ') || t('export.sin_recepciones');
 
-                // Usando traducirEstado(pedido.estado) aquí:
-                return [`"${folio}"`, `"${autorizo}"`, `"${solicito}"`, `"${formatFecha(pedido.fechaPedido)}"`, `"${formatFecha(pedido.fechaDevolucion)}"`, `"${herramientas}"`, `"${observaciones}"`, `"${traducirEstado(pedido.estado)}"`].join(',');
+                return [
+                    `"${folio}"`, `"${autorizo}"`, `"${solicito}"`, 
+                    `"${numeroOrden}"`, `"${numeroMaquina}"`, 
+                    `"${formatFecha(salida.fechaSalida)}"`, 
+                    `"${formatFecha(salida.fechaDevolucion)}"`, `"${herramientas}"`, 
+                    `"${observaciones}"`, `"${traducirEstado(salida.estado)}"`
+                ].join(',');
             });
 
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
         } 
         else if (formato === 'xlsx') {
-            const datosParaExcel = historialFiltrado.map(pedido => {
-                const herramientas = pedido.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
+            // CAMBIO: pedido -> salida
+            const datosParaExcel = historialFiltrado.map(salida => {
+                const herramientas = salida.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
                 
-                const observaciones = pedido.herramientas.map(h => {
+                const observaciones = salida.herramientas.map(h => {
                     if (h.historialDevoluciones?.length > 0) {
                         const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
                         if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x ${t('export.recibidas_por')} ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
@@ -336,14 +345,16 @@ export function useGestorArchivos() {
                 }).filter(Boolean).join(' || ') || t('export.sin_recepciones');
 
                 return {
-                    [t('export.folio')]: `#${pedido.id}`,
-                    [t('export.autorizo')]: pedido.prestadorNombre || t('export.na'),
-                    [t('export.solicito')]: `${pedido.trabajadorNumero} - ${pedido.trabajadorNombre}`,
-                    [t('export.fecha_prestamo')]: formatFecha(pedido.fechaPedido),
-                    [t('export.fecha_devolucion')]: formatFecha(pedido.fechaDevolucion),
+                    [t('export.folio')]: `#${salida.id}`,
+                    [t('export.autorizo')]: salida.prestadorNombre || t('export.na'),
+                    [t('export.solicito')]: `${salida.trabajadorNumero} - ${salida.trabajadorNombre}`,
+                    [t('export.numero_orden')]: salida.numeroOrden || t('export.na'),     
+                    [t('export.numero_maquina')]: salida.numeroMaquina || t('export.na'),
+                    [t('export.fecha_salida')]: formatFecha(salida.fechaSalida),        
+                    [t('export.fecha_devolucion')]: formatFecha(salida.fechaDevolucion),
                     [t('export.resumen_herr')]: herramientas,
                     [t('export.observaciones')]: observaciones,
-                    [t('export.estado')]: traducirEstado(pedido.estado) 
+                    [t('export.estado')]: traducirEstado(salida.estado) 
                 };
             });
 
@@ -358,6 +369,6 @@ export function useGestorArchivos() {
         extraerDatosDeArchivo,
         exportarBitacora,
         exportarInventario,
-        exportarHistorialPedidos 
+        exportarHistorialSalidas 
     };
 }

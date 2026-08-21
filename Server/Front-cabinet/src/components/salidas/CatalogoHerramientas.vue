@@ -35,11 +35,11 @@ onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 // =====================================================
 // DEFINICIÓN DINÁMICA DE COLUMNAS
 // =====================================================
-// Aplicamos la traducción a los encabezados
+// Aplicamos la traducción a todos los encabezados
 const columnasCatalogo = computed(() => [
     { field: 'codigo', header: t('catalogo_herramientas.col_codigo'), width: esMovil.value ? undefined : '20%', minWidth: '120px' },
     { field: 'nombre', header: t('catalogo_herramientas.col_nombre'), width: esMovil.value ? undefined : '40%', minWidth: '200px' },
-    { field: 'cantidadDisponible', header: 'Stock', width: esMovil.value ? undefined : '20%', minWidth: '90px' },
+    { field: 'cantidadDisponible', header: t('catalogo_herramientas.col_stock'), width: esMovil.value ? undefined : '20%', minWidth: '90px' },
     { header: t('catalogo_herramientas.col_accion'), width: esMovil.value ? undefined : '20%', minWidth: '120px', slotName: 'accion' }
 ]);
 
@@ -64,6 +64,7 @@ const emitirAgregar = (herramienta) => {
 // --- Lógica de Stock ---
 const obtenerSeveridadStock = (h) => {
     if (!h) return 'success';
+    if (h.cantidadDisponible <= 0) return 'danger'; // Mejora: Si es 0 o menor, es peligro.
     if (h.cantidadDisponible < h.cantidadMinima) return 'danger';
     if (h.cantidadDisponible === h.cantidadMinima) return 'warning';
     return 'success';
@@ -72,6 +73,7 @@ const obtenerSeveridadStock = (h) => {
 // Traducimos los estados del Stock
 const obtenerTextoStock = (h) => {
     if (!h) return '';
+    if (h.cantidadDisponible <= 0) return t('catalogo_herramientas.estado_agotado'); // Nueva posible traducción
     if (h.cantidadDisponible < h.cantidadMinima) return t('catalogo_herramientas.estado_critico');
     if (h.cantidadDisponible === h.cantidadMinima) return t('catalogo_herramientas.estado_alerta');
     return t('catalogo_herramientas.estado_normal');
@@ -80,7 +82,9 @@ const obtenerTextoStock = (h) => {
 
 <template>
     <div class="panel-inventario p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="subtitulo text-xl md:text-2xl font-bold" style="color: #5ab1ce;">{{ t('catalogo_herramientas.titulo') }}</h3>
+        <h3 class="subtitulo text-xl md:text-2xl font-bold" style="color: #5ab1ce;">
+            {{ t('catalogo_herramientas.titulo') }}
+        </h3>
         
         <!-- Buscador -->
         <div class="buscador-container mb-4">
@@ -97,6 +101,7 @@ const obtenerTextoStock = (h) => {
                 />
             </IconField>
         </div>
+        
         <TablaGenerica
             :datos="inventario"
             :columnas="columnasCatalogo"

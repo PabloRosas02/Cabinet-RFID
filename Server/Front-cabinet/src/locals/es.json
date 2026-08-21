@@ -1,6 +1,6 @@
 {
   "menu": {
-    "pedidos": "Pedidos",
+    "salidas": "Salidas",
     "devoluciones": "Devoluciones",
     "historial": "Historial",
     "nuevo_producto": "Nuevo Producto",
@@ -32,16 +32,18 @@
     "btn_confirmar": "Confirmar Devolución"
   },
   "tabla_devoluciones": {
-    "folio_pedido": "Folio Pedido",
+    "folio_salida": "Folio",
     "no_empleado": "No. Empleado",
     "nombre_trabajador": "Nombre del Trabajador",
-    "fecha_prestamo": "Fecha de Préstamo",
+    "fecha_salida": "Fecha de Salida",
     "estado": "Estado",
     "accion": "Acción",
     "buscar_placeholder": "Buscar por folio o empleado...",
     "mensaje_vacio": "No hay devoluciones pendientes en este momento.",
     "estado_pendiente": "Pendiente",
-    "btn_devolver": "Devolver"
+    "btn_devolver": "Devolver",
+    "num_orden": "Orden",
+    "num_maquina": "Máquina"
   },
   "view_devoluciones": {
     "titulo": "Devolución de Herramientas",
@@ -145,7 +147,6 @@
     "presto": "Prestó (Almacenista)",
     "recibio": "Recibió / Devolución",
     "solicito": "Solicitó (Empleado)",
-    "fecha_prestamo": "Fecha Préstamo",
     "fecha_devolucion": "Fecha Devolución",
     "herramientas": "Herramientas",
     "estado": "Estado",
@@ -156,7 +157,10 @@
     "estado_pendiente": "PENDIENTE",
     "estado_devuelto": "DEVUELTO",
     "pendiente_curso": "Pendiente / En curso",
-    "pendiente_fecha": "Pendiente"
+    "pendiente_fecha": "Pendiente",
+    "num_orden": "Orden",
+    "num_maquina": "Máquina",
+    "fecha_salida": "Fecha de Salida"
   },
   "view_historial": {
     "titulo": "Historial y Reportes",
@@ -254,10 +258,11 @@
     "modal_sin_descripcion": "Sin descripción disponible.",
     "no_aplica": "N/A",
     "btn_cerrar": "Cerrar",
-    "btn_anadir": "Añadir al Pedido"
+    "btn_anadir": "Añadir al Pedido",
+    "estado_agotado": "Agotado"
   },
   "detalle_pedido": {
-    "titulo": "Detalle del Pedido",
+    "titulo": "Detalle de la Salida",
     "label_num_empleado": "No. de Empleado (Buscar o Escribir)",
     "ph_num_empleado": "Ej. 1045...",
     "label_nom_empleado": "Nombre del Trabajador",
@@ -269,7 +274,7 @@
     "aria_cantidad": "Cantidad a llevar",
     "aria_quitar": "Quitar",
     "error_trabajador": "Selecciona un trabajador válido de la lista.",
-    "btn_registrar": "Registrar Pedido",
+    "btn_registrar": "Registrar Salida",
     "modal_titulo": "Detalles de la Herramienta",
     "estado_critico": "CRÍTICO",
     "estado_alerta": "ALERTA",
@@ -284,9 +289,10 @@
     "modal_descripcion": "Descripción y Notas",
     "modal_sin_descripcion": "Sin descripción disponible.",
     "no_aplica": "N/A",
-    "btn_cerrar": "Cerrar"
+    "btn_cerrar": "Cerrar",
+    "estado_agotado":"Agotado"
   },
-  "view_pedidos": {
+  "view_salidas": {
     "toast_limite_titulo": "Límite alcanzado",
     "toast_limite_detalle": "Has alcanzado el límite de stock disponible para esta herramienta.",
     "error_sesion": "No se encontró una sesión activa. Por favor, vuelve a iniciar sesión.",
@@ -426,7 +432,9 @@
     "folio": "Folio",
     "autorizo": "Autorizó (Prestador)",
     "solicito": "Solicitó (Empleado)",
-    "fecha_prestamo": "Fecha Préstamo",
+    "numero_orden": "Número de Orden",
+    "numero_maquina": "Número de Máquina",
+    "fecha_salida": "Fecha de Salida",
     "fecha_devolucion": "Fecha Devolución General",
     "resumen_herr": "Resumen de Herramientas",
     "observaciones": "Observaciones (Rastreo Parcial)",

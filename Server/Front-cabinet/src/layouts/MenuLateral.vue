@@ -4,6 +4,8 @@ import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
+import InputSwitch from 'primevue/inputswitch'; 
+import axios from 'axios';
 
 const props = defineProps({
   menuAbierto: Boolean
@@ -18,6 +20,32 @@ const { t, locale } = useI18n();
 // Estados para el Modal de Configuración y Preferencias
 const mostrarModalConfig = ref(false);
 const temaActual = ref(localStorage.getItem('theme') || 'dark');
+
+// Estado para la automatización de correos (Prueba cada 1 min)
+const correosActivos = ref(false);
+
+// Consultar el estado inicial del cron al montar el componente
+const cargarEstadoAutomatizacion = async () => {
+  try {
+    const { data } = await axios.get('/api/configuracion/automatizacion');
+    correosActivos.value = data.activo;
+  } catch (error) {
+    console.error('Error al cargar el estado de la automatización:', error);
+  }
+};
+
+// Cambiar el estado del cron al presionar el switch
+const toggleAutomatizacion = async (nuevoValor) => {
+  try {
+    const { data } = await axios.post('/api/configuracion/automatizacion', { 
+      activo: nuevoValor 
+    });
+    correosActivos.value = data.activo;
+  } catch (error) {
+    console.error('Error al actualizar la automatización:', error);
+    correosActivos.value = !nuevoValor; // Revertir visualmente en caso de error
+  }
+};
 
 // Aplicar y guardar el tema
 const cambiarTema = (nuevoTema) => {
@@ -38,6 +66,7 @@ const aplicarTemaDOM = (tema) => {
 
 onMounted(() => {
   aplicarTemaDOM(temaActual.value);
+  cargarEstadoAutomatizacion(); // <-- Carga si el cron está activo al iniciar
 });
 
 // Lógica de Idioma
@@ -84,7 +113,7 @@ const obtenerRolUsuario = () => {
 };
 
 const menuCompleto = [
-  { claveT: 'pedidos', icono: 'pi pi-chart-bar', ruta: '/pedidos', rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] },
+  { claveT: 'salidas', icono: 'pi pi-chart-bar', ruta: '/salidas', rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] },
   { claveT: 'devoluciones', icono: 'pi pi-replay', ruta: '/devoluciones', rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA'] },
   { claveT: 'historial', icono: 'pi pi-book', ruta: '/historial', rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'OPERADOR','ALMACENISTA'] },
   { claveT: 'nuevo_producto', icono: 'pi pi-plus-circle', ruta: '/nuevo-producto', rolesPermitidos: ['ADMINISTRADOR', 'SUPERVISOR_ALMACEN'] },
@@ -135,13 +164,13 @@ const menuFiltrado = computed(() => {
     </ul>
   </aside>
 
-  <!-- MODAL DE CONFIGURACIÓN (IDIOMA Y TEMA) -->
+  <!-- MODAL DE CONFIGURACIÓN -->
   <Dialog 
     v-model:visible="mostrarModalConfig" 
     :header="t('configuracion_modal.titulo')" 
     :modal="true" 
     :breakpoints="{ '1199px': '75vw', '575px': '95vw' }" 
-    :style="{ width: '400px' }" 
+    :style="{ width: '450px' }" 
     class="modal-oscuro"
     dismissableMask
   >
@@ -187,6 +216,20 @@ const menuFiltrado = computed(() => {
         </div>
       </div>
 
+      <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
+        <span class="label-blanco font-semibold">Correos de Devoluciones Pendientes</span>
+        <div class="flex align-items-center justify-content-between p-3 surface-100 border-round">
+          <div>
+            <span class="text-white text-sm font-bold block">Envío automático (Prueba)</span>
+            <span class="text-xs text-400">Manda correo cada 1 minuto si hay pendientes</span>
+          </div>
+          <InputSwitch 
+            v-model="correosActivos" 
+            @change="toggleAutomatizacion(correosActivos)" 
+          />
+        </div>
+      </div>
+
     </div>
 
     <template #footer>
@@ -199,7 +242,7 @@ const menuFiltrado = computed(() => {
 
 <style scoped>
 /* =========================================================
-   ESTILOS ESCRITORIO (Monitor de PC)
+   ESTILOS ESCRITORIO
    ========================================================= */
 .sidebar {
   background-color: #063b69; 
@@ -256,12 +299,12 @@ const menuFiltrado = computed(() => {
 .ml-3 { margin-left: 0.5rem; }
 
 /* =========================================================
-   NUEVO ESTILO "FLOATING PANEL" PARA MÓVILES (Hasta 992px)
+   ESTILO RESPONSIVO MÓVILES
    ========================================================= */
 @media (max-width: 992px) {
   .sidebar {
     position: fixed;
-    top: 1rem;        
+    top: 1rem;       
     left: 1rem;      
     height: calc(100dvh - 2rem); 
     border-radius: 16px; 

@@ -34,13 +34,18 @@ onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 // =====================================================
 const columnasHistorial = computed(() => {
     const cols = [
-        { field: 'id', header: t('tabla_historial.folio'), width: esMovil.value ? undefined : '8%', minWidth: '100px', slotName: 'folio' },
-        { field: 'prestadorNombre', header: t('tabla_historial.presto'), width: esMovil.value ? undefined : '15%', minWidth: '180px' },
-        { header: t('tabla_historial.recibio'), width: esMovil.value ? undefined : '15%', minWidth: '180px', slotName: 'recibio' },
-        { header: t('tabla_historial.solicito'), width: esMovil.value ? undefined : '16%', minWidth: '220px', slotName: 'solicito' },
-        { header: t('tabla_historial.fecha_prestamo'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'fechaPrestamo' },
+        { field: 'id', header: t('tabla_historial.folio'), width: esMovil.value ? undefined : '6%', minWidth: '80px', slotName: 'folio' },
+        { field: 'numeroOrden', header: t('tabla_historial.num_orden'), width: esMovil.value ? undefined : '10%', minWidth: '120px' },
+        { field: 'numeroMaquina', header: t('tabla_historial.num_maquina'), width: esMovil.value ? undefined : '10%', minWidth: '120px' },
+        
+        { field: 'prestadorNombre', header: t('tabla_historial.presto'), width: esMovil.value ? undefined : '12%', minWidth: '160px' },
+        { header: t('tabla_historial.recibio'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'recibio' },
+        { header: t('tabla_historial.solicito'), width: esMovil.value ? undefined : '14%', minWidth: '200px', slotName: 'solicito' },
+        
+        { header: t('tabla_historial.fecha_salida'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'fechaSalida' },
         { header: t('tabla_historial.fecha_devolucion'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'fechaDevolucion' },
-        { header: t('tabla_historial.herramientas'), width: esMovil.value ? undefined : '14%', minWidth: '250px', slotName: 'herramientas' },
+        
+        { header: t('tabla_historial.herramientas'), width: esMovil.value ? undefined : '16%', minWidth: '250px', slotName: 'herramientas' },
         { field: 'estado', header: t('tabla_historial.estado'), width: esMovil.value ? undefined : '8%', minWidth: '120px', slotName: 'estado' }
     ];
 
@@ -63,8 +68,8 @@ const verDetalles = (data) => {
             :columnas="columnasHistorial"
             :cargando="cargando"
             :filtros="filtros"
-            :globalFilterFields="['trabajadorNombre', 'trabajadorNumero', 'prestadorNombre', 'receptorNombre']"
-            llaveMemoria="historial_prestamos"
+            :globalFilterFields="['trabajadorNombre', 'trabajadorNumero', 'prestadorNombre', 'receptorNombre', 'numeroOrden', 'numeroMaquina']"
+            llaveMemoria="historial_salidas"
             dataKey="id"
             :mensajeVacio="mensajeVacio || t('tabla_historial.mensaje_vacio')"
             :iconoVacio="iconoVacio"
@@ -89,9 +94,8 @@ const verDetalles = (data) => {
                 {{ data.trabajadorNumero }} - {{ data.trabajadorNombre }}
             </template>
 
-            <!-- 2. Pasamos 'locale' al formatear la fecha de préstamo -->
-            <template #fechaPrestamo="{ data }">
-                {{ formatearFecha(data.fechaPedido, locale) }}
+            <template #fechaSalida="{ data }">
+                {{ formatearFecha(data.fechaSalida, locale) }}
             </template>
 
             <!-- INTERCEPTAMOS LA FECHA CUANDO DICE "Pendiente" y pasamos 'locale' -->

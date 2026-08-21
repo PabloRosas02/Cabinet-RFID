@@ -76,7 +76,7 @@ html, body {
     color: #e2e8f0; 
 }
 
-/* Contenedor de las vistas normales (Inventario, Pedidos) */
+/* Contenedor de las vistas normales (Inventario, Salidas) */
 .vista-contenido { 
     flex: 1; 
     padding: 1.5rem; 

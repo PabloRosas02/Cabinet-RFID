@@ -11,7 +11,7 @@ import { useI18n } from 'vue-i18n';
 import { formatearFecha } from '@/utils/dateHelper';
 
 const props = defineProps({
-    pedidos: {
+    salidas: {
         type: Array,
         required: true
     },
@@ -41,11 +41,17 @@ onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 // =====================================================
 // DEFINICIÓN DINÁMICA DE COLUMNAS (Reactivas al tamaño de pantalla e idioma)
 // =====================================================
-const columnasPedidos = computed(() => [
-    { field: 'id', header: t('tabla_devoluciones.folio_pedido'), width: esMovil.value ? undefined : '15%', minWidth: '120px', slotName: 'folio' },
-    { field: 'trabajadorNumero', header: t('tabla_devoluciones.no_empleado'), width: esMovil.value ? undefined : '15%', minWidth: '140px' },
-    { field: 'trabajadorNombre', header: t('tabla_devoluciones.nombre_trabajador'), width: esMovil.value ? undefined : '30%', minWidth: '220px' },
-    { field: 'fechaPedido', header: t('tabla_devoluciones.fecha_prestamo'), width: esMovil.value ? undefined : '20%', minWidth: '160px', slotName: 'fecha' },
+const columnasSalidas = computed(() => [
+    { field: 'id', header: t('tabla_devoluciones.folio_salida'), width: esMovil.value ? undefined : '8%', minWidth: '100px', slotName: 'folio' },
+    
+    { field: 'numeroOrden', header: t('tabla_devoluciones.num_orden'), width: esMovil.value ? undefined : '12%', minWidth: '120px' },
+    { field: 'numeroMaquina', header: t('tabla_devoluciones.num_maquina'), width: esMovil.value ? undefined : '12%', minWidth: '120px' },
+    
+    { field: 'trabajadorNumero', header: t('tabla_devoluciones.no_empleado'), width: esMovil.value ? undefined : '12%', minWidth: '130px' },
+    { field: 'trabajadorNombre', header: t('tabla_devoluciones.nombre_trabajador'), width: esMovil.value ? undefined : '20%', minWidth: '200px' },
+    
+    { field: 'fechaSalida', header: t('tabla_devoluciones.fecha_salida'), width: esMovil.value ? undefined : '16%', minWidth: '160px', slotName: 'fecha' },
+    
     { header: t('tabla_devoluciones.estado'), width: esMovil.value ? undefined : '10%', minWidth: '120px', slotName: 'estado' },
     { header: t('tabla_devoluciones.accion'), width: esMovil.value ? undefined : '10%', minWidth: '140px', slotName: 'accion' }
 ]);
@@ -56,7 +62,7 @@ const filtros = ref({
 </script>
 
 <template>
-    <div class="tabla-pedidos-container">
+    <div class="tabla-salidas-container">
         
         <div class="flex justify-content-start mb-3">
             <IconField iconPosition="left" class="w-full sm:w-30rem">
@@ -74,12 +80,12 @@ const filtros = ref({
         </div>
 
         <TablaGenerica
-            :datos="pedidos"
-            :columnas="columnasPedidos"
+            :datos="salidas"
+            :columnas="columnasSalidas"
             :cargando="cargando"
             :filtros="filtros"
-            :globalFilterFields="['id', 'trabajadorNumero', 'trabajadorNombre']"
-            llaveMemoria="pedidos_pendientes"
+            :globalFilterFields="['id', 'numeroOrden', 'numeroMaquina', 'trabajadorNumero', 'trabajadorNombre']"
+            llaveMemoria="salidas_pendientes"
             dataKey="id"
             iconoVacio="pi-undo"
             :mensajeVacio="t('tabla_devoluciones.mensaje_vacio')"
@@ -89,9 +95,8 @@ const filtros = ref({
                 <span class="font-bold text-400">#{{ data.id }}</span>
             </template>
 
-            <!-- Slot Personalizado: Fecha (Usando el helper y 'locale') -->
             <template #fecha="{ data }">
-                {{ formatearFecha(data.fechaPedido, locale) }}
+                {{ formatearFecha(data.fechaSalida, locale) }}
             </template>
 
             <!-- Slot Personalizado: Estado -->
