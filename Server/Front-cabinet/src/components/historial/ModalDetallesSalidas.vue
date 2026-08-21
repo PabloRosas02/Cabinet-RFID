@@ -51,7 +51,8 @@ const { t } = useI18n();
                 
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-500 block">{{ t('modal_detalles_pedido.fecha_prestamo') }}</span>
-                    <span class="text-white">{{ formatearFecha(pedido.fechaPedido) }}</span>
+                    <!-- CORRECCIÓN: Se cambió fechaPedido a fechaSalida para coincidir con el backend -->
+                    <span class="text-white">{{ formatearFecha(pedido.fechaSalida) }}</span>
                 </div>
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-500 block">{{ t('modal_detalles_pedido.almacenista_entrada') }}</span>
@@ -81,7 +82,7 @@ const { t } = useI18n();
             <div class="border-top-1 border-gray-600 pt-3">
                 <h3 class="text-lg font-bold mb-3" style="color: #5ab1ce;">{{ t('modal_detalles_pedido.desglose_titulo') }}</h3>
                 <ul class="list-none p-0 m-0">
-                    <li v-for="h in pedido.herramientas" :key="h.codigo" class="surface-100 p-3 md:p-4 mb-3 border-round shadow-1">
+                    <li v-for="(h, index) in pedido.herramientas" :key="index" class="surface-100 p-3 md:p-4 mb-3 border-round shadow-1">
                         
                         <div class="flex flex-column sm:flex-row justify-content-between mb-2 border-bottom-1 border-gray-700 pb-2 gap-3 sm:gap-0">
                             <div>
