@@ -1,16 +1,22 @@
 import { Router } from 'express';
-import { cambiarEstadoAutomatizacion, obtenerEstadoAutomatizacion } from '../jobs/cronPendientes.js';
 
 const router = Router();
 
+// Estado global en memoria para el switch
+let automatizacionGlobal = false;
+
 router.get('/configuracion/automatizacion', (req, res) => {
-    res.json({ activo: obtenerEstadoAutomatizacion() });
+    res.json({ activo: automatizacionGlobal });
 });
 
 router.post('/configuracion/automatizacion', (req, res) => {
     const { activo } = req.body;
-    const nuevoEstado = cambiarEstadoAutomatizacion(Boolean(activo));
-    res.json({ success: true, activo: nuevoEstado });
+    automatizacionGlobal = Boolean(activo);
+    console.log(`🚀 Automatización de correos ${automatizacionGlobal ? 'ACTIVADA' : 'DESACTIVADA'}`);
+    res.json({ success: true, activo: automatizacionGlobal });
 });
+
+// Exportamos una función auxiliar para leer el estado desde el Cron de Vercel
+export const obtenerEstadoGlobal = () => automatizacionGlobal;
 
 export default router;

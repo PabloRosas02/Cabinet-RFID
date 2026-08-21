@@ -6,7 +6,6 @@ import usuariosRoutes from './routes/usuarios.js';
 import herramientasRoutes from './routes/herramientas.js';
 import salidasRoutes from './routes/salidas.js';
 import configRoutes from './routes/configRoutes.js';
-import { configurarCronNotificaciones } from './jobs/cronPendientes.js'; 
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,8 +18,6 @@ app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/herramientas', herramientasRoutes);
 app.use('/api/salidas', salidasRoutes);
 app.use('/api', configRoutes);
-
-configurarCronNotificaciones();
 
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
