@@ -197,7 +197,7 @@ const realizarExportacion = (formato) => {
 
     <ModalDetallesSalida 
         :mostrar="mostrarModal" 
-        :salida="salidaSeleccionada" 
+        :pedido="salidaSeleccionada" 
         @cerrar="mostrarModal = false" 
     />
   </div>
