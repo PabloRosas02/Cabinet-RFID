@@ -5,20 +5,19 @@ import { enviarNotificacionPendientes } from '../services/emailService.js';
 
 const router = Router();
 
-let automatizacionGlobal = false;
-
+// Endpoint para consultar el estado (opcional, para mantener sincronizado el UI)
 router.get('/configuracion/automatizacion', (req, res) => {
-    res.json({ activo: automatizacionGlobal });
+    res.json({ activo: true });
 });
 
+// Endpoint que se ejecuta al mover el switch
 router.post('/configuracion/automatizacion', async (req, res) => {
     const { activo } = req.body;
-    automatizacionGlobal = Boolean(activo);
     
-    console.log(`🚀 Automatización de correos ${automatizacionGlobal ? 'ACTIVADA' : 'DESACTIVADA'}`);
+    console.log(`🚀 Solicitud de toggle recibida. Estado solicitado: ${activo}`);
 
-    // Si el usuario acaba de ACTIVAR el interruptor, enviamos el reporte de inmediato
-    if (automatizacionGlobal) {
+    // Si el usuario encendió el interruptor (activo === true)
+    if (Boolean(activo)) {
         try {
             const salidasPendientes = await prisma.salida.findMany({
                 where: { estado: 'PENDIENTE' },
@@ -45,16 +44,17 @@ router.post('/configuracion/automatizacion', async (req, res) => {
                 );
 
                 await enviarNotificacionPendientes(process.env.ADMIN_EMAIL, listaFormateada);
-                console.log(`✉️ Correo de prueba enviado por activación del toggle. Pendientes: ${listaFormateada.length}`);
+                console.log(`✉️ Correo enviado exitosamente. Pendientes encontrados: ${listaFormateada.length}`);
             } else {
-                console.log('✅ Se activó el toggle, pero no hay devoluciones pendientes.');
+                console.log('✅ El interruptor se activó, pero no hay devoluciones pendientes en la base de datos.');
             }
         } catch (error) {
-            console.error('❌ Error al enviar el correo al activar el toggle:', error);
+            console.error('❌ Error crítico al enviar el correo:', error);
+            return res.status(500).json({ success: false, error: error.message });
         }
     }
 
-    res.json({ success: true, activo: automatizacionGlobal });
+    res.json({ success: true, activo: Boolean(activo) });
 });
 
 export default router;
