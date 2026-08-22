@@ -12,6 +12,22 @@ defineProps({
 
 const emit = defineEmits(['cerrar']);
 const { t } = useI18n();
+
+// =====================================================================
+// Funciones de ayuda para mantener limpio el template
+// =====================================================================
+const obtenerNombreReceptor = (pedido) => {
+    if (!pedido.receptorNombre) return t('modal_detalles_pedido.sin_entregas');
+    if (pedido.receptorNombre === 'Pendiente / En curso') return t('modal_detalles_pedido.pendiente_curso');
+    return pedido.receptorNombre;
+};
+
+const obtenerFechaDevolucion = (pedido) => {
+    if (!pedido.fechaDevolucion) return t('modal_detalles_pedido.pendiente_fecha');
+    
+    const fecha = formatearFecha(pedido.fechaDevolucion);
+    return fecha.includes('Pendiente') ? t('modal_detalles_pedido.pendiente_fecha') : fecha;
+};
 </script>
 
 <template>
@@ -56,25 +72,15 @@ const { t } = useI18n();
                 </div>
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-500 block">{{ t('modal_detalles_pedido.almacenista_entrada') }}</span>
-                    <!-- Interceptamos el string literal "Pendiente / En curso" -->
                     <span class="font-bold" style="color: #38bdf8;">
-                        {{ 
-                            pedido.receptorNombre === 'Pendiente / En curso' 
-                                ? t('modal_detalles_pedido.pendiente_curso') 
-                                : (pedido.receptorNombre || t('modal_detalles_pedido.sin_entregas')) 
-                        }}
+                        {{ obtenerNombreReceptor(pedido) }}
                     </span>
                 </div>
                 
                 <div class="col-12 mb-2">
                     <span class="text-500 block">{{ t('modal_detalles_pedido.fecha_devolucion') }}</span>
-                    <!-- Interceptamos el string literal "Pendiente" que pueda devolver el formateador o la BD -->
                     <span class="text-white">
-                        {{ 
-                            !pedido.fechaDevolucion || formatearFecha(pedido.fechaDevolucion).includes('Pendiente') 
-                                ? t('modal_detalles_pedido.pendiente_fecha') 
-                                : formatearFecha(pedido.fechaDevolucion) 
-                        }}
+                        {{ obtenerFechaDevolucion(pedido) }}
                     </span>
                 </div>
             </div>

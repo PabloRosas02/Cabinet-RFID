@@ -33,6 +33,7 @@ const columnas = computed(() => [
     { field: 'tipo', header: t('tabla_herramientas.tipo'), sortable: true, width: '15%', minWidth: '140px' },
     { field: 'ubicacion', header: t('tabla_herramientas.ubicacion'), sortable: true, width: '15%', minWidth: '140px' },
     { field: 'cantidadMinima', header: t('tabla_herramientas.stock_min'), sortable: true, width: '10%', minWidth: '120px' },
+    { field: 'cantidadMaxima', header: t('tabla_herramientas.stock_max', 'Stock Máx'), sortable: true, width: '10%', minWidth: '120px' },
     { field: 'cantidadDisponible', header: t('tabla_herramientas.stock_fisico'), sortable: true, width: '15%', minWidth: '130px', slotName: 'stock' },
     { width: '5%', minWidth: '70px', slotName: 'acciones' }
 ]);

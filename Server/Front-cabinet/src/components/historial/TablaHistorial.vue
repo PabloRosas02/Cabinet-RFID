@@ -5,6 +5,7 @@ import Button from 'primevue/button';
 import { formatearFecha } from '@/utils/dateHelper';
 import TablaGenerica from '@/components/TablaGenerica.vue';
 import { useI18n } from 'vue-i18n'; 
+
 const { t, locale } = useI18n(); 
 
 const props = defineProps({
@@ -28,6 +29,29 @@ const actualizarVista = () => {
 
 onMounted(() => window.addEventListener('resize', actualizarVista));
 onUnmounted(() => window.removeEventListener('resize', actualizarVista));
+
+// =====================================================
+// FUNCIONES DE AYUDA (Para limpiar el template)
+// =====================================================
+const obtenerNombreReceptor = (data) => {
+    if (!data.receptorNombre || data.receptorNombre === 'Pendiente / En curso') {
+        return t('tabla_historial.pendiente_curso');
+    }
+    return data.receptorNombre;
+};
+
+const esFechaPendiente = (data) => {
+    if (!data.fechaDevolucion) return true;
+    return formatearFecha(data.fechaDevolucion, locale.value).includes('Pendiente');
+};
+
+const obtenerFechaDevolucion = (data) => {
+    if (esFechaPendiente(data)) return t('tabla_historial.pendiente_fecha');
+    return formatearFecha(data.fechaDevolucion, locale.value);
+};
+
+const obtenerSeveridadEstado = (estado) => estado === 'DEVUELTO' ? 'success' : 'danger';
+const obtenerTextoEstado = (estado) => estado === 'DEVUELTO' ? t('tabla_historial.estado_devuelto') : t('tabla_historial.estado_pendiente');
 
 // =====================================================
 // DEFINICIÓN DINÁMICA DE COLUMNAS
@@ -79,14 +103,10 @@ const verDetalles = (data) => {
                 <span class="font-bold text-400">#{{ data.id }}</span>
             </template>
 
-            <!-- INTERCEPTAMOS EL TEXTO "Pendiente / En curso" -->
+            <!-- Receptor simplificado -->
             <template #recibio="{ data }">
                 <span class="text-blue-400 font-medium">
-                    {{ 
-                        data.receptorNombre === 'Pendiente / En curso' 
-                        ? t('tabla_historial.pendiente_curso') 
-                        : (data.receptorNombre || t('tabla_historial.pendiente_curso')) 
-                    }}
+                    {{ obtenerNombreReceptor(data) }}
                 </span>
             </template>
 
@@ -98,14 +118,10 @@ const verDetalles = (data) => {
                 {{ formatearFecha(data.fechaSalida, locale) }}
             </template>
 
-            <!-- INTERCEPTAMOS LA FECHA CUANDO DICE "Pendiente" y pasamos 'locale' -->
+            <!-- Fecha de devolución simplificada -->
             <template #fechaDevolucion="{ data }">
-                <span :class="{'text-400': !data.fechaDevolucion || formatearFecha(data.fechaDevolucion, locale).includes('Pendiente')}">
-                    {{ 
-                        (!data.fechaDevolucion || formatearFecha(data.fechaDevolucion, locale).includes('Pendiente')) 
-                        ? t('tabla_historial.pendiente_fecha') 
-                        : formatearFecha(data.fechaDevolucion, locale) 
-                    }}
+                <span :class="{'text-400': esFechaPendiente(data)}">
+                    {{ obtenerFechaDevolucion(data) }}
                 </span>
             </template>
 
@@ -120,11 +136,11 @@ const verDetalles = (data) => {
                 </div>
             </template>
 
-            <!-- INTERCEPTAMOS EL ESTADO DE LA BD -->
+            <!-- Estado simplificado -->
             <template #estado="{ data }">
                 <Tag 
-                    :severity="data.estado === 'DEVUELTO' ? 'success' : 'danger'" 
-                    :value="data.estado === 'DEVUELTO' ? t('tabla_historial.estado_devuelto') : t('tabla_historial.estado_pendiente')" 
+                    :severity="obtenerSeveridadEstado(data.estado)" 
+                    :value="obtenerTextoEstado(data.estado)" 
                     class="px-3 py-1 font-bold" 
                 />
             </template>

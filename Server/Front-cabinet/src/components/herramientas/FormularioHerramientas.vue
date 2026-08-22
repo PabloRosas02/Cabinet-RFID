@@ -148,11 +148,15 @@ const procesarImagen = (evento) => {
     </div>
 
     <div class="formgrid grid mb-4">
-      <div class="col flex flex-column gap-2">
+      <div class="col-12 md:col-4 flex flex-column gap-2">
         <label for="cantidadMinima" class="label-blanco">{{ t('formulario_herramientas.stock_minimo') }}</label>
         <InputNumber inputId="cantidadMinima" name="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>
-      <div class="col flex flex-column gap-2">
+      <div class="col-12 md:col-4 flex flex-column gap-2">
+        <label for="cantidadMaxima" class="label-blanco">{{ t('formulario_herramientas.stock_maximo', 'Stock Máximo') }}</label>
+        <InputNumber inputId="cantidadMaxima" name="cantidadMaxima" v-model="herramienta.cantidadMaxima" integeronly class="w-full" inputClass="w-full input-oscuro" />
+      </div>
+      <div class="col-12 md:col-4 flex flex-column gap-2">
         <label for="cantidadDisponible" class="label-blanco">{{ t('formulario_herramientas.stock_fisico') }}</label>
         <InputNumber inputId="cantidadDisponible" name="cantidadDisponible" v-model="herramienta.cantidadDisponible" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>

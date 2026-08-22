@@ -19,9 +19,10 @@ const emit = defineEmits(['guardar', 'error', 'limpiar-mensajes']);
 const toast = useToast(); 
 const { t } = useI18n(); 
 
+// 1. Agregamos cantidadMaxima al objeto base
 const formularioBasico = {
     codigo: '', nombre: '', tipo: '', ubicacion: '',
-    marca: '', descripcion: '', cantidadMinima: 1,
+    marca: '', descripcion: '', cantidadMinima: 1, cantidadMaxima: null,
     cantidadDisponible: 1, imagen: null
 };
 
@@ -116,14 +117,19 @@ defineExpose({ limpiar });
                     <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" :placeholder="t('formulario_producto.ph_marca')" autocomplete="off" class="input-oscuro" />
                 </div>
 
-                <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
+                <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
                     <label for="stockFisico" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_fisico') }}</label>
                     <InputNumber inputId="stockFisico" name="stockFisico" v-model="herramienta.cantidadDisponible" integeronly inputClass="input-oscuro" />
                 </div>
 
-                <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
+                <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
                     <label for="stockMinimo" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_minimo') }}</label>
                     <InputNumber inputId="stockMinimo" name="stockMinimo" v-model="herramienta.cantidadMinima" integeronly inputClass="input-oscuro" />
+                </div>
+
+                <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
+                    <label for="stockMaximo" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_maximo', 'Stock Máximo') }}</label>
+                    <InputNumber inputId="stockMaximo" name="stockMaximo" v-model="herramienta.cantidadMaxima" integeronly inputClass="input-oscuro" />
                 </div>
 
                 <div class="col-12 mb-3 flex flex-column gap-2">

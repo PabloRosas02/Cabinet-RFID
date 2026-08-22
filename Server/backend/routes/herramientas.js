@@ -90,7 +90,7 @@ router.post('/', verificarToken, async (req, res) => {
     try {
         const { 
             codigo, nombre, tipo, ubicacion, marca, 
-            descripcion, cantidadMinima, cantidadDisponible, cantidad, imagen
+            descripcion, cantidadMinima, cantidadMaxima, cantidadDisponible, cantidad, imagen
         } = req.body;
 
         const usuarioBdId = await obtenerUsuarioIdValido(req);
@@ -101,6 +101,8 @@ router.post('/', verificarToken, async (req, res) => {
         const sanitizarTexto = (val) => (val === null || val === undefined) ? '' : String(val).trim();
 
         const cantMinimaNum = parseInt(cantidadMinima, 10) || 0;
+        const cantMaximaNum = parseInt(cantidadMaxima, 10) || 0; 
+
         let cantDisp = parseInt(cantidadDisponible, 10);
         let cantTot = parseInt(cantidad, 10);
         
@@ -108,6 +110,10 @@ router.post('/', verificarToken, async (req, res) => {
         if (isNaN(cantTot)) cantTot = 0;
         
         const stockInicial = (cantidadDisponible !== undefined) ? cantDisp : cantTot;
+
+        if (cantMaximaNum > 0 && stockInicial > cantMaximaNum) {
+            return res.status(400).json({ error: `Error: El stock inicial (${stockInicial}) supera el límite máximo permitido (${cantMaximaNum}).` });
+        }
 
         const nuevaHerramienta = await prisma.$transaction(async (tx) => {
             const herramienta = await tx.herramienta.create({
@@ -120,6 +126,7 @@ router.post('/', verificarToken, async (req, res) => {
                     descripcion: sanitizarTexto(descripcion),
                     imagen: imagen || null,
                     cantidadMinima: cantMinimaNum,
+                    cantidadMaxima: cantMaximaNum,
                     cantidadDisponible: stockInicial,
                     cantidad: stockInicial,
                     estado: 'ACTIVA' 
@@ -159,7 +166,7 @@ router.put('/:id', verificarToken, async (req, res) => {
         const { id } = req.params;
         const { 
             codigo, nombre, tipo, ubicacion, marca, 
-            descripcion, cantidadMinima, cantidad, cantidadDisponible, imagen 
+            descripcion, cantidadMinima, cantidadMaxima, cantidad, cantidadDisponible, imagen 
         } = req.body;
 
         const usuarioBdId = await obtenerUsuarioIdValido(req);
@@ -193,6 +200,11 @@ router.put('/:id', verificarToken, async (req, res) => {
                 dataToUpdate.cantidadMinima = parseInt(valorMinimo, 10) || 0;
             }
 
+            const valorMaximo = cantidadMaxima ?? herramientaVieja.cantidadMaxima;
+            if (valorMaximo !== undefined && valorMaximo !== null && valorMaximo !== '') {
+                dataToUpdate.cantidadMaxima = parseInt(valorMaximo, 10) || 0;
+            }
+
             const nuevaDispRecibida = parseInt(cantidadDisponible, 10);
             const nuevaCantRecibida = parseInt(cantidad, 10);
 
@@ -211,6 +223,12 @@ router.put('/:id', verificarToken, async (req, res) => {
                 }
             }
 
+            const cantidadFinal = dataToUpdate.cantidad ?? herramientaVieja.cantidad;
+            const maxFinal = dataToUpdate.cantidadMaxima ?? herramientaVieja.cantidadMaxima;
+            if (maxFinal > 0 && cantidadFinal > maxFinal) {
+                throw new Error(`VALIDATION_ERROR: El stock resultante (${cantidadFinal}) superaría la cantidad máxima permitida (${maxFinal}).`);
+            }
+
             let detallesCambio = [];
             const camposAComparar = [
                 { key: 'codigo', label: 'Código' },
@@ -219,6 +237,7 @@ router.put('/:id', verificarToken, async (req, res) => {
                 { key: 'ubicacion', label: 'Ubicación' },
                 { key: 'marca', label: 'Marca' },
                 { key: 'cantidadMinima', label: 'Stock Mínimo' },
+                { key: 'cantidadMaxima', label: 'Stock Máximo' }, 
                 { key: 'cantidadDisponible', label: 'Stock Físico' } 
             ];
 
@@ -242,20 +261,25 @@ router.put('/:id', verificarToken, async (req, res) => {
                 data: dataToUpdate
             });
 
-            await tx.historialHerramienta.create({
-                data: {
-                    accion: 'MODIFICACION',
-                    herramientaId: herramienta.id,
-                    usuarioId: usuarioBdId,
-                    detalle: textoHistorial
-                }
-            });
+            if (detallesCambio.length > 0) {
+                await tx.historialHerramienta.create({
+                    data: {
+                        accion: 'MODIFICACION',
+                        herramientaId: herramienta.id,
+                        usuarioId: usuarioBdId,
+                        detalle: textoHistorial
+                    }
+                });
+            }
 
             return herramienta;
         });
 
         res.json(herramientaActualizada);
     } catch (error) {
+        if (error.message && error.message.includes('VALIDATION_ERROR')) {
+            return res.status(400).json({ error: error.message.replace('VALIDATION_ERROR: ', '') });
+        }
         if (error.code === 'P2002' && error.meta?.target?.includes('codigo')) {
             return res.status(400).json({ error: "El código ingresado ya pertenece a otra herramienta." });
         }
@@ -318,12 +342,12 @@ router.post('/importar', verificarToken, async (req, res) => {
 
     let creados = 0;
     let actualizados = 0;
+    let errores = []; 
 
     try {
         await prisma.$transaction(async (tx) => {
             for (const item of herramientas) {
                 const cantidadAAgregar = parseInt(item.cantidad, 10) || 0;
-                
                 if (cantidadAAgregar <= 0) continue;
 
                 const herramientaExistente = await tx.herramienta.findUnique({
@@ -333,6 +357,12 @@ router.post('/importar', verificarToken, async (req, res) => {
                 if (herramientaExistente) {
                     const cantVieja = herramientaExistente.cantidad;
                     const dispVieja = herramientaExistente.cantidadDisponible;
+                    const maxPermitido = herramientaExistente.cantidadMaxima;
+
+                    if (maxPermitido > 0 && (cantVieja + cantidadAAgregar) > maxPermitido) {
+                        errores.push(`Código ${item.codigo}: Superaría el límite máximo de ${maxPermitido}. Se omitió.`);
+                        continue;
+                    }
 
                     await tx.herramienta.update({
                         where: { codigo: item.codigo },
@@ -354,6 +384,12 @@ router.post('/importar', verificarToken, async (req, res) => {
                     actualizados++;
                 } else {
                     const cantidadMinima = parseInt(item.cantidadMinima, 10) || 0;
+                    const cantidadMaxima = parseInt(item.cantidadMaxima, 10) || 0;
+
+                    if (cantidadMaxima > 0 && cantidadAAgregar > cantidadMaxima) {
+                        errores.push(`Código ${item.codigo}: Stock inicial ${cantidadAAgregar} supera su límite máximo de ${cantidadMaxima}. Se omitió.`);
+                        continue;
+                    }
                     
                     const nuevaHerramienta = await tx.herramienta.create({
                         data: {
@@ -364,6 +400,7 @@ router.post('/importar', verificarToken, async (req, res) => {
                             cantidad: cantidadAAgregar,
                             cantidadDisponible: cantidadAAgregar,
                             cantidadMinima: cantidadMinima,
+                            cantidadMaxima: cantidadMaxima, 
                             tipo: item.tipo || null,
                             ubicacion: item.ubicacion || null,
                             estado: 'ACTIVA'
@@ -385,9 +422,10 @@ router.post('/importar', verificarToken, async (req, res) => {
         });
 
         res.status(200).json({ 
-            mensaje: 'Importación finalizada con éxito.',
+            mensaje: 'Importación finalizada.',
             creados,
-            actualizados
+            actualizados,
+            advertencias: errores.length > 0 ? errores : undefined
         });
 
     } catch (error) {

@@ -22,8 +22,6 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['revisar']);
-
-// Extraemos tanto la función de traducción (t) como el idioma actual (locale)
 const { t, locale } = useI18n();
 
 // =========================================================
@@ -39,21 +37,18 @@ onMounted(() => window.addEventListener('resize', actualizarVista));
 onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 
 // =====================================================
-// DEFINICIÓN DINÁMICA DE COLUMNAS (Reactivas al tamaño de pantalla e idioma)
+// DEFINICIÓN DINÁMICA DE COLUMNAS 
 // =====================================================
 const columnasSalidas = computed(() => [
-    { field: 'id', header: t('tabla_devoluciones.folio_salida'), width: esMovil.value ? undefined : '8%', minWidth: '100px', slotName: 'folio' },
-    
-    { field: 'numeroOrden', header: t('tabla_devoluciones.num_orden'), width: esMovil.value ? undefined : '12%', minWidth: '120px' },
-    { field: 'numeroMaquina', header: t('tabla_devoluciones.num_maquina'), width: esMovil.value ? undefined : '12%', minWidth: '120px' },
-    
-    { field: 'trabajadorNumero', header: t('tabla_devoluciones.no_empleado'), width: esMovil.value ? undefined : '12%', minWidth: '130px' },
-    { field: 'trabajadorNombre', header: t('tabla_devoluciones.nombre_trabajador'), width: esMovil.value ? undefined : '20%', minWidth: '200px' },
-    
-    { field: 'fechaSalida', header: t('tabla_devoluciones.fecha_salida'), width: esMovil.value ? undefined : '16%', minWidth: '160px', slotName: 'fecha' },
-    
+    { field: 'id', header: t('tabla_devoluciones.folio_salida'), width: esMovil.value ? undefined : '8%', minWidth: '90px', slotName: 'folio' },
+    { field: 'numeroOrden', header: t('tabla_devoluciones.num_orden'), width: esMovil.value ? undefined : '10%', minWidth: '110px' },
+    { field: 'numeroMaquina', header: t('tabla_devoluciones.num_maquina'), width: esMovil.value ? undefined : '10%', minWidth: '110px' },
+    { field: 'trabajadorNumero', header: t('tabla_devoluciones.no_empleado'), width: esMovil.value ? undefined : '10%', minWidth: '120px' },
+    { field: 'trabajadorNombre', header: t('tabla_devoluciones.nombre_trabajador'), width: esMovil.value ? undefined : '16%', minWidth: '180px' },
+    { field: 'motivo', header: t('tabla_devoluciones.motivo', 'Motivo'), width: esMovil.value ? undefined : '14%', minWidth: '150px', slotName: 'motivo' },
+    { field: 'fechaSalida', header: t('tabla_devoluciones.fecha_salida'), width: esMovil.value ? undefined : '12%', minWidth: '140px', slotName: 'fecha' },
     { header: t('tabla_devoluciones.estado'), width: esMovil.value ? undefined : '10%', minWidth: '120px', slotName: 'estado' },
-    { header: t('tabla_devoluciones.accion'), width: esMovil.value ? undefined : '10%', minWidth: '140px', slotName: 'accion' }
+    { header: t('tabla_devoluciones.accion'), width: esMovil.value ? undefined : '10%', minWidth: '120px', slotName: 'accion' }
 ]);
 
 const filtros = ref({
@@ -84,7 +79,7 @@ const filtros = ref({
             :columnas="columnasSalidas"
             :cargando="cargando"
             :filtros="filtros"
-            :globalFilterFields="['id', 'numeroOrden', 'numeroMaquina', 'trabajadorNumero', 'trabajadorNombre']"
+            :globalFilterFields="['id', 'numeroOrden', 'numeroMaquina', 'trabajadorNumero', 'trabajadorNombre', 'motivo', 'motivoOtro']"
             llaveMemoria="salidas_pendientes"
             dataKey="id"
             iconoVacio="pi-undo"
@@ -93,6 +88,13 @@ const filtros = ref({
             <!-- Slot Personalizado: Folio -->
             <template #folio="{ data }">
                 <span class="font-bold text-400">#{{ data.id }}</span>
+            </template>
+
+            <!-- Slot Personalizado: Motivo -->
+            <template #motivo="{ data }">
+                <span class="capitalize">
+                    {{ data.motivo === 'otro' && data.motivoOtro ? `Otro (${data.motivoOtro})` : data.motivo }}
+                </span>
             </template>
 
             <template #fecha="{ data }">
@@ -126,5 +128,8 @@ const filtros = ref({
 }
 .btn-accion-devolver:hover { 
     background-color: #2563eb !important; 
+}
+.capitalize {
+    text-transform: capitalize;
 }
 </style>

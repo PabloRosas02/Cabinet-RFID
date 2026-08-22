@@ -60,8 +60,8 @@ export function useGestorArchivos() {
     const descargarPlantillaHerramientas = (formato) => {
         const nombreArchivo = t('export.plantilla_herramientas');
         if (formato === 'csv') {
-            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.marca'), t('export.descripcion'), t('export.cantidad'), t('export.cantidad_minima'), t('export.tipo'), t('export.ubicacion')];
-            const filaEjemplo = ['"HERR-EJEMPLO"', `"${t('export.ejemplo_taladro')}"`, '"DeWalt"', `"${t('export.ejemplo_desc')}"`, '"5"', '"1"', `"${t('export.ejemplo_tipo')}"`, '"Estante A"'];
+            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.marca'), t('export.descripcion'), t('export.cantidad'), t('export.cantidad_minima'), t('export.cantidad_maxima', 'Cantidad Máxima'), t('export.tipo'), t('export.ubicacion')];
+            const filaEjemplo = ['"HERR-EJEMPLO"', `"${t('export.ejemplo_taladro')}"`, '"DeWalt"', `"${t('export.ejemplo_desc')}"`, '"5"', '"1"', '"10"', `"${t('export.ejemplo_tipo')}"`, '"Estante A"'];
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, [filaEjemplo.join(',')]);
         } else {
             const datosParaExcel = [{
@@ -71,6 +71,7 @@ export function useGestorArchivos() {
                 [t('export.descripcion')]: t('export.ejemplo_desc'),
                 [t('export.cantidad')]: 5,
                 [t('export.cantidad_minima')]: 1,
+                [t('export.cantidad_maxima', 'Cantidad Máxima')]: 10,
                 [t('export.tipo')]: t('export.ejemplo_tipo'),
                 [t('export.ubicacion')]: 'Estante A'
             }];
@@ -117,6 +118,8 @@ export function useGestorArchivos() {
                     if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
                     if (cabecera.includes('descripcion') || cabecera.includes('description')) obj.descripcion = valor;
                     if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) obj.cantidadMinima = valor;
+                    // SE AGREGÓ: Identificador para el stock máximo
+                    if (cabecera.includes('cantidadmaxima') || cabecera.includes('maxquantity')) obj.cantidadMaxima = valor;
                     else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) obj.cantidad = valor;
                     if (cabecera.includes('tipo') || cabecera.includes('type')) obj.tipo = valor;
                     if (cabecera.includes('ubicacion') || cabecera.includes('location')) obj.ubicacion = valor;
@@ -159,6 +162,7 @@ export function useGestorArchivos() {
                     if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
                     if (cabecera.includes('descripcion') || cabecera.includes('description')) obj.descripcion = valor;
                     if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) obj.cantidadMinima = valor;
+                    if (cabecera.includes('cantidadmaxima') || cabecera.includes('maxquantity')) obj.cantidadMaxima = valor;
                     else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) obj.cantidad = valor;
                     if (cabecera.includes('tipo') || cabecera.includes('type')) obj.tipo = valor;
                     if (cabecera.includes('ubicacion') || cabecera.includes('location')) obj.ubicacion = valor;
@@ -245,9 +249,11 @@ export function useGestorArchivos() {
         const nombreArchivo = `${t('export.reporte_inventario')}_${fecha}`;
 
         if (formato === 'csv') {
-            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.tipo'), t('export.ubicacion'), t('export.stock_min'), t('export.stock_fisico')];
+            // SE AGREGÓ: t('export.stock_max')
+            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.tipo'), t('export.ubicacion'), t('export.stock_min'), t('export.stock_max', 'Stock Máx.'), t('export.stock_fisico')];
             const filas = herramientasVisibles.map(h => {
-                return `"${h.codigo}","${h.nombre}","${h.tipo || ''}","${h.ubicacion || ''}","${h.cantidadMinima}","${h.cantidadDisponible}"`;
+                // SE AGREGÓ: ${h.cantidadMaxima || ''}
+                return `"${h.codigo}","${h.nombre}","${h.tipo || ''}","${h.ubicacion || ''}","${h.cantidadMinima}","${h.cantidadMaxima || ''}","${h.cantidadDisponible}"`;
             });
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
         } 
@@ -258,6 +264,7 @@ export function useGestorArchivos() {
                 [t('export.tipo')]: h.tipo || t('export.na'),
                 [t('export.ubicacion')]: h.ubicacion || t('export.na'),
                 [t('export.stock_min')]: h.cantidadMinima,
+                [t('export.stock_max', 'Stock Máx.')]: h.cantidadMaxima || '',
                 [t('export.stock_fisico')]: h.cantidadDisponible
             }));
             generarDescargaExcel(`${nombreArchivo}.xlsx`, datosParaExcel);
@@ -308,7 +315,7 @@ export function useGestorArchivos() {
                 const folio = `#${salida.id}`;
                 const autorizo = salida.prestadorNombre || t('export.na');
                 const solicito = `${salida.trabajadorNumero} - ${salida.trabajadorNombre}`;
-                const numeroOrden = salida.numeroOrden || t('export.na');     
+                const numeroOrden = salida.numeroOrden || t('export.na');    
                 const numeroMaquina = salida.numeroMaquina || t('export.na');
                 const herramientas = salida.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
 
@@ -332,7 +339,6 @@ export function useGestorArchivos() {
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
         } 
         else if (formato === 'xlsx') {
-            // CAMBIO: pedido -> salida
             const datosParaExcel = historialFiltrado.map(salida => {
                 const herramientas = salida.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
                 
@@ -348,7 +354,7 @@ export function useGestorArchivos() {
                     [t('export.folio')]: `#${salida.id}`,
                     [t('export.autorizo')]: salida.prestadorNombre || t('export.na'),
                     [t('export.solicito')]: `${salida.trabajadorNumero} - ${salida.trabajadorNombre}`,
-                    [t('export.numero_orden')]: salida.numeroOrden || t('export.na'),     
+                    [t('export.numero_orden')]: salida.numeroOrden || t('export.na'),    
                     [t('export.numero_maquina')]: salida.numeroMaquina || t('export.na'),
                     [t('export.fecha_salida')]: formatFecha(salida.fechaSalida),        
                     [t('export.fecha_devolucion')]: formatFecha(salida.fechaDevolucion),

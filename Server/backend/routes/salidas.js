@@ -6,39 +6,101 @@ const router = express.Router();
 const prisma = new PrismaClient();
 
 // =====================================================================
+// Función auxiliar para obtener la Llave Primaria segura desde el Token
+// =====================================================================
+const obtenerUsuarioIdValido = async (req) => {
+    const tokenData = req.user || req.usuario;
+    if (!tokenData) return null;
+
+    try {
+        let usuarioReal = null;
+        const posibleId = parseInt(tokenData.id || (typeof tokenData !== 'object' ? tokenData : null), 10);
+        const posibleNumTrabajador = parseInt(tokenData.numTrabajador, 10);
+
+        if (!isNaN(posibleNumTrabajador)) {
+            usuarioReal = await prisma.usuario.findFirst({
+                where: { numTrabajador: posibleNumTrabajador }
+            });
+        }
+
+        if (!usuarioReal && !isNaN(posibleId)) {
+            usuarioReal = await prisma.usuario.findFirst({
+                where: {
+                    OR: [
+                        { id: posibleId },
+                        { numTrabajador: posibleId }
+                    ]
+                }
+            });
+        }
+        if (usuarioReal) return usuarioReal.id;
+        return null; 
+    } catch (error) {
+        console.error("Error al validar el usuario en la BD:", error);
+        return null;
+    }
+};
+
+// =====================================================================
 // 1. POST /api/salidas -> Crear una nueva Salida (Antes Pedido) 
 // =====================================================================
 router.post('/', verificarToken, async (req, res) => {
-    const { trabajadorNumero, trabajadorNombre, prestadorId, numeroOrden, numeroMaquina, herramientas } = req.body;
+    const { 
+        trabajadorNumero, 
+        trabajadorNombre, 
+        numeroOrden, 
+        numeroMaquina, 
+        herramientas,
+        motivo,        
+        motivoOtro    
+    } = req.body;
 
     try {
-        if (!prestadorId) {
-            return res.status(400).json({ error: 'No se especificó el ID del prestador.' });
+        const prestadorBdId = await obtenerUsuarioIdValido(req);
+        if (!prestadorBdId) {
+            return res.status(401).json({ error: 'Error de autenticación: No se pudo verificar la identidad del prestador.' });
         }
 
+        if (!herramientas || !Array.isArray(herramientas) || herramientas.length === 0) {
+            return res.status(400).json({ error: 'Debes incluir al menos una herramienta en la salida.' });
+        }
+
+        // Sanitización básica para el motivo
+        const motivoGuardar = motivo ? motivo.trim() : 'NO ESPECIFICADO';
+        // Si el motivo es "otro" (ignorando mayúsculas), guardamos el texto libre, de lo contrario null
+        const motivoOtroGuardar = (motivoGuardar.toLowerCase() === 'otro' && motivoOtro) 
+            ? motivoOtro.trim() 
+            : null;
+
         await prisma.$transaction(async (tx) => {
-            await tx.salida.create({
+            const salida = await tx.salida.create({
                 data: {
                     trabajadorNumero: trabajadorNumero.toString(),
                     trabajadorNombre,
-                    prestadorId: parseInt(prestadorId, 10), 
+                    prestadorId: prestadorBdId, 
                     numeroOrden: numeroOrden || null,    
                     numeroMaquina: numeroMaquina || null,
+                    motivo: motivoGuardar,          
+                    motivoOtro: motivoOtroGuardar,   
                     detalles: {
-                        create: herramientas.map((h) => ({
-                            herramientaId: h.id,
-                            cantidadPrestada: h.cantidadPrestada,
-                            cantidadRegresada: 0 
-                        }))
+                        create: herramientas
+                            .filter(h => h.cantidadPrestada > 0) 
+                            .map((h) => ({
+                                herramientaId: h.id,
+                                cantidadPrestada: h.cantidadPrestada,
+                                cantidadRegresada: 0 
+                            }))
                     }
                 }
             });
 
             for (const h of herramientas) {
+                if (h.cantidadPrestada <= 0) continue;
+
                 const herramientaDB = await tx.herramienta.findUnique({ where: { id: h.id } });
                 
                 if (!herramientaDB || herramientaDB.cantidadDisponible < h.cantidadPrestada) {
-                    throw new Error(`Stock insuficiente para la herramienta: ${h.id}`);
+                    throw new Error(`Stock insuficiente para la herramienta con código ID: ${h.id}. Disponible: ${herramientaDB?.cantidadDisponible || 0}`);
                 }
 
                 await tx.herramienta.update({
@@ -92,6 +154,8 @@ router.get('/pendientes', verificarToken, async (req, res) => {
             trabajadorNombre: salida.trabajadorNombre,
             numeroOrden: salida.numeroOrden,     
             numeroMaquina: salida.numeroMaquina,
+            motivo: salida.motivo,             
+            motivoOtro: salida.motivoOtro,    
             prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
             receptorNombre: salida.receptor ? salida.receptor.nombre : null,
             fechaSalida: salida.fechaSalida,    
@@ -119,11 +183,12 @@ router.get('/pendientes', verificarToken, async (req, res) => {
 // =====================================================================
 router.put('/:id/devolver', verificarToken, async (req, res) => {
     const salidaId = parseInt(req.params.id);
-    let { herramientasDevueltas, receptorId } = req.body; 
+    let { herramientasDevueltas } = req.body; 
 
     try {
-        if (!receptorId) {
-            return res.status(400).json({ error: 'No se especificó el ID del receptor de la devolución.' });
+        const receptorBdId = await obtenerUsuarioIdValido(req);
+        if (!receptorBdId) {
+            return res.status(401).json({ error: 'Error de autenticación: No se pudo verificar tu identidad para procesar el retorno.' });
         }
 
         herramientasDevueltas = herramientasDevueltas.filter(item => item.cantidad > 0);
@@ -139,7 +204,7 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
             });
 
             if (!salida || salida.estado === 'DEVUELTO') {
-                throw new Error('La salida no existe o ya fue cerrada');
+                throw new Error('La salida no existe o ya fue cerrada previamente.');
             }
 
             for (const item of herramientasDevueltas) {
@@ -147,7 +212,7 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
                 if (!detalle) throw new Error(`Detalle ID ${item.detalleId} no encontrado en esta salida`);
 
                 if ((detalle.cantidadRegresada + item.cantidad) > detalle.cantidadPrestada) {
-                    throw new Error(`La cantidad total devuelta excede lo prestado.`);
+                    throw new Error(`La cantidad total devuelta excede el número de herramientas que se prestaron originalmente.`);
                 }
 
                 await tx.detalleSalida.update({
@@ -158,7 +223,7 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
                 await tx.devolucionParcial.create({
                     data: {
                         detalleId: detalle.id,
-                        receptorId: parseInt(receptorId, 10),
+                        receptorId: receptorBdId, 
                         cantidadDevuelta: item.cantidad
                     }
                 });
@@ -182,8 +247,8 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
                 where: { id: salidaId },
                 data: { 
                     estado: todasDevueltas ? 'DEVUELTO' : salida.estado, 
-                    receptorId: parseInt(receptorId, 10),
-                    fechaDevolucion: new Date() 
+                    receptorId: receptorBdId, 
+                    ...(todasDevueltas ? { fechaDevolucion: new Date() } : {}) 
                 }
             });
         });
@@ -212,7 +277,6 @@ router.get('/historial', verificarToken, async (req, res) => {
             };
         }
 
-        // CAMBIO: prisma.pedido.findMany -> prisma.salida.findMany
         const salidas = await prisma.salida.findMany({
             where: filtrosConsulta,
             include: {
@@ -236,6 +300,8 @@ router.get('/historial', verificarToken, async (req, res) => {
             trabajadorNombre: salida.trabajadorNombre,
             numeroOrden: salida.numeroOrden,    
             numeroMaquina: salida.numeroMaquina, 
+            motivo: salida.motivo,             
+            motivoOtro: salida.motivoOtro,     
             prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
             receptorNombre: salida.receptor ? salida.receptor.nombre : 'Pendiente / En curso',
             fechaSalida: salida.fechaSalida,   

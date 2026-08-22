@@ -89,9 +89,15 @@ const obtenerTextoStock = (h) => {
               <span class="label-gris block mb-1">{{ t('detalle_herramientas.marca') }}</span>
               <span class="text-lg text-white">{{ herramienta.marca || t('detalle_herramientas.sin_marca') }}</span>
           </div>
+          
           <div class="col-12 md:col-6 mb-3">
-              <span class="label-gris block mb-1">{{ t('detalle_herramientas.stock_vs_minimo') }}</span>
-              <span class="text-lg font-bold text-white">{{ herramienta.cantidadDisponible }} / {{ herramienta.cantidadMinima }} {{ t('detalle_herramientas.unidades') }}</span>
+              <span class="label-gris block mb-1">{{ t('detalle_herramientas.stock_niveles', 'Niveles de Stock (Físico / Mín / Máx)') }}</span>
+              <span class="text-lg text-white">
+                  <b class="text-xl text-white">{{ herramienta.cantidadDisponible }}</b> 
+                  / {{ herramienta.cantidadMinima }} 
+                  / <span style="color: #5ab1ce;">{{ herramienta.cantidadMaxima || 'N/A' }}</span>
+                  <span class="text-sm ml-1 text-400">{{ t('detalle_herramientas.unidades') }}</span>
+              </span>
           </div>
           
           <div class="col-12 mb-3">

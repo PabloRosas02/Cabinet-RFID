@@ -5,6 +5,7 @@ import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select'; 
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -25,6 +26,13 @@ const props = defineProps({
 const emit = defineEmits(['quitar', 'registrar']);
 const { t } = useI18n(); 
 
+const opcionesMotivo = ref([
+    'Préstamo para turno',
+    'Mantenimiento de equipo',
+    'Reemplazo por desgaste',
+    'Asignación a proyecto'
+]);
+
 // =====================================================================
 // LÓGICA DE BÚSQUEDA Y VALIDACIÓN DE TRABAJADOR
 // =====================================================================
@@ -43,7 +51,6 @@ const buscarUsuario = (event) => {
 
 const seleccionarUsuario = (event) => {
     const usuario = event.value;
-    // PrimeVue devuelve el objeto completo al seleccionar
     if (usuario && typeof usuario === 'object') {
         props.trabajador.numero = usuario.numTrabajador;
         props.trabajador.nombre = usuario.nombre;
@@ -51,13 +58,11 @@ const seleccionarUsuario = (event) => {
 };
 
 const trabajadorValido = computed(() => {
-    // Verificamos que existan el número, nombre, orden y máquina
-    if (!props.trabajador.numero || !props.trabajador.nombre || !props.trabajador.orden || !props.trabajador.maquina || !props.listaUsuarios) return false;
+    if (!props.trabajador.numero || !props.trabajador.nombre || !props.trabajador.orden || !props.trabajador.maquina || !props.trabajador.motivo || !props.listaUsuarios) return false;
     
     const numIngresado = props.trabajador.numero.toString().trim();
     const nomIngresado = props.trabajador.nombre.toString().trim().toLowerCase();
 
-    // Verificamos que exista un usuario en la BD que coincida con ambos campos
     return props.listaUsuarios.some(u => 
         u.numTrabajador?.toString() === numIngresado && 
         u.nombre?.toString().toLowerCase() === nomIngresado
@@ -152,7 +157,7 @@ const obtenerTextoStock = (h) => {
                 </AutoComplete>
             </div>
 
-            <!-- Orden de Trabajo (NUEVO) -->
+            <!-- Orden de Trabajo -->
             <div class="field mb-3">
                 <label for="ordenTrabajo" class="label-blanco">No. de Orden</label>
                 <InputText 
@@ -163,7 +168,7 @@ const obtenerTextoStock = (h) => {
                 />
             </div>
 
-            <!-- Máquina / Equipo (NUEVO) -->
+            <!-- Máquina / Equipo -->
             <div class="field mb-3">
                 <label for="maquinaTrabajo" class="label-blanco">Máquina / Equipo</label>
                 <InputText 
@@ -171,6 +176,19 @@ const obtenerTextoStock = (h) => {
                     v-model="trabajador.maquina" 
                     placeholder="Ej. CNC-02..." 
                     class="w-full input-oscuro" 
+                />
+            </div>
+            <!-- Motivo de Salida (NUEVO) -->
+            <div class="field mb-3">
+                <label for="motivoSalida" class="label-blanco">Motivo de Salida</label>
+                <Select 
+                    id="motivoSalida"
+                    v-model="trabajador.motivo" 
+                    :options="opcionesMotivo"
+                    editable
+                    placeholder="Selecciona o escribe el motivo" 
+                    class="w-full input-oscuro" 
+                    panelClass="panel-autocomplete-oscuro"
                 />
             </div>
             

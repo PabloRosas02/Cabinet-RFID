@@ -49,8 +49,18 @@ const totalHerramientasARegresar = computed(() => {
     >
         <div v-if="pedidoLocal" class="p-2 md:p-3">
             <div class="mb-4 p-3 border-round surface-ground-custom">
-                <p class="m-0 mb-2"><span class="text-500 font-bold">{{ t('modal_devolucion.empleado') }}</span> {{ pedidoLocal.trabajadorNumero }} - {{ pedidoLocal.trabajadorNombre }}</p>
-                <p class="m-0"><span class="text-500 font-bold">{{ t('modal_devolucion.folio') }}</span> #{{ pedidoLocal.id }}</p>
+                <p class="m-0 mb-2">
+                    <span class="text-500 font-bold">{{ t('modal_devolucion.empleado') }}</span> 
+                    {{ pedidoLocal.trabajadorNumero }} - {{ pedidoLocal.trabajadorNombre }}
+                </p>
+                <p class="m-0 mb-2">
+                    <span class="text-500 font-bold">{{ t('modal_devolucion.folio') }}</span> 
+                    #{{ pedidoLocal.id }}
+                </p>
+                <p class="m-0 capitalize">
+                    <span class="text-500 font-bold">{{ t('tabla_devoluciones.motivo', 'Motivo') }}:</span> 
+                    {{ pedidoLocal.motivo === 'otro' && pedidoLocal.motivoOtro ? `Otro (${pedidoLocal.motivoOtro})` : (pedidoLocal.motivo || 'N/A') }}
+                </p>
             </div>
 
             <h3 class="text-lg font-bold mb-3" style="color: #5ab1ce;">{{ t('modal_devolucion.herramientas_regresar') }}</h3>
@@ -125,6 +135,8 @@ const totalHerramientasARegresar = computed(() => {
 .surface-ground-custom { background-color: #121820; border: 1px solid #3f4b5b; }
 .lista-herramientas { list-style: none; overflow-x: hidden; }
 .item-herramienta { background-color: #2a323d; border: 1px solid #3f4b5b; }
+
+.capitalize { text-transform: capitalize; }
 
 /* =======================================================
    CORRECCIÓN DEL BUG DEL INPUT NUMBER

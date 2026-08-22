@@ -77,6 +77,7 @@ model Herramienta {
   cantidad           Int               @default(0)
   cantidadDisponible Int               @default(0)
   cantidadMinima     Int               @default(0)
+  cantidadMaxima     Int?              @default(0) 
   
   imagen             String?             
   estado             EstadoHerramienta @default(ACTIVA)
@@ -113,6 +114,9 @@ model Salida {
 
   numeroOrden      String?      // String por si la orden lleva letras (ej. OT-123)
   numeroMaquina    String?      // String por si la máquina es (ej. CNC-04)
+
+  motivo       String?  // Ej: "fin de vida util", "daño por operador", etc.
+  motivoOtro   String?  // Texto libre si el motivo es "otro"
 
   prestadorId      Int
   prestador        Usuario      @relation("PrestadorSalida", fields: [prestadorId], references: [id])
