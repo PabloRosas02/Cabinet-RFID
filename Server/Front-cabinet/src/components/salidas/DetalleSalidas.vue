@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
@@ -27,11 +27,26 @@ const emit = defineEmits(['quitar', 'registrar']);
 const { t } = useI18n(); 
 
 const opcionesMotivo = ref([
-    'Préstamo para turno',
-    'Mantenimiento de equipo',
-    'Reemplazo por desgaste',
-    'Asignación a proyecto'
+    'Fin de vida util',
+    'Daño por operador',
+    'Extravio',
+    'Set up',
+    'Mala calidad de la herramienta',
+    'Otro...'
 ]);
+
+// Variables para controlar el Select estricto y el Input libre
+const motivoSeleccionado = ref(props.trabajador.motivo || '');
+const motivoOtro = ref('');
+
+// Watcher para mantener actualizado el objeto trabajador original
+watch([motivoSeleccionado, motivoOtro], ([nuevoSelect, nuevoOtro]) => {
+    if (nuevoSelect === 'Otro...') {
+        props.trabajador.motivo = nuevoOtro; // Toma el texto escrito a mano
+    } else {
+        props.trabajador.motivo = nuevoSelect; // Toma la opción estricta
+    }
+});
 
 // =====================================================================
 // LÓGICA DE BÚSQUEDA Y VALIDACIÓN DE TRABAJADOR
@@ -177,17 +192,27 @@ const obtenerTextoStock = (h) => {
                     class="w-full input-oscuro" 
                 />
             </div>
-            <!-- Motivo de Salida -->
+            
+            <!-- Motivo de Salida  -->
             <div class="field mb-3">
                 <label for="motivoSalida" class="label-blanco">Motivo de Salida</label>
+                
                 <Select 
                     id="motivoSalida"
-                    v-model="trabajador.motivo" 
+                    v-model="motivoSeleccionado" 
                     :options="opcionesMotivo"
-                    editable
-                    placeholder="Selecciona o escribe el motivo" 
+                    placeholder="Selecciona el motivo" 
                     class="w-full input-oscuro" 
                     panelClass="panel-autocomplete-oscuro"
+                />
+
+                <!-- Input extra que solo aparece si eligen "Otro..." -->
+                <InputText 
+                    v-if="motivoSeleccionado === 'Otro...'"
+                    v-model="motivoOtro"
+                    placeholder="Escribe el motivo..." 
+                    class="w-full input-oscuro mt-2" 
+                    autocomplete="off"
                 />
             </div>
             
@@ -256,6 +281,7 @@ const obtenerTextoStock = (h) => {
             />
         </div>
 
+        <!-- Modal Detalles de Herramienta -->
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
@@ -304,7 +330,6 @@ const obtenerTextoStock = (h) => {
                         <span class="text-lg text-white">{{ herramientaActual.marca || t('detalle_pedido.no_aplica') }}</span>
                     </div>
                     
-                    <!-- AQUÍ ESTÁ EL CAMBIO DEL STOCK MÁXIMO -->
                     <div class="col-12 md:col-6 mb-3">
                         <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }} / Máx</span>
                         <span class="text-lg font-bold text-white">

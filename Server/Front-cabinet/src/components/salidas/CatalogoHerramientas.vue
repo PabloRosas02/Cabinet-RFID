@@ -6,7 +6,6 @@ import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag'; 
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
-import Select from 'primevue/select'; // <-- Nuevo import para el Dropdown/Select
 import { FilterMatchMode } from '@primevue/core/api';
 import TablaGenerica from '@/components/TablaGenerica.vue';
 import { useI18n } from 'vue-i18n'; 
@@ -57,41 +56,11 @@ const abrirDetalles = (data) => {
 };
 
 // =====================================================
-// NUEVA LÓGICA: MOTIVO DE SALIDA
+// ACCIÓN DE AGREGAR DIRECTA
 // =====================================================
-const mostrarModalMotivo = ref(false);
-const herramientaParaAgregar = ref(null);
-const motivoSeleccionado = ref(null);
-
-// Opciones dinámicas con i18n para el motivo
-const opcionesMotivo = computed(() => [
-    { label: t('catalogo_herramientas.motivos.prestamo'), value: 'Préstamo' },
-    { label: t('catalogo_herramientas.motivos.consumo'), value: 'Consumo' },
-    { label: t('catalogo_herramientas.motivos.mantenimiento'), value: 'Mantenimiento' },
-    { label: t('catalogo_herramientas.motivos.merma'), value: 'Merma / Daño' }
-]);
-
-// Intercepta el click en "+" para pedir el motivo primero
-const prepararAgregar = (herramienta) => {
-    herramientaParaAgregar.value = herramienta;
-    motivoSeleccionado.value = null; // Reiniciamos el select
-    mostrarModalMotivo.value = true;
-};
-
-// Emite el evento agregando el motivo al objeto
-const confirmarAgregar = () => {
-    if (!motivoSeleccionado.value) return;
-
-    // Clonamos el objeto y le añadimos el motivo de salida
-    const itemConMotivo = {
-        ...herramientaParaAgregar.value,
-        motivoSalida: motivoSeleccionado.value
-    };
-
-    emit('agregar', itemConMotivo);
-    
-    // Cerramos ambos modales
-    mostrarModalMotivo.value = false;
+const agregarHerramienta = (herramienta) => {
+    emit('agregar', herramienta);
+    // Si se añadió desde el modal de detalles, lo cerramos
     mostrarDetalles.value = false; 
 };
 
@@ -159,7 +128,7 @@ const obtenerTextoStock = (h) => {
                     <Button 
                         icon="pi pi-plus" 
                         class="p-button-rounded p-button-success p-button-sm" 
-                        @click.stop="prepararAgregar(data)" 
+                        @click.stop="agregarHerramienta(data)" 
                         :disabled="data.cantidadDisponible <= 0"
                         :aria-label="t('catalogo_herramientas.aria_agregar')"
                     />
@@ -216,10 +185,15 @@ const obtenerTextoStock = (h) => {
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_marca') }}</span>
                         <span class="text-lg text-white">{{ herramientaActual.marca || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
+                    
+                    <!-- Stock Actual / Mínimo / Máximo -->
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_stock_vs') }}</span>
-                        <span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} {{ t('catalogo_herramientas.modal_unidades') }}</span>
+                        <span class="text-500 block mb-1">Stock (Act / Mín / Máx)</span>
+                        <span class="text-lg font-bold text-white">
+                            {{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} / {{ herramientaActual.cantidadMaxima || '-' }} {{ t('catalogo_herramientas.modal_unidades') }}
+                        </span>
                     </div>
+                    
                     <div class="col-12 mb-3">
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_descripcion') }}</span>
                         <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
@@ -237,57 +211,13 @@ const obtenerTextoStock = (h) => {
                         class="btn-cancelar w-full sm:w-auto" 
                         @click="mostrarDetalles = false" 
                     />
-                    <!-- CAMBIO: Ahora llama a prepararAgregar -->
                     <Button 
                         :label="t('catalogo_herramientas.btn_anadir')" 
                         icon="pi pi-plus" 
                         class="boton-anadir-verde w-full sm:w-auto" 
-                        @click="prepararAgregar(herramientaActual)" 
+                        @click="agregarHerramienta(herramientaActual)" 
                         :disabled="!herramientaActual || herramientaActual.cantidadDisponible <= 0"
                         autofocus 
-                    />
-                </div>
-            </template>
-        </Dialog>
-
-        <!-- NUEVO: Modal para Seleccionar Motivo -->
-        <Dialog 
-            v-model:visible="mostrarModalMotivo" 
-            :header="t('catalogo_herramientas.modal_motivo_titulo')" 
-            :style="{ width: '400px' }" 
-            :breakpoints="{ '575px': '90vw' }"
-            :modal="true"
-            class="modal-oscuro"
-        >
-            <div class="flex flex-column gap-3 pt-3">
-                <label for="motivo" class="text-300">
-                    {{ t('catalogo_herramientas.lbl_seleccione_motivo') }}
-                </label>
-                <Select 
-                    id="motivo"
-                    v-model="motivoSeleccionado" 
-                    :options="opcionesMotivo" 
-                    optionLabel="label" 
-                    optionValue="value"
-                    :placeholder="t('catalogo_herramientas.ph_motivo')" 
-                    class="w-full input-oscuro" 
-                />
-            </div>
-            
-            <template #footer>
-                <div class="flex justify-content-end gap-2 mt-4">
-                    <Button 
-                        :label="t('catalogo_herramientas.btn_cancelar')" 
-                        icon="pi pi-times" 
-                        class="p-button-text p-button-secondary" 
-                        @click="mostrarModalMotivo = false" 
-                    />
-                    <Button 
-                        :label="t('catalogo_herramientas.btn_confirmar')" 
-                        icon="pi pi-check" 
-                        class="boton-anadir-verde" 
-                        :disabled="!motivoSeleccionado" 
-                        @click="confirmarAgregar" 
                     />
                 </div>
             </template>
