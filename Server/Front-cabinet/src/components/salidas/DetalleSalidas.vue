@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed } from 'vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
@@ -35,18 +35,29 @@ const opcionesMotivo = ref([
     'Otro'
 ]);
 
-// Variables para controlar el Select estricto y el Input libre
+// Variables para controlar el Select y el Input libre
 const motivoSeleccionado = ref(props.trabajador.motivo || '');
-const motivoOtro = ref('');
+const motivoOtro = ref(props.trabajador.motivoOtro || '');
 
-// Watcher para mantener actualizado el objeto trabajador original
-watch([motivoSeleccionado, motivoOtro], ([nuevoSelect, nuevoOtro]) => {
-    if (nuevoSelect === 'Otro...') {
-        props.trabajador.motivo = nuevoOtro; // Toma el texto escrito a mano
+// Función directa para asignar el motivo sin romper el objeto reactivo original
+const manejarCambioMotivo = (e) => {
+    const valor = e.value;
+    if (valor !== 'Otro') {
+        props.trabajador.motivo = valor;
+        props.trabajador.motivoOtro = null; // Limpiamos el texto libre si selecciona una opción normal
+        motivoOtro.value = '';
     } else {
-        props.trabajador.motivo = nuevoSelect; // Toma la opción estricta
+        props.trabajador.motivo = 'Otro';
+        props.trabajador.motivoOtro = motivoOtro.value;
     }
-});
+};
+
+// Función para capturar cuando escribe en la opción "Otro"
+const manejarMotivoOtro = (e) => {
+    const texto = e.target.value;
+    motivoOtro.value = texto;
+    props.trabajador.motivoOtro = texto;
+};
 
 // =====================================================================
 // LÓGICA DE BÚSQUEDA Y VALIDACIÓN DE TRABAJADOR
@@ -204,12 +215,14 @@ const obtenerTextoStock = (h) => {
                     placeholder="Selecciona el motivo" 
                     class="w-full input-oscuro" 
                     panelClass="panel-autocomplete-oscuro"
+                    @change="manejarCambioMotivo"
                 />
 
-                <!-- Input extra que solo aparece si eligen "Otro..." -->
+                <!-- Input extra que solo aparece si eligen "Otro" -->
                 <InputText 
                     v-if="motivoSeleccionado === 'Otro'"
-                    v-model="motivoOtro"
+                    :value="motivoOtro"
+                    @input="manejarMotivoOtro"
                     placeholder="Escribe el motivo..." 
                     class="w-full input-oscuro mt-2" 
                     autocomplete="off"
@@ -362,9 +375,6 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-/* =========================================================
-   ESTILOS EXCLUSIVOS DE ESTA VISTA (CARRITO)
-   ========================================================= */
 .label-blanco {
     display: block;
     margin-bottom: 0.5rem;
@@ -398,7 +408,6 @@ const obtenerTextoStock = (h) => {
 </style>
 
 <style>
-/* Estilos globales para el AutoComplete de PrimeVue */
 .panel-autocomplete-oscuro {
     background-color: #1e252d !important;
     border: 1px solid #4a5568 !important;
