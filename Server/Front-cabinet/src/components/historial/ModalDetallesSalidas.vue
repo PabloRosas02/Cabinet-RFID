@@ -64,10 +64,17 @@ const obtenerFechaDevolucion = (pedido) => {
                     <span class="text-500 block">{{ t('modal_detalles_pedido.almacenista_salida') }}</span>
                     <span class="font-bold text-white">{{ pedido.prestadorNombre }}</span>
                 </div>
+
+                <!-- Motivo de Salida -->
+                <div class="col-12 md:col-6 mb-3">
+                    <span class="text-500 block">Motivo de Salida</span>
+                    <span class="font-bold text-white">
+                        {{ pedido.motivo === 'Otro' ? `Otro: ${pedido.motivoOtro}` : (pedido.motivo || 'NO ESPECIFICADO') }}
+                    </span>
+                </div>
                 
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-500 block">{{ t('modal_detalles_pedido.fecha_prestamo') }}</span>
-                    <!-- CORRECCIÓN: Se cambió fechaPedido a fechaSalida para coincidir con el backend -->
                     <span class="text-white">{{ formatearFecha(pedido.fechaSalida) }}</span>
                 </div>
                 <div class="col-12 md:col-6 mb-3">

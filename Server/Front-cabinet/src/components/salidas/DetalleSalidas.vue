@@ -32,7 +32,7 @@ const opcionesMotivo = ref([
     'Extravio',
     'Set up',
     'Mala calidad de la herramienta',
-    'Otro...'
+    'Otro'
 ]);
 
 // Variables para controlar el Select estricto y el Input libre
@@ -208,7 +208,7 @@ const obtenerTextoStock = (h) => {
 
                 <!-- Input extra que solo aparece si eligen "Otro..." -->
                 <InputText 
-                    v-if="motivoSeleccionado === 'Otro...'"
+                    v-if="motivoSeleccionado === 'Otro'"
                     v-model="motivoOtro"
                     placeholder="Escribe el motivo..." 
                     class="w-full input-oscuro mt-2" 
