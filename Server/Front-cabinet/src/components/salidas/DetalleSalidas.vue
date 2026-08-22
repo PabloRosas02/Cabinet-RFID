@@ -80,7 +80,6 @@ const verDetalles = (item) => {
     mostrarDetalles.value = true;
 };
 
-// Se agregó la condición de <= 0 para mantener consistencia con el catálogo
 const obtenerSeveridadStock = (h) => {
     if (!h) return 'success';
     if (h.cantidadDisponible <= 0) return 'danger';
@@ -178,7 +177,7 @@ const obtenerTextoStock = (h) => {
                     class="w-full input-oscuro" 
                 />
             </div>
-            <!-- Motivo de Salida (NUEVO) -->
+            <!-- Motivo de Salida -->
             <div class="field mb-3">
                 <label for="motivoSalida" class="label-blanco">Motivo de Salida</label>
                 <Select 
@@ -257,7 +256,6 @@ const obtenerTextoStock = (h) => {
             />
         </div>
 
-        <!-- Modal de Detalles (Idéntico al Catálogo) -->
         <Dialog 
             v-model:visible="mostrarDetalles" 
             :style="{width: '700px'}" 
@@ -285,13 +283,41 @@ const obtenerTextoStock = (h) => {
                 </div>
 
                 <div class="grid">
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.col_codigo') }}</span><span class="text-xl font-bold" style="color: #38bdf8;">{{ herramientaActual.codigo }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.col_nombre') }}</span><span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_tipo') }}</span><span class="text-lg text-white">{{ herramientaActual.tipo || t('detalle_pedido.no_aplica') }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_ubicacion') }}</span><span class="text-lg text-white">{{ herramientaActual.ubicacion || t('detalle_pedido.no_aplica') }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_marca') }}</span><span class="text-lg text-white">{{ herramientaActual.marca || t('detalle_pedido.no_aplica') }}</span></div>
-                    <div class="col-12 md:col-6 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }}</span><span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} {{ t('detalle_pedido.modal_unidades') }}</span></div>
-                    <div class="col-12 mb-3"><span class="text-500 block mb-1">{{ t('detalle_pedido.modal_descripcion') }}</span><div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">{{ herramientaActual.descripcion || t('detalle_pedido.modal_sin_descripcion') }}</div></div>
+                    <div class="col-12 md:col-6 mb-3">
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.col_codigo') }}</span>
+                        <span class="text-xl font-bold" style="color: #38bdf8;">{{ herramientaActual.codigo }}</span>
+                    </div>
+                    <div class="col-12 md:col-6 mb-3">
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.col_nombre') }}</span>
+                        <span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span>
+                    </div>
+                    <div class="col-12 md:col-6 mb-3">
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_tipo') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.tipo || t('detalle_pedido.no_aplica') }}</span>
+                    </div>
+                    <div class="col-12 md:col-6 mb-3">
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_ubicacion') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.ubicacion || t('detalle_pedido.no_aplica') }}</span>
+                    </div>
+                    <div class="col-12 md:col-6 mb-3">
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_marca') }}</span>
+                        <span class="text-lg text-white">{{ herramientaActual.marca || t('detalle_pedido.no_aplica') }}</span>
+                    </div>
+                    
+                    <!-- AQUÍ ESTÁ EL CAMBIO DEL STOCK MÁXIMO -->
+                    <div class="col-12 md:col-6 mb-3">
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }} / Máx</span>
+                        <span class="text-lg font-bold text-white">
+                            {{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} / <span class="text-green-400">{{ herramientaActual.cantidadMaxima || 'N/A' }}</span> {{ t('detalle_pedido.modal_unidades') }}
+                        </span>
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_descripcion') }}</span>
+                        <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
+                            {{ herramientaActual.descripcion || t('detalle_pedido.modal_sin_descripcion') }}
+                        </div>
+                    </div>
                 </div>
             </div>
             

@@ -6,6 +6,7 @@ import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag'; 
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import Select from 'primevue/select'; // <-- Nuevo import para el Dropdown/Select
 import { FilterMatchMode } from '@primevue/core/api';
 import TablaGenerica from '@/components/TablaGenerica.vue';
 import { useI18n } from 'vue-i18n'; 
@@ -35,7 +36,6 @@ onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 // =====================================================
 // DEFINICIÓN DINÁMICA DE COLUMNAS
 // =====================================================
-// Aplicamos la traducción a todos los encabezados
 const columnasCatalogo = computed(() => [
     { field: 'codigo', header: t('catalogo_herramientas.col_codigo'), width: esMovil.value ? undefined : '20%', minWidth: '120px' },
     { field: 'nombre', header: t('catalogo_herramientas.col_nombre'), width: esMovil.value ? undefined : '40%', minWidth: '200px' },
@@ -43,7 +43,6 @@ const columnasCatalogo = computed(() => [
     { header: t('catalogo_herramientas.col_accion'), width: esMovil.value ? undefined : '20%', minWidth: '120px', slotName: 'accion' }
 ]);
 
-// Filtros nativos en lugar del filtrado manual
 const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
@@ -57,23 +56,57 @@ const abrirDetalles = (data) => {
     mostrarDetalles.value = true;
 };
 
-const emitirAgregar = (herramienta) => {
-    emit('agregar', herramienta);
+// =====================================================
+// NUEVA LÓGICA: MOTIVO DE SALIDA
+// =====================================================
+const mostrarModalMotivo = ref(false);
+const herramientaParaAgregar = ref(null);
+const motivoSeleccionado = ref(null);
+
+// Opciones dinámicas con i18n para el motivo
+const opcionesMotivo = computed(() => [
+    { label: t('catalogo_herramientas.motivos.prestamo'), value: 'Préstamo' },
+    { label: t('catalogo_herramientas.motivos.consumo'), value: 'Consumo' },
+    { label: t('catalogo_herramientas.motivos.mantenimiento'), value: 'Mantenimiento' },
+    { label: t('catalogo_herramientas.motivos.merma'), value: 'Merma / Daño' }
+]);
+
+// Intercepta el click en "+" para pedir el motivo primero
+const prepararAgregar = (herramienta) => {
+    herramientaParaAgregar.value = herramienta;
+    motivoSeleccionado.value = null; // Reiniciamos el select
+    mostrarModalMotivo.value = true;
+};
+
+// Emite el evento agregando el motivo al objeto
+const confirmarAgregar = () => {
+    if (!motivoSeleccionado.value) return;
+
+    // Clonamos el objeto y le añadimos el motivo de salida
+    const itemConMotivo = {
+        ...herramientaParaAgregar.value,
+        motivoSalida: motivoSeleccionado.value
+    };
+
+    emit('agregar', itemConMotivo);
+    
+    // Cerramos ambos modales
+    mostrarModalMotivo.value = false;
+    mostrarDetalles.value = false; 
 };
 
 // --- Lógica de Stock ---
 const obtenerSeveridadStock = (h) => {
     if (!h) return 'success';
-    if (h.cantidadDisponible <= 0) return 'danger'; // Mejora: Si es 0 o menor, es peligro.
+    if (h.cantidadDisponible <= 0) return 'danger'; 
     if (h.cantidadDisponible < h.cantidadMinima) return 'danger';
     if (h.cantidadDisponible === h.cantidadMinima) return 'warning';
     return 'success';
 };
 
-// Traducimos los estados del Stock
 const obtenerTextoStock = (h) => {
     if (!h) return '';
-    if (h.cantidadDisponible <= 0) return t('catalogo_herramientas.estado_agotado'); // Nueva posible traducción
+    if (h.cantidadDisponible <= 0) return t('catalogo_herramientas.estado_agotado');
     if (h.cantidadDisponible < h.cantidadMinima) return t('catalogo_herramientas.estado_critico');
     if (h.cantidadDisponible === h.cantidadMinima) return t('catalogo_herramientas.estado_alerta');
     return t('catalogo_herramientas.estado_normal');
@@ -113,7 +146,6 @@ const obtenerTextoStock = (h) => {
             :mensajeVacio="t('catalogo_herramientas.mensaje_vacio')"
             @doble-click="abrirDetalles"
         >
-            <!-- Slot Personalizado: Acción -->
             <template #accion="{ data }">
                 <div class="flex gap-2">
                     <Button 
@@ -127,7 +159,7 @@ const obtenerTextoStock = (h) => {
                     <Button 
                         icon="pi pi-plus" 
                         class="p-button-rounded p-button-success p-button-sm" 
-                        @click.stop="emitirAgregar(data)" 
+                        @click.stop="prepararAgregar(data)" 
                         :disabled="data.cantidadDisponible <= 0"
                         :aria-label="t('catalogo_herramientas.aria_agregar')"
                     />
@@ -145,10 +177,7 @@ const obtenerTextoStock = (h) => {
             dismissableMask
             class="modal-oscuro"
         >
-            <!-- Padding adaptativo -->
             <div v-if="herramientaActual" class="p-2 md:p-4">
-                
-                <!-- Imagen y Badge dinámicos -->
                 <div class="flex flex-column align-items-center mb-5">
                     <img 
                         v-if="herramientaActual.imagen" 
@@ -166,7 +195,6 @@ const obtenerTextoStock = (h) => {
                     </div>
                 </div>
 
-                <!-- Grid de Datos -->
                 <div class="grid">
                     <div class="col-12 md:col-6 mb-3">
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.col_codigo') }}</span>
@@ -176,7 +204,6 @@ const obtenerTextoStock = (h) => {
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.col_nombre') }}</span>
                         <span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span>
                     </div>
-                    
                     <div class="col-12 md:col-6 mb-3">
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_tipo') }}</span>
                         <span class="text-lg text-white">{{ herramientaActual.tipo || t('catalogo_herramientas.no_aplica') }}</span>
@@ -185,7 +212,6 @@ const obtenerTextoStock = (h) => {
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_ubicacion') }}</span>
                         <span class="text-lg text-white">{{ herramientaActual.ubicacion || t('catalogo_herramientas.no_aplica') }}</span>
                     </div>
-                    
                     <div class="col-12 md:col-6 mb-3">
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_marca') }}</span>
                         <span class="text-lg text-white">{{ herramientaActual.marca || t('catalogo_herramientas.no_aplica') }}</span>
@@ -194,7 +220,6 @@ const obtenerTextoStock = (h) => {
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_stock_vs') }}</span>
                         <span class="text-lg font-bold text-white">{{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} {{ t('catalogo_herramientas.modal_unidades') }}</span>
                     </div>
-                    
                     <div class="col-12 mb-3">
                         <span class="text-500 block mb-1">{{ t('catalogo_herramientas.modal_descripcion') }}</span>
                         <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
@@ -212,13 +237,57 @@ const obtenerTextoStock = (h) => {
                         class="btn-cancelar w-full sm:w-auto" 
                         @click="mostrarDetalles = false" 
                     />
+                    <!-- CAMBIO: Ahora llama a prepararAgregar -->
                     <Button 
                         :label="t('catalogo_herramientas.btn_anadir')" 
                         icon="pi pi-plus" 
                         class="boton-anadir-verde w-full sm:w-auto" 
-                        @click="() => { emitirAgregar(herramientaActual); mostrarDetalles = false; }" 
+                        @click="prepararAgregar(herramientaActual)" 
                         :disabled="!herramientaActual || herramientaActual.cantidadDisponible <= 0"
                         autofocus 
+                    />
+                </div>
+            </template>
+        </Dialog>
+
+        <!-- NUEVO: Modal para Seleccionar Motivo -->
+        <Dialog 
+            v-model:visible="mostrarModalMotivo" 
+            :header="t('catalogo_herramientas.modal_motivo_titulo')" 
+            :style="{ width: '400px' }" 
+            :breakpoints="{ '575px': '90vw' }"
+            :modal="true"
+            class="modal-oscuro"
+        >
+            <div class="flex flex-column gap-3 pt-3">
+                <label for="motivo" class="text-300">
+                    {{ t('catalogo_herramientas.lbl_seleccione_motivo') }}
+                </label>
+                <Select 
+                    id="motivo"
+                    v-model="motivoSeleccionado" 
+                    :options="opcionesMotivo" 
+                    optionLabel="label" 
+                    optionValue="value"
+                    :placeholder="t('catalogo_herramientas.ph_motivo')" 
+                    class="w-full input-oscuro" 
+                />
+            </div>
+            
+            <template #footer>
+                <div class="flex justify-content-end gap-2 mt-4">
+                    <Button 
+                        :label="t('catalogo_herramientas.btn_cancelar')" 
+                        icon="pi pi-times" 
+                        class="p-button-text p-button-secondary" 
+                        @click="mostrarModalMotivo = false" 
+                    />
+                    <Button 
+                        :label="t('catalogo_herramientas.btn_confirmar')" 
+                        icon="pi pi-check" 
+                        class="boton-anadir-verde" 
+                        :disabled="!motivoSeleccionado" 
+                        @click="confirmarAgregar" 
                     />
                 </div>
             </template>
@@ -227,7 +296,6 @@ const obtenerTextoStock = (h) => {
 </template>
 
 <style scoped>
-/* Solo conservamos los fondos específicos de las tarjetas internas */
 .subtitulo { margin-top: 0; margin-bottom: 1.5rem; }
 :deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }
 :deep(.surface-200) { background-color: #1e252d !important; }
