@@ -211,33 +211,36 @@ router.put('/:id', verificarToken, async (req, res) => {
             // 1. Calculamos cuántas piezas están prestadas actualmente
             const unidadesPrestadas = herramientaVieja.cantidad - herramientaVieja.cantidadDisponible;
 
-            // 2. Determinamos el nuevo stock TOTAL
             let nuevaCantidadTotal = herramientaVieja.cantidad;
-            if (!isNaN(nuevaCantRecibida)) {
+            let nuevaCantidadDisponible = herramientaVieja.cantidadDisponible;
+
+            // 2. Ajustamos las cantidades basándonos en el campo del frontend
+            if (!isNaN(nuevaDispRecibida)) {
+                // Si editas el "Stock Físico", ese es tu nuevo disponible.
+                nuevaCantidadDisponible = nuevaDispRecibida;
+                // El Total se recalcula sumando el físico + lo que está afuera.
+                nuevaCantidadTotal = nuevaCantidadDisponible + unidadesPrestadas; 
+            } else if (!isNaN(nuevaCantRecibida)) {
+                // Por si acaso alguna vez decides enviar el "Total" directamente.
                 nuevaCantidadTotal = nuevaCantRecibida;
-            } else if (!isNaN(nuevaDispRecibida)) {
-                // Si desde el frontend nos envían el "Físico", asumimos que es el nuevo Total que quieren fijar
-                nuevaCantidadTotal = nuevaDispRecibida; 
+                nuevaCantidadDisponible = nuevaCantidadTotal - unidadesPrestadas;
             }
 
-            // 3. Calculamos cuál será el nuevo stock disponible en almacén
-            const nuevaCantidadDisponible = nuevaCantidadTotal - unidadesPrestadas;
-
-            // 4. Validamos que el nuevo total no sea menor a lo que ya está prestado (evita stock negativo)
+            // 3. Validar que no haya números negativos por error
             if (nuevaCantidadDisponible < 0) {
-                throw new Error(`VALIDATION_ERROR: No puedes reducir el stock a ${nuevaCantidadTotal}. Actualmente hay ${unidadesPrestadas} unidad(es) prestada(s).`);
+                throw new Error(`VALIDATION_ERROR: Error matemático. El stock disponible resultante sería menor a 0.`);
             }
 
-            // 5. Validamos contra el máximo usando el TOTAL real (lo que hay en estante + lo prestado)
+            // 4. Validar contra el máximo usando el TOTAL real
             const maxFinal = dataToUpdate.cantidadMaxima ?? herramientaVieja.cantidadMaxima;
             if (maxFinal > 0 && nuevaCantidadTotal > maxFinal) {
-                throw new Error(`VALIDATION_ERROR: El stock total resultante (${nuevaCantidadTotal}) superaría la cantidad máxima permitida (${maxFinal}).`);
+                throw new Error(`VALIDATION_ERROR: Al sumar las ${unidadesPrestadas} unidad(es) prestada(s) a tu stock físico, el total general (${nuevaCantidadTotal}) superaría la cantidad máxima permitida (${maxFinal}).`);
             }
 
-            // 6. Asignamos los valores correctos para actualizar
+            // 5. Asignamos los valores correctos para actualizar
             dataToUpdate.cantidad = nuevaCantidadTotal;
             dataToUpdate.cantidadDisponible = nuevaCantidadDisponible;
-            
+
             let detallesCambio = [];
             const camposAComparar = [
                 { key: 'codigo', label: 'Código' },
