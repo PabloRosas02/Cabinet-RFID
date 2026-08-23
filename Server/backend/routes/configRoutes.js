@@ -1,22 +1,20 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 import { enviarNotificacionPendientes } from '../services/emailService.js';
+import { generarExcelEnMemoria } from '../utils/excelHelper.js';
 
+const prisma = new PrismaClient();
 const router = Router();
 
-// Endpoint para consultar el estado (opcional, para mantener sincronizado el UI)
 router.get('/configuracion/automatizacion', (req, res) => {
     res.json({ activo: true });
 });
 
-// Endpoint que se ejecuta al mover el switch
 router.post('/configuracion/automatizacion', async (req, res) => {
     const { activo } = req.body;
     
-    console.log(`🚀 Solicitud de toggle recibida. Estado solicitado: ${activo}`);
+    console.log(`Solicitud de toggle recibida. Estado solicitado: ${activo}`);
 
-    // Si el usuario encendió el interruptor (activo === true)
     if (Boolean(activo)) {
         try {
             const salidasPendientes = await prisma.salida.findMany({
@@ -31,25 +29,35 @@ router.post('/configuracion/automatizacion', async (req, res) => {
             if (salidasPendientes.length > 0) {
                 const listaFormateada = salidasPendientes.flatMap(s => 
                     s.detalles.map(d => ({
-                        folio: s.id,
-                        trabajadorNombre: s.trabajadorNombre,
-                        herramientaNombre: d.herramienta?.nombre || 'Herramienta',
-                        numeroOrden: s.numeroOrden || 'N/A',
-                        numeroMaquina: s.numeroMaquina || 'N/A',
-                        fechaSalida: new Date(s.fechaSalida).toLocaleString('es-MX', { 
+                        'Folio': `#${s.id}`,
+                        'Trabajador': s.trabajadorNombre,
+                        'Herramienta': d.herramienta?.nombre || 'Desconocida',
+                        'Número de Orden': s.numeroOrden || 'N/A',
+                        'Número de Máquina': s.numeroMaquina || 'N/A',
+                        'Fecha de Salida': new Date(s.fechaSalida).toLocaleString('es-MX', { 
                             timeZone: 'America/Tijuana',
-                            hour12: true 
+                            hour12: true,
+                            year: 'numeric', 
+                            month: 'short', 
+                            day: 'numeric', 
+                            hour: '2-digit', 
+                            minute: '2-digit'
                         })
                     }))
                 );
 
-                await enviarNotificacionPendientes(process.env.ADMIN_EMAIL, listaFormateada);
-                console.log(`✉️ Correo enviado exitosamente. Pendientes encontrados: ${listaFormateada.length}`);
+                // 1. Generamos el buffer con la misma lógica del frontend
+                const excelBuffer = await generarExcelEnMemoria(listaFormateada);
+
+                // 2. Enviamos el correo (Asegúrate que tu emailService soporte buffers como attachment)
+                await enviarNotificacionPendientes(process.env.ADMIN_EMAIL, excelBuffer);
+                
+                console.log(`Correo enviado exitosamente. Archivo Excel generado con ${listaFormateada.length} pendientes.`);
             } else {
-                console.log('✅ El interruptor se activó, pero no hay devoluciones pendientes en la base de datos.');
+                console.log('El interruptor se activó, pero no hay devoluciones pendientes en la base de datos.');
             }
         } catch (error) {
-            console.error('❌ Error crítico al enviar el correo:', error);
+            console.error('Error crítico al enviar el correo:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     }
