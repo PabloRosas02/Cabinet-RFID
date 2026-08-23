@@ -1,10 +1,15 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { enviarNotificacionPendientes } from '../services/emailService.js';
+// 1. Agregamos enviarReporteSemanal a la importación
+import { enviarNotificacionPendientes, enviarReporteSemanal } from '../services/emailService.js';
 import { generarExcelEnMemoria } from '../utils/excelHelper.js';
 
 const prisma = new PrismaClient();
 const router = Router();
+
+// =======================================================
+// RUTAS DE AUTOMATIZACIÓN (DEVOLUCIONES PENDIENTES)
+// =======================================================
 
 router.get('/configuracion/automatizacion', (req, res) => {
     res.json({ activo: true });
@@ -46,10 +51,7 @@ router.post('/configuracion/automatizacion', async (req, res) => {
                     }))
                 );
 
-                // 1. Generamos el buffer con la misma lógica del frontend
                 const excelBuffer = await generarExcelEnMemoria(listaFormateada);
-
-                // 2. Enviamos el correo (Asegúrate que tu emailService soporte buffers como attachment)
                 await enviarNotificacionPendientes(process.env.ADMIN_EMAIL, excelBuffer);
                 
                 console.log(`Correo enviado exitosamente. Archivo Excel generado con ${listaFormateada.length} pendientes.`);
@@ -63,6 +65,86 @@ router.post('/configuracion/automatizacion', async (req, res) => {
     }
 
     res.json({ success: true, activo: Boolean(activo) });
+});
+
+
+// =======================================================
+// NUEVA RUTA: REPORTE SEMANAL DEL HISTORIAL
+// =======================================================
+
+router.post('/reportes/historial-semanal', async (req, res) => {
+    try {
+        // 1. Calcular la fecha límite (hace 7 días exactos)
+        const haceUnaSemana = new Date();
+        haceUnaSemana.setDate(haceUnaSemana.getDate() - 7);
+
+        // 2. Traer los registros de Prisma (últimos 7 días)
+        const historialSemanal = await prisma.salida.findMany({
+            where: {
+                fechaSalida: {
+                    gte: haceUnaSemana
+                }
+            },
+            include: {
+                detalles: {
+                    include: { herramienta: true } 
+                }
+            },
+            orderBy: {
+                fechaSalida: 'desc'
+            }
+        });
+
+        if (historialSemanal.length === 0) {
+            console.log('Solicitud de reporte semanal: No hubo movimientos esta semana.');
+            return res.json({ success: true, mensaje: 'No hubo movimientos esta semana.' });
+        }
+
+        // Función para estandarizar las fechas en el Excel
+        const formatFecha = (fecha) => {
+            if (!fecha) return 'Pendiente';
+            return new Date(fecha).toLocaleString('es-MX', { 
+                timeZone: 'America/Tijuana',
+                hour12: true,
+                year: 'numeric', month: 'short', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit'
+            });
+        };
+
+        // 3. Formatear la información para las columnas del Excel (Estilo Historial)
+        const listaFormateada = historialSemanal.map(salida => {
+            // Unimos todas las herramientas prestadas en esa salida
+            const resumenHerramientas = salida.detalles.map(d => {
+                const nombre = d.herramienta?.nombre || 'Desconocida';
+                const cantidad = d.cantidadPrestada || d.cantidad || 1; // Verifica si usas cantidadPrestada o cantidad
+                const regresada = d.cantidadRegresada ? ` (Regresó ${d.cantidadRegresada})` : '';
+                return `${cantidad}x ${nombre}${regresada}`;
+            }).join(' | ');
+
+            return {
+                'Folio': `#${salida.id}`,
+                'Autorizó': salida.prestadorNombre || 'N/A',
+                'Solicitó': `${salida.trabajadorNumero || ''} - ${salida.trabajadorNombre || 'N/A'}`.trim(),
+                'Número de Orden': salida.numeroOrden || 'N/A',
+                'Número de Máquina': salida.numeroMaquina || 'N/A',
+                'Fecha de Salida': formatFecha(salida.fechaSalida),
+                'Fecha de Devolución': formatFecha(salida.fechaDevolucion),
+                'Resumen Herramientas': resumenHerramientas,
+                'Estado': salida.estado === 'PENDIENTE' ? 'Pendiente' : 'Devuelto'
+            };
+        });
+
+        // 4. Generar el Excel y enviarlo por correo
+        const excelBuffer = await generarExcelEnMemoria(listaFormateada);
+        await enviarReporteSemanal(process.env.ADMIN_EMAIL, excelBuffer);
+
+        console.log(`Reporte semanal enviado exitosamente con ${listaFormateada.length} registros.`);
+        res.json({ success: true, registros: listaFormateada.length });
+
+    } catch (error) {
+        console.error('Error al enviar reporte semanal:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
 });
 
 export default router;
