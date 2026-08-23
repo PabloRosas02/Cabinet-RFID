@@ -91,6 +91,8 @@ const procesarPedido = async () => {
             trabajadorNombre: trabajador.value.nombre,
             numeroOrden: trabajador.value.orden,      
             numeroMaquina: trabajador.value.maquina,  
+            motivo: trabajador.value.motivo,
+            motivoOtro: trabajador.value.motivoOtro,
             prestadorId: usuarioSesion.id, 
             herramientas: pedidoActual.value.map(item => ({
                 id: item.id,
@@ -111,7 +113,7 @@ const procesarPedido = async () => {
         
         await cargarInventario();
         
-        trabajador.value = { numero: '', nombre: '', orden: '', maquina: '' };
+        trabajador.value = { numero: '', nombre: '', orden: '', maquina: '', motivo: '', motivoOtro: '' };
         pedidoActual.value = [];
 
     } catch (error) {
