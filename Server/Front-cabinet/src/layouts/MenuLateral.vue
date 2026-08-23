@@ -21,8 +21,11 @@ const { t, locale } = useI18n();
 const mostrarModalConfig = ref(false);
 const temaActual = ref(localStorage.getItem('theme') || 'dark');
 
-// Estado para la automatización de correos (Prueba cada 1 min)
+// Estado para la automatización de correos
 const correosActivos = ref(false);
+
+// Estado para evitar doble clic al enviar el reporte semanal
+const enviandoReporte = ref(false);
 
 // Consultar el estado inicial del cron al montar el componente
 const cargarEstadoAutomatizacion = async () => {
@@ -47,6 +50,24 @@ const toggleAutomatizacion = async (nuevoValor) => {
   }
 };
 
+// Función para disparar el reporte semanal manualmente
+const generarReporteSemanal = async () => {
+  enviandoReporte.value = true;
+  try {
+    const { data } = await axios.post('/api/reportes/historial-semanal');
+    if (data.success) {
+      alert(data.mensaje || `Reporte enviado con éxito. Registros encontrados: ${data.registros}`);
+    } else {
+      alert('Hubo un problema al generar el reporte.');
+    }
+  } catch (error) {
+    console.error('Error al solicitar el reporte semanal:', error);
+    alert('Ocurrió un error en el servidor al enviar el correo.');
+  } finally {
+    enviandoReporte.value = false;
+  }
+};
+
 // Aplicar y guardar el tema
 const cambiarTema = (nuevoTema) => {
   temaActual.value = nuevoTema;
@@ -66,7 +87,7 @@ const aplicarTemaDOM = (tema) => {
 
 onMounted(() => {
   aplicarTemaDOM(temaActual.value);
-  cargarEstadoAutomatizacion(); // <-- Carga si el cron está activo al iniciar
+  cargarEstadoAutomatizacion(); 
 });
 
 // Lógica de Idioma
@@ -195,7 +216,7 @@ const menuFiltrado = computed(() => {
         </div>
       </div>
 
-      <!-- Selector de Tema (Oscuro / Claro) -->
+      <!-- Selector de Tema -->
       <div class="field flex flex-column gap-2">
         <span class="label-blanco font-semibold">{{ t('configuracion_modal.tema') }}</span>
         <div class="flex gap-2">
@@ -216,6 +237,7 @@ const menuFiltrado = computed(() => {
         </div>
       </div>
 
+      <!-- Switch de Devoluciones Pendientes -->
       <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
         <span class="label-blanco font-semibold">Correos de Devoluciones Pendientes</span>
         <div class="flex align-items-center justify-content-between p-3 surface-100 border-round">
@@ -226,6 +248,24 @@ const menuFiltrado = computed(() => {
           <InputSwitch 
             v-model="correosActivos" 
             @change="toggleAutomatizacion(correosActivos)" 
+          />
+        </div>
+      </div>
+
+      <!-- Botón para Enviar Reporte Semanal -->
+      <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
+        <span class="label-blanco font-semibold">Reporte Semanal de Salidas</span>
+        <div class="flex align-items-center justify-content-between p-3 surface-100 border-round">
+          <div>
+            <span class="text-white text-sm font-bold block">Generar Historial</span>
+            <span class="text-xs text-400">Envía Excel con salidas de los últimos 7 días</span>
+          </div>
+          <Button 
+            icon="pi pi-send" 
+            :label="enviandoReporte ? 'Enviando...' : 'Enviar'" 
+            :disabled="enviandoReporte"
+            @click="generarReporteSemanal" 
+            class="p-button-sm btn-nuevo"
           />
         </div>
       </div>
