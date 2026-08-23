@@ -44,7 +44,7 @@ export const enviarNotificacionPendientes = async (destinatario, excelBuffer) =>
     });
 };
 
-// 2. NUEVA Función: Reporte Semanal del Historial
+// 2. Reporte Semanal del Historial
 export const enviarReporteSemanal = async (destinatario, excelBuffer) => {
     const fecha = new Date().toISOString().split('T')[0];
     const nombreArchivo = `Historial_Semanal_${fecha}.xlsx`;

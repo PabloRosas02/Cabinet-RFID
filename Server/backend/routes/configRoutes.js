@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-// 1. Agregamos enviarReporteSemanal a la importación
 import { enviarNotificacionPendientes, enviarReporteSemanal } from '../services/emailService.js';
 import { generarExcelEnMemoria } from '../utils/excelHelper.js';
 
@@ -69,7 +68,7 @@ router.post('/configuracion/automatizacion', async (req, res) => {
 
 
 // =======================================================
-// NUEVA RUTA: REPORTE SEMANAL DEL HISTORIAL
+// REPORTE SEMANAL DEL HISTORIAL
 // =======================================================
 
 router.post('/reportes/historial-semanal', async (req, res) => {
@@ -89,6 +88,9 @@ router.post('/reportes/historial-semanal', async (req, res) => {
                 detalles: {
                     include: { herramienta: true } 
                 }
+                // Si tienes relaciones con la tabla de usuarios para los nombres, inclúyelas aquí:
+                // almacenistaPrestador: true,
+                // almacenistaReceptor: true
             },
             orderBy: {
                 fechaSalida: 'desc'
@@ -106,8 +108,11 @@ router.post('/reportes/historial-semanal', async (req, res) => {
             return new Date(fecha).toLocaleString('es-MX', { 
                 timeZone: 'America/Tijuana',
                 hour12: true,
-                year: 'numeric', month: 'short', day: 'numeric', 
-                hour: '2-digit', minute: '2-digit'
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit'
             });
         };
 
@@ -116,21 +121,23 @@ router.post('/reportes/historial-semanal', async (req, res) => {
             // Unimos todas las herramientas prestadas en esa salida
             const resumenHerramientas = salida.detalles.map(d => {
                 const nombre = d.herramienta?.nombre || 'Desconocida';
-                const cantidad = d.cantidadPrestada || d.cantidad || 1; // Verifica si usas cantidadPrestada o cantidad
+                const cantidad = d.cantidadPrestada || d.cantidad || 1;
                 const regresada = d.cantidadRegresada ? ` (Regresó ${d.cantidadRegresada})` : '';
                 return `${cantidad}x ${nombre}${regresada}`;
             }).join(' | ');
 
             return {
                 'Folio': `#${salida.id}`,
-                'Autorizó': salida.prestadorNombre || 'N/A',
-                'Solicitó': `${salida.trabajadorNumero || ''} - ${salida.trabajadorNombre || 'N/A'}`.trim(),
-                'Número de Orden': salida.numeroOrden || 'N/A',
-                'Número de Máquina': salida.numeroMaquina || 'N/A',
+                'Orden': salida.numeroOrden || 'N/A',
+                'Máquina': salida.numeroMaquina || 'N/A',
+                'Prestó (Almacenista)': salida.prestadorNombre || salida.almacenistaPrestador?.nombre || 'Admin Principal',
+                'Recibió / Devolución': salida.receptorNombre || salida.almacenistaReceptor?.nombre || 'Pendiente / En curso',
+                'Solicitó (Empleado)': `${salida.trabajadorNumero || ''} - ${salida.trabajadorNombre || 'N/A'}`.trim(),
+                'Motivo de Salida': salida.motivoSalida || salida.motivo || 'N/A',
                 'Fecha de Salida': formatFecha(salida.fechaSalida),
-                'Fecha de Devolución': formatFecha(salida.fechaDevolucion),
-                'Resumen Herramientas': resumenHerramientas,
-                'Estado': salida.estado === 'PENDIENTE' ? 'Pendiente' : 'Devuelto'
+                'Fecha Devolución': formatFecha(salida.fechaDevolucion),
+                'Herramientas': resumenHerramientas,
+                'Estado': salida.estado === 'PENDIENTE' ? 'PENDIENTE' : 'DEVUELTO'
             };
         });
 
