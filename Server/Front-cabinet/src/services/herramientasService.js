@@ -28,9 +28,12 @@ export const HerramientasService = {
         return respuesta.data;
     },
 
-    // 4. Dar de baja lógica a una herramienta
-    eliminar: async (id) => {
-        const respuesta = await axios.delete(`${API_URL}/${id}`);
+    // 4. Dar de baja lógica a una herramienta (ahora incluye motivo)
+    eliminar: async (id, datosBaja) => {
+        // Axios requiere que el cuerpo de una petición DELETE vaya dentro de la propiedad "data"
+        const respuesta = await axios.delete(`${API_URL}/${id}`, {
+            data: datosBaja
+        });
         return respuesta.data;
     },
 

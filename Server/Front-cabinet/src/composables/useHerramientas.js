@@ -118,13 +118,13 @@ export function useHerramientas() {
         }
     };
 
-    // ELIMINAR (Soft Delete con Toast dinámico)
-    const eliminarHerramienta = async (herramienta) => {
-        const confirmado = confirm(`¿Estás seguro de dar de baja la herramienta [${herramienta.codigo}] - ${herramienta.nombre}?`);
-        if (!confirmado) return false;
-
+    // ELIMINAR (Soft Delete con Toast dinámico y recepción del motivo)
+    const eliminarHerramienta = async (herramienta, datosBaja) => {
+        // La confirmación ya se hizo en el Modal de la vista, así que procedemos directo
         try {
-            await HerramientasService.eliminar(herramienta.id);
+            // Se envía el id y el objeto con los motivos al servicio
+            await HerramientasService.eliminar(herramienta.id, datosBaja);
+            
             herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
             
             toast.removeAllGroups();

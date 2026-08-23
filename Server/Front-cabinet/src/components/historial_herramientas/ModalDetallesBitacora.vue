@@ -95,9 +95,31 @@ const obtenerListaDetalles = (texto) => {
 
                 <!-- Creación, Eliminación u otros -->
                 <div v-else class="surface-100 p-3 md:p-4 mb-3 border-round shadow-1 text-gray-300 text-sm flex align-items-center">
-                    <p v-if="registro.accion === 'CREACION'" class="m-0 text-base"><i class="pi pi-plus-circle text-green-400 mr-2 text-lg"></i>{{ t('modal_detalles_bitacora.msj_creacion') }}</p>
-                    <p v-else-if="registro.accion === 'ELIMINACION'" class="m-0 text-base"><i class="pi pi-trash text-red-400 mr-2 text-lg"></i>{{ t('modal_detalles_bitacora.msj_eliminacion') }}</p>
-                    <p v-else class="m-0">{{ registro.detalle || t('modal_detalles_bitacora.msj_sin_detalles') }}</p>
+                    
+                    <div v-if="registro.accion === 'CREACION'" class="w-full">
+                        <p class="m-0 text-base"><i class="pi pi-plus-circle text-green-400 mr-2 text-lg"></i>{{ t('modal_detalles_bitacora.msj_creacion') }}</p>
+                        <p v-if="registro.detalle" class="m-0 mt-2 text-gray-400 text-sm italic">{{ registro.detalle }}</p>
+                    </div>
+                    
+                    <div v-else-if="registro.accion === 'ELIMINACION'" class="w-full">
+                        <p class="m-0 text-base">
+                            <i class="pi pi-trash text-red-400 mr-2 text-lg"></i>
+                            {{ t('modal_detalles_bitacora.msj_eliminacion') }}
+                        </p>
+                        <!-- Aquí agregamos el recuadro con el motivo de baja -->
+                        <div v-if="registro.detalle" class="mt-3 p-3 surface-200 border-round border-1 border-red-900/50 flex align-items-start gap-2">
+                            <i class="pi pi-info-circle text-red-300 mt-1"></i>
+                            <div>
+                                <span class="block text-red-300 font-bold mb-1 text-xs uppercase tracking-wide">Registro del motivo</span>
+                                <span class="text-gray-300">{{ registro.detalle }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div v-else class="w-full">
+                        <p class="m-0">{{ registro.detalle || t('modal_detalles_bitacora.msj_sin_detalles') }}</p>
+                    </div>
+
                 </div>
             </div>
 

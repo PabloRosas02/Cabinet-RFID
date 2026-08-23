@@ -208,23 +208,17 @@ router.put('/:id', verificarToken, async (req, res) => {
             const nuevaDispRecibida = parseInt(cantidadDisponible, 10);
             const nuevaCantRecibida = parseInt(cantidad, 10);
 
-            if (cantidadDisponible !== undefined && cantidadDisponible !== null && cantidadDisponible !== '' && !isNaN(nuevaDispRecibida)) {
-                if (nuevaDispRecibida !== herramientaVieja.cantidadDisponible) {
-                    const diferencia = nuevaDispRecibida - herramientaVieja.cantidadDisponible;
-                    dataToUpdate.cantidadDisponible = nuevaDispRecibida;
-                    dataToUpdate.cantidad = herramientaVieja.cantidad + diferencia;
-                }
-            } 
-            else if (cantidad !== undefined && cantidad !== null && cantidad !== '' && !isNaN(nuevaCantRecibida)) {
-                if (nuevaCantRecibida !== herramientaVieja.cantidad) {
-                    const diferencia = nuevaCantRecibida - herramientaVieja.cantidad;
-                    dataToUpdate.cantidad = nuevaCantRecibida;
-                    dataToUpdate.cantidadDisponible = herramientaVieja.cantidadDisponible + diferencia;
-                }
+            if (!isNaN(nuevaDispRecibida)) {
+                dataToUpdate.cantidadDisponible = nuevaDispRecibida;
+                dataToUpdate.cantidad = nuevaDispRecibida; 
+            } else if (!isNaN(nuevaCantRecibida)) {
+                dataToUpdate.cantidad = nuevaCantRecibida;
+                dataToUpdate.cantidadDisponible = nuevaCantRecibida;
             }
 
             const cantidadFinal = dataToUpdate.cantidad ?? herramientaVieja.cantidad;
             const maxFinal = dataToUpdate.cantidadMaxima ?? herramientaVieja.cantidadMaxima;
+            
             if (maxFinal > 0 && cantidadFinal > maxFinal) {
                 throw new Error(`VALIDATION_ERROR: El stock resultante (${cantidadFinal}) superaría la cantidad máxima permitida (${maxFinal}).`);
             }
@@ -289,15 +283,29 @@ router.put('/:id', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 4. DELETE /api/herramientas/:id -> Baja lógica
+// 4. DELETE /api/herramientas/:id -> Baja lógica con motivo y desglose
 // =====================================================================
 router.delete('/:id', verificarToken, async (req, res) => {
     try {
         const { id } = req.params;
+        const { motivo, motivoOtro } = req.body; 
+
         const usuarioBdId = await obtenerUsuarioIdValido(req);
-        
         if (!usuarioBdId) {
             return res.status(401).json({ error: "Error de autenticación. Usuario no encontrado en BD." });
+        }
+
+        if (!motivo) {
+            return res.status(400).json({ error: "Debe seleccionar un motivo de baja." });
+        }
+
+        // Construimos el desglose limpio para la bitácora
+        let detalleMotivo = `Motivo de baja: ${motivo}`;
+        if (motivo.toLowerCase() === 'otro') {
+            if (!motivoOtro || motivoOtro.trim() === '') {
+                return res.status(400).json({ error: "Debe especificar el motivo en el campo 'Otro'." });
+            }
+            detalleMotivo += ` (${motivoOtro.trim()})`;
         }
 
         const herramientaId = parseInt(id, 10);
@@ -313,7 +321,7 @@ router.delete('/:id', verificarToken, async (req, res) => {
                     accion: 'ELIMINACION',
                     herramientaId: herramientaId,
                     usuarioId: usuarioBdId,
-                    detalle: 'Baja lógica del inventario.' 
+                    detalle: detalleMotivo 
                 }
             });
         });

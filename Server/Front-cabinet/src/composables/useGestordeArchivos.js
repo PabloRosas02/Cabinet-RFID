@@ -118,7 +118,6 @@ export function useGestorArchivos() {
                     if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
                     if (cabecera.includes('descripcion') || cabecera.includes('description')) obj.descripcion = valor;
                     if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) obj.cantidadMinima = valor;
-                    // SE AGREGÓ: Identificador para el stock máximo
                     if (cabecera.includes('cantidadmaxima') || cabecera.includes('maxquantity')) obj.cantidadMaxima = valor;
                     else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) obj.cantidad = valor;
                     if (cabecera.includes('tipo') || cabecera.includes('type')) obj.tipo = valor;

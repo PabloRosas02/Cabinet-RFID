@@ -19,10 +19,9 @@ const emit = defineEmits(['guardar', 'error', 'limpiar-mensajes']);
 const toast = useToast(); 
 const { t } = useI18n(); 
 
-// 1. Agregamos cantidadMaxima al objeto base
 const formularioBasico = {
     codigo: '', nombre: '', tipo: '', ubicacion: '',
-    marca: '', descripcion: '', cantidadMinima: 1, cantidadMaxima: null,
+    marca: '', descripcion: '', cantidadMinima: 1, cantidadMaxima: 1,
     cantidadDisponible: 1, imagen: null
 };
 

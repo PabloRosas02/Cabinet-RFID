@@ -1,15 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue'; 
+import { ref, computed, onMounted } from 'vue'; 
 import { useRouter } from 'vue-router'; 
 import { FilterMatchMode } from '@primevue/core/api';
 import { useHerramientas } from '@/composables/useHerramientas';
 import { useI18n } from 'vue-i18n'; 
-
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
 import Toast from 'primevue/toast';
+import Dialog from 'primevue/dialog';
+import Dropdown from 'primevue/dropdown';
 
 import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import FormularioHerramienta from '@/components/herramientas/FormularioHerramientas.vue';
@@ -31,6 +32,27 @@ const filtros = ref({
 const mostrarModalDetalles = ref(false);
 const herramientaViendo = ref(null);
 
+// Variables para el Modal de Baja
+const mostrarModalBaja = ref(false);
+const motivoBaja = ref(null);
+const motivoOtro = ref('');
+
+const opcionesMotivos = [
+    'Fin de vida útil', 
+    'Daño por operador', 
+    'Extravío', 
+    'Set up', 
+    'Mala calidad', 
+    'Otro'
+];
+
+// Validación dinámica para habilitar/deshabilitar el botón de confirmar
+const esValidoParaBaja = computed(() => {
+    if (!motivoBaja.value) return false;
+    if (motivoBaja.value === 'Otro' && !motivoOtro.value.trim()) return false;
+    return true;
+});
+
 const manejarSeleccion = (seleccion) => {
     herramientaSeleccionada.value = seleccion;
 };
@@ -46,10 +68,33 @@ const prepararEdicionSeleccionada = () => {
     }
 };
 
-const eliminarSeleccionada = async () => {
+// Abre el modal de confirmación en lugar de eliminar directamente
+const confirmarBaja = () => {
     if (herramientaSeleccionada.value) {
-        await eliminarHerramienta(herramientaSeleccionada.value);
+        motivoBaja.value = null;
+        motivoOtro.value = '';
+        mostrarModalBaja.value = true;
+    }
+};
+
+const cerrarModalBaja = () => {
+    mostrarModalBaja.value = false;
+};
+
+// Procesa la eliminación enviando el motivo
+const procesarBaja = async () => {
+    if (herramientaSeleccionada.value && esValidoParaBaja.value) {
+        // Armamos el objeto con los motivos para enviarlo al composable/API
+        const datosBaja = {
+            motivo: motivoBaja.value,
+            motivoOtro: motivoOtro.value.trim()
+        };
+
+        // NOTA: Asegúrate de que `eliminarHerramienta` reciba el segundo parámetro en tu composable
+        await eliminarHerramienta(herramientaSeleccionada.value, datosBaja);
+        
         herramientaSeleccionada.value = null; 
+        mostrarModalBaja.value = false;
         
         // Refrescamos por seguridad
         await cargarHerramientas();
@@ -85,14 +130,12 @@ onMounted(() => {
     <Toast />
 
     <div class="flex justify-content-between align-items-center mb-4">
-      <!-- Inyectamos la traducción del título -->
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_movimientos.titulo') }}</h2>
     </div>
 
     <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
 
       <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
-        <!-- Traducimos los botones -->
         <Button 
             icon="pi pi-arrow-left" 
             :label="t('view_movimientos.btn_volver')" 
@@ -110,13 +153,14 @@ onMounted(() => {
             @click="prepararEdicionSeleccionada" 
         />
         
+        <!-- Cambiamos la acción aquí para abrir el modal -->
         <Button 
             :label="t('view_movimientos.btn_eliminar')" 
             icon="pi pi-trash" 
             severity="danger" 
             class="font-bold btn-eliminar w-full sm:w-auto" 
             :disabled="!herramientaSeleccionada" 
-            @click="eliminarSeleccionada" 
+            @click="confirmarBaja" 
         />
       </div>
       
@@ -155,6 +199,48 @@ onMounted(() => {
       v-model:visible="mostrarModalDetalles" 
       :herramienta="herramientaViendo" 
     />
+
+    <!-- MODAL DE CONFIRMACIÓN DE BAJA -->
+    <Dialog 
+        v-model:visible="mostrarModalBaja" 
+        header="Confirmar Baja de Herramienta" 
+        :modal="true" 
+        :style="{ width: '450px' }" 
+        :closable="false"
+    >
+        <div class="flex flex-column gap-4 py-3">
+            <span>
+                ¿Estás seguro de que deseas dar de baja 
+                <b v-if="herramientaSeleccionada">{{ herramientaSeleccionada.nombre }} ({{ herramientaSeleccionada.codigo }})</b>?
+            </span>
+
+            <div class="flex flex-column gap-2">
+                <label for="motivoBaja" class="font-semibold">Motivo de la baja *</label>
+                <Dropdown 
+                    id="motivoBaja" 
+                    v-model="motivoBaja" 
+                    :options="opcionesMotivos" 
+                    placeholder="Selecciona un motivo" 
+                    class="w-full" 
+                />
+            </div>
+
+            <div v-if="motivoBaja === 'Otro'" class="flex flex-column gap-2">
+                <label for="motivoOtro" class="font-semibold">Especificar motivo *</label>
+                <InputText 
+                    id="motivoOtro" 
+                    v-model="motivoOtro" 
+                    placeholder="Describe la razón detalladamente..." 
+                    class="w-full" 
+                />
+            </div>
+        </div>
+
+        <template #footer>
+            <Button label="Cancelar" icon="pi pi-times" text severity="secondary" @click="cerrarModalBaja" />
+            <Button label="Confirmar Baja" icon="pi pi-check" severity="danger" :disabled="!esValidoParaBaja" @click="procesarBaja" />
+        </template>
+    </Dialog>
 
   </div>
 </template>
