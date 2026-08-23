@@ -46,16 +46,20 @@ export function useHerramientas() {
         mostrarModal.value = true;
     };
 
-    const prepararEdicion = (herramienta) => {
-        // Hacemos la copia de la herramienta, pero forzamos la sincronización de los nombres 
-        // de las variables para que el modal lea lo mismo que muestra la tabla.
+    const prepararEdicion = (herramientaSeleccionada) => {
+        // 1.Buscamos la versión más reciente en nuestro arreglo
+        // usando el ID
+        const herramientaActualizada = herramientas.value.find(h => h.id === herramientaSeleccionada.id) || herramientaSeleccionada;
+
+        // 2. Pasamos los datos frescos al modal
         herramientaActual.value = { 
-            ...herramienta,
-            cantidadMinima: herramienta.stockMinimo ?? herramienta.cantidadMinima ?? 0,
-            cantidadMaxima: herramienta.stockMaximo ?? herramienta.cantidadMaxima ?? 0,
-            cantidadDisponible: herramienta.stockFisico ?? herramienta.cantidadDisponible ?? 0,
-            cantidad: herramienta.stockTotal ?? herramienta.cantidad ?? 0
+            ...herramientaActualizada,
+            cantidadMinima: herramientaActualizada.stockMinimo ?? herramientaActualizada.cantidadMinima ?? 0,
+            cantidadMaxima: herramientaActualizada.stockMaximo ?? herramientaActualizada.cantidadMaxima ?? 0,
+            cantidadDisponible: herramientaActualizada.stockFisico ?? herramientaActualizada.cantidadDisponible ?? 0,
+            cantidad: herramientaActualizada.stockTotal ?? herramientaActualizada.cantidad ?? 0
         };
+        
         esEdicion.value = true;
         mostrarModal.value = true;
     };
