@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputSwitch from 'primevue/inputswitch'; 
+import InputText from 'primevue/inputtext'; // Importamos InputText
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
@@ -26,6 +27,11 @@ const temaActual = ref(localStorage.getItem('theme') || 'dark');
 // Estado para la automatización de correos
 const correosActivos = ref(false);
 
+// Estados para los correos destinatarios opcionales
+const correoPendientes = ref('');
+const correoReporte = ref('');
+const correoStock = ref('');
+
 // Estados para evitar doble clic en los envíos de correo
 const enviandoReporte = ref(false);
 const enviandoAlertaStock = ref(false);
@@ -40,31 +46,45 @@ const cargarEstadoAutomatizacion = async () => {
   }
 };
 
-// Cambiar el estado del cron al presionar el switch
+// Cambiar el estado del cron al presionar el switch (enviando correo destino)
 const toggleAutomatizacion = async (nuevoValor) => {
   try {
     const { data } = await axios.post('/api/configuracion/automatizacion', { 
-      activo: nuevoValor 
+      activo: nuevoValor,
+      correoDestino: correoPendientes.value
     });
     correosActivos.value = data.activo;
+    
+    if (data.activo) {
+      toast.add({ 
+        severity: 'info', 
+        summary: 'Automatización Activada', 
+        detail: `Alertas configuradas hacia: ${data.destinatario}`, 
+        life: 4000 
+      });
+    }
   } catch (error) {
     console.error('Error al actualizar la automatización:', error);
     correosActivos.value = !nuevoValor; 
   }
 };
 
-// Función para disparar el reporte semanal manualmente (Actualizado con Toast)
+// Función para disparar el reporte semanal manualmente
 const generarReporteSemanal = async () => {
   enviandoReporte.value = true;
   try {
-    const { data } = await axios.post('/api/reportes/historial-semanal');
+    const { data } = await axios.post('/api/reportes/historial-semanal', {
+      correoDestino: correoReporte.value
+    });
+
     if (data.success) {
       toast.add({ 
         severity: 'success', 
         summary: 'Reporte Enviado', 
-        detail: data.mensaje || `Reporte enviado con éxito. Registros encontrados: ${data.registros}`, 
+        detail: data.mensaje || `Reporte enviado con éxito a ${data.destinatario}. Registros: ${data.registros}`, 
         life: 4000 
       });
+      correoReporte.value = ''; // Limpiar input tras envío exitoso
     } else {
       toast.add({ 
         severity: 'error', 
@@ -90,15 +110,19 @@ const generarReporteSemanal = async () => {
 const enviarAlertaStock = async () => {
   enviandoAlertaStock.value = true;
   try {
-    const { data } = await axios.post('/api/reportes/alertas-stock');
+    const { data } = await axios.post('/api/reportes/alertas-stock', {
+      correoDestino: correoStock.value
+    });
+
     if (data.success) {
       if (data.registros) {
         toast.add({ 
           severity: 'warn', 
           summary: 'Alerta Enviada', 
-          detail: `Se notificaron ${data.registros} herramientas en estado crítico.`, 
+          detail: `Se notificaron ${data.registros} herramientas a ${data.destinatario}.`, 
           life: 4000 
         });
+        correoStock.value = ''; // Limpiar input tras envío exitoso
       } else {
         toast.add({ 
           severity: 'info', 
@@ -300,14 +324,21 @@ const menuFiltrado = computed(() => {
       <!-- Switch de Devoluciones Pendientes -->
       <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
         <span class="label-blanco font-semibold">Correos de Devoluciones Pendientes</span>
-        <div class="flex align-items-center justify-content-between p-3 surface-100 border-round">
-          <div>
-            <span class="text-white text-sm font-bold block">Envío automático (Prueba)</span>
-            <span class="text-xs text-400">Manda correo cada 1 minuto si hay pendientes</span>
+        <div class="flex flex-column gap-2 p-3 surface-100 border-round">
+          <div class="flex align-items-center justify-content-between">
+            <div>
+              <span class="text-white text-sm font-bold block">Envío automático (Prueba)</span>
+              <span class="text-xs text-400">Manda correo cada 1 minuto si hay pendientes</span>
+            </div>
+            <InputSwitch 
+              v-model="correosActivos" 
+              @change="toggleAutomatizacion(correosActivos)" 
+            />
           </div>
-          <InputSwitch 
-            v-model="correosActivos" 
-            @change="toggleAutomatizacion(correosActivos)" 
+          <InputText 
+            v-model="correoPendientes" 
+            placeholder="ejemplo@correo.com (opcional)" 
+            class="w-full p-inputtext-sm mt-1" 
           />
         </div>
       </div>
@@ -315,36 +346,52 @@ const menuFiltrado = computed(() => {
       <!-- Botón para Enviar Reporte Semanal -->
       <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
         <span class="label-blanco font-semibold">Reporte Semanal de Salidas</span>
-        <div class="flex align-items-center justify-content-between p-3 surface-100 border-round">
+        <div class="flex flex-column gap-2 p-3 surface-100 border-round">
           <div>
             <span class="text-white text-sm font-bold block">Generar Historial</span>
             <span class="text-xs text-400">Envía Excel con salidas de los últimos 7 días</span>
           </div>
-          <Button 
-            icon="pi pi-send" 
-            :label="enviandoReporte ? 'Enviando...' : 'Enviar'" 
-            :disabled="enviandoReporte"
-            @click="generarReporteSemanal" 
-            class="p-button-sm btn-nuevo"
-          />
+          <div class="flex gap-2 w-full mt-1">
+            <InputText 
+              v-model="correoReporte" 
+              placeholder="ejemplo@correo.com (opcional)" 
+              class="w-full p-inputtext-sm" 
+            />
+            <Button 
+              icon="pi pi-send" 
+              :label="enviandoReporte ? 'Enviando...' : 'Enviar'" 
+              :disabled="enviandoReporte"
+              @click="generarReporteSemanal" 
+              class="p-button-sm btn-nuevo"
+              style="white-space: nowrap;"
+            />
+          </div>
         </div>
       </div>
 
       <!-- Botón para Enviar Alerta de Stock Mínimo -->
       <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
         <span class="label-blanco font-semibold">Alerta de Stock Mínimo</span>
-        <div class="flex align-items-center justify-content-between p-3 surface-100 border-round">
+        <div class="flex flex-column gap-2 p-3 surface-100 border-round">
           <div>
             <span class="text-white text-sm font-bold block">Verificar Inventario</span>
             <span class="text-xs text-400">Notifica herramientas con stock crítico</span>
           </div>
-          <Button 
-            icon="pi pi-exclamation-triangle" 
-            :label="enviandoAlertaStock ? 'Verificando...' : 'Verificar'" 
-            :disabled="enviandoAlertaStock"
-            @click="enviarAlertaStock" 
-            class="p-button-sm p-button-warning"
-          />
+          <div class="flex gap-2 w-full mt-1">
+            <InputText 
+              v-model="correoStock" 
+              placeholder="ejemplo@correo.com (opcional)" 
+              class="w-full p-inputtext-sm" 
+            />
+            <Button 
+              icon="pi pi-exclamation-triangle" 
+              :label="enviandoAlertaStock ? 'Enviando...' : 'Verificar'" 
+              :disabled="enviandoAlertaStock"
+              @click="enviarAlertaStock" 
+              class="p-button-sm p-button-warning"
+              style="white-space: nowrap;"
+            />
+          </div>
         </div>
       </div>
 

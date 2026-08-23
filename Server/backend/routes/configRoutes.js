@@ -15,9 +15,13 @@ router.get('/configuracion/automatizacion', (req, res) => {
 });
 
 router.post('/configuracion/automatizacion', async (req, res) => {
-    const { activo } = req.body;
+    // 1. Recibir el correo destino opcional (además del estado activo)
+    const { activo, correoDestino } = req.body;
     
-    console.log(`Solicitud de toggle recibida. Estado solicitado: ${activo}`);
+    // Si mandan un correo, lo usamos. Si no, usamos el del .env
+    const destinatario = correoDestino || process.env.ADMIN_EMAIL;
+    
+    console.log(`Solicitud de toggle recibida. Estado solicitado: ${activo}. Destinatario: ${destinatario}`);
 
     if (Boolean(activo)) {
         try {
@@ -51,19 +55,20 @@ router.post('/configuracion/automatizacion', async (req, res) => {
                 );
 
                 const excelBuffer = await generarExcelEnMemoria(listaFormateada);
-                await enviarNotificacionPendientes(process.env.ADMIN_EMAIL, excelBuffer);
+                // 2. Enviar el correo a la variable 'destinatario'
+                await enviarNotificacionPendientes(destinatario, excelBuffer);
                 
-                console.log(`Correo enviado exitosamente. Archivo Excel generado con ${listaFormateada.length} pendientes.`);
+                console.log(`Correo de pendientes enviado a ${destinatario}. Archivo Excel generado con ${listaFormateada.length} pendientes.`);
             } else {
                 console.log('El interruptor se activó, pero no hay devoluciones pendientes en la base de datos.');
             }
         } catch (error) {
-            console.error('Error crítico al enviar el correo:', error);
+            console.error('Error crítico al enviar el correo de pendientes:', error);
             return res.status(500).json({ success: false, error: error.message });
         }
     }
 
-    res.json({ success: true, activo: Boolean(activo) });
+    res.json({ success: true, activo: Boolean(activo), destinatario });
 });
 
 
@@ -73,11 +78,17 @@ router.post('/configuracion/automatizacion', async (req, res) => {
 
 router.post('/reportes/historial-semanal', async (req, res) => {
     try {
-        // 1. Calcular la fecha límite (hace 7 días exactos)
+        // 1. Recibir el correo opcional desde el frontend
+        const { correoDestino } = req.body;
+        
+        // Si mandan un correo, lo usamos. Si no, usamos el del .env
+        const destinatario = correoDestino || process.env.ADMIN_EMAIL;
+
+        // Calcular la fecha límite (hace 7 días exactos)
         const haceUnaSemana = new Date();
         haceUnaSemana.setDate(haceUnaSemana.getDate() - 7);
 
-        // 2. Traer los registros de Prisma (últimos 7 días)
+        // Traer los registros de Prisma (últimos 7 días)
         const historialSemanal = await prisma.salida.findMany({
             where: {
                 fechaSalida: {
@@ -115,7 +126,7 @@ router.post('/reportes/historial-semanal', async (req, res) => {
             });
         };
 
-        // 3. Formatear la información para las columnas del Excel (Estilo Historial)
+        // Formatear la información para las columnas del Excel (Estilo Historial)
         const listaFormateada = historialSemanal.map(salida => {
             // Unimos todas las herramientas prestadas en esa salida
             const resumenHerramientas = salida.detalles.map(d => {
@@ -146,12 +157,14 @@ router.post('/reportes/historial-semanal', async (req, res) => {
             };
         });
 
-        // 4. Generar el Excel y enviarlo por correo
+        // Generar el Excel y enviarlo por correo
         const excelBuffer = await generarExcelEnMemoria(listaFormateada);
-        await enviarReporteSemanal(process.env.ADMIN_EMAIL, excelBuffer);
+        
+        // 2. Enviar el correo a la variable 'destinatario'
+        await enviarReporteSemanal(destinatario, excelBuffer);
 
-        console.log(`Reporte semanal enviado exitosamente con ${listaFormateada.length} registros.`);
-        res.json({ success: true, registros: listaFormateada.length });
+        console.log(`Reporte semanal enviado a ${destinatario} con ${listaFormateada.length} registros.`);
+        res.json({ success: true, registros: listaFormateada.length, destinatario });
 
     } catch (error) {
         console.error('Error al enviar reporte semanal:', error);
@@ -165,7 +178,13 @@ router.post('/reportes/historial-semanal', async (req, res) => {
 
 router.post('/reportes/alertas-stock', async (req, res) => {
     try {
-        // 1. Traer herramientas activas o en mantenimiento (ignoramos las dadas de baja)
+        // 1. Recibir el correo opcional desde el frontend
+        const { correoDestino } = req.body;
+        
+        // Si mandan un correo, lo usamos. Si no, usamos el del .env
+        const destinatario = correoDestino || process.env.ADMIN_EMAIL;
+
+        // Traer herramientas activas o en mantenimiento (ignoramos las dadas de baja)
         const herramientas = await prisma.herramienta.findMany({
             where: {
                 estado: {
@@ -174,7 +193,7 @@ router.post('/reportes/alertas-stock', async (req, res) => {
             }
         });
 
-        // 2. Filtrar únicamente las que estén en estado crítico
+        // Filtrar únicamente las que estén en estado crítico
         const bajoStock = herramientas.filter(h => h.cantidadDisponible <= h.cantidadMinima);
 
         if (bajoStock.length === 0) {
@@ -182,7 +201,7 @@ router.post('/reportes/alertas-stock', async (req, res) => {
             return res.json({ success: true, mensaje: 'No hay herramientas en stock mínimo actualmente.' });
         }
 
-        // 3. Formatear la información para tu helper de Excel (incluyendo Marca y Descripción)
+        // Formatear la información para tu helper de Excel (incluyendo Marca y Descripción)
         const listaFormateada = bajoStock.map(h => ({
             'Código': h.codigo || 'N/A',
             'Nombre': h.nombre || 'N/A',
@@ -194,14 +213,14 @@ router.post('/reportes/alertas-stock', async (req, res) => {
             'Descripción': h.descripcion || 'Sin descripción'
         }));
 
-        // 4. Generar el Excel en memoria con el formato actualizado
+        // Generar el Excel en memoria con el formato actualizado
         const excelBuffer = await generarExcelEnMemoria(listaFormateada);
         
-        // 5. Enviar el correo usando la variable de entorno
-        await enviarAlertaStockMinimo(process.env.ADMIN_EMAIL, excelBuffer);
+        // 2. Enviar el correo a la variable 'destinatario'
+        await enviarAlertaStockMinimo(destinatario, excelBuffer);
 
-        console.log(`Alerta de stock enviada exitosamente. ${listaFormateada.length} herramientas críticas.`);
-        res.json({ success: true, registros: listaFormateada.length });
+        console.log(`Alerta de stock enviada a ${destinatario}. ${listaFormateada.length} herramientas críticas.`);
+        res.json({ success: true, registros: listaFormateada.length, destinatario });
 
     } catch (error) {
         console.error('Error crítico al enviar alerta de stock:', error);
