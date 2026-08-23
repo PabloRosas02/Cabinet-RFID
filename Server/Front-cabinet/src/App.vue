@@ -1,15 +1,16 @@
 <script setup>
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
+import Toast from 'primevue/toast';
 import MenuLateral from './layouts/MenuLateral.vue';
 
 const route = useRoute();
 
-// MEJORA UX: Si la pantalla es de celular/tablet (< 992px), empieza cerrado. 
+// Si la pantalla es de celular/tablet (< 992px), empieza cerrado. 
 // Si es monitor de PC, empieza abierto.
 const menuAbierto = ref(window.innerWidth > 992);
 
-// Opcional: Si el usuario voltea el celular o redimensiona la ventana en PC, lo ajustamos automáticamente
+// Si el usuario voltea el celular o redimensiona la ventana en PC, lo ajustamos automáticamente
 window.addEventListener('resize', () => {
     if (window.innerWidth > 992) {
         menuAbierto.value = true;
@@ -20,28 +21,30 @@ window.addEventListener('resize', () => {
 </script>
 
 <template>
-  <div class="layout-global">
-    <MenuLateral 
-        v-if="!route.meta.hideLayout" 
-        :menuAbierto="menuAbierto" 
-        @toggle="menuAbierto = false" 
-    />
-    
-    <div class="contenedor-derecho">
-      <!-- Barra superior -->
-      <div v-if="!route.meta.hideLayout" class="topbar">
-        <!-- El botón de hamburguesa alterna entre abierto y cerrado -->
-        <button class="btn-hamburguesa" @click="menuAbierto = !menuAbierto">
-          <i class="pi pi-bars"></i>
-        </button>
-      </div>
+    <!-- Componente contenedor global para todas las alertas del sistema -->
+    <Toast position="top-right" />
+        <div class="layout-global">
+            <MenuLateral 
+                v-if="!route.meta.hideLayout" 
+                :menuAbierto="menuAbierto" 
+                @toggle="menuAbierto = false" 
+            />
+            
+            <div class="contenedor-derecho">
+            <!-- Barra superior -->
+            <div v-if="!route.meta.hideLayout" class="topbar">
+                <!-- El botón de hamburguesa alterna entre abierto y cerrado -->
+                <button class="btn-hamburguesa" @click="menuAbierto = !menuAbierto">
+                <i class="pi pi-bars"></i>
+                </button>
+            </div>
 
-      <!-- Aquí se cargan todas las vistas -->
-      <main :class="['vista-contenido', { 'pantalla-completa': route.meta.hideLayout }]">
-        <router-view />
-      </main>
-    </div>
-  </div>
+            <!-- Aquí se cargan todas las vistas -->
+            <main :class="['vista-contenido', { 'pantalla-completa': route.meta.hideLayout }]">
+                <router-view />
+            </main>
+            </div>
+        </div>
 </template>
 
 <style>

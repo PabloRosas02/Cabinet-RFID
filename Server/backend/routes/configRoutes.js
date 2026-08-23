@@ -174,7 +174,7 @@ router.post('/reportes/alertas-stock', async (req, res) => {
             }
         });
 
-        // 2. Filtrar únicamente las que estén en estado crítico usando los nombres exactos de tu base de datos
+        // 2. Filtrar únicamente las que estén en estado crítico
         const bajoStock = herramientas.filter(h => h.cantidadDisponible <= h.cantidadMinima);
 
         if (bajoStock.length === 0) {
@@ -182,20 +182,22 @@ router.post('/reportes/alertas-stock', async (req, res) => {
             return res.json({ success: true, mensaje: 'No hay herramientas en stock mínimo actualmente.' });
         }
 
-        // 3. Formatear la información para tu helper de Excel
+        // 3. Formatear la información para tu helper de Excel (incluyendo Marca y Descripción)
         const listaFormateada = bajoStock.map(h => ({
             'Código': h.codigo || 'N/A',
             'Nombre': h.nombre || 'N/A',
             'Tipo / Categoría': h.tipo || 'N/A',
+            'Marca': h.marca || 'N/A',
             'Ubicación': h.ubicacion || 'N/A',
             'Stock Mínimo': h.cantidadMinima,
-            'Stock Físico': h.cantidadDisponible
+            'Stock Físico': h.cantidadDisponible,
+            'Descripción': h.descripcion || 'Sin descripción'
         }));
 
-        // 4. Generar el Excel en memoria
+        // 4. Generar el Excel en memoria con el formato actualizado
         const excelBuffer = await generarExcelEnMemoria(listaFormateada);
         
-        // 5. Enviar el correo usando la variable de entorno que ya manejas
+        // 5. Enviar el correo usando la variable de entorno
         await enviarAlertaStockMinimo(process.env.ADMIN_EMAIL, excelBuffer);
 
         console.log(`Alerta de stock enviada exitosamente. ${listaFormateada.length} herramientas críticas.`);
