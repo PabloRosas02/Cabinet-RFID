@@ -77,3 +77,37 @@ export const enviarReporteSemanal = async (destinatario, excelBuffer) => {
         ]
     });
 };
+
+// 3. Alerta de Stock Mínimo
+export const enviarAlertaStockMinimo = async (destinatario, excelBuffer) => {
+    const fecha = new Date().toISOString().split('T')[0];
+    const nombreArchivo = `Alertas_Stock_Minimo_${fecha}.xlsx`;
+
+    const htmlContent = `
+        <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px;">
+            <h2 style="color: #ea580c; border-bottom: 2px solid #ea580c; padding-bottom: 10px;">
+                ⚠️ Alerta: Herramientas en Stock Mínimo
+            </h2>
+            <p style="font-size: 16px;">Hola, Encargado de Almacén:</p>
+            <p style="font-size: 16px;">Se ha detectado que una o más herramientas han alcanzado o descendido por debajo de su nivel de <strong>stock mínimo</strong>.</p>
+            <p style="font-size: 16px;">Por favor, revisa el archivo de <strong>Excel adjunto</strong> para consultar el listado completo y gestionar el reabastecimiento necesario.</p>
+            <br/>
+            <p style="font-size: 12px; color: #777; border-top: 1px solid #eaeaea; padding-top: 10px;">
+                Este es un mensaje automático generado por el Sistema de Almacén.
+            </p>
+        </div>
+    `;
+
+    await transporter.sendMail({
+        from: `"Sistema de Almacén" <${process.env.SMTP_USER}>`,
+        to: destinatario,
+        subject: '⚠️ Alerta de Inventario: Herramientas en Stock Mínimo',
+        html: htmlContent,
+        attachments: [
+            {
+                filename: nombreArchivo,
+                content: excelBuffer 
+            }
+        ]
+    });
+};

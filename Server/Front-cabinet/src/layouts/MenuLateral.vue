@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputSwitch from 'primevue/inputswitch'; 
+import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
 const props = defineProps({
@@ -16,6 +17,7 @@ const route = useRoute();
 const router = useRouter();
 
 const { t, locale } = useI18n();
+const toast = useToast();
 
 // Estados para el Modal de Configuración y Preferencias
 const mostrarModalConfig = ref(false);
@@ -24,8 +26,9 @@ const temaActual = ref(localStorage.getItem('theme') || 'dark');
 // Estado para la automatización de correos
 const correosActivos = ref(false);
 
-// Estado para evitar doble clic al enviar el reporte semanal
+// Estados para evitar doble clic en los envíos de correo
 const enviandoReporte = ref(false);
+const enviandoAlertaStock = ref(false);
 
 // Consultar el estado inicial del cron al montar el componente
 const cargarEstadoAutomatizacion = async () => {
@@ -46,25 +49,82 @@ const toggleAutomatizacion = async (nuevoValor) => {
     correosActivos.value = data.activo;
   } catch (error) {
     console.error('Error al actualizar la automatización:', error);
-    correosActivos.value = !nuevoValor; // Revertir visualmente en caso de error
+    correosActivos.value = !nuevoValor; 
   }
 };
 
-// Función para disparar el reporte semanal manualmente
+// Función para disparar el reporte semanal manualmente (Actualizado con Toast)
 const generarReporteSemanal = async () => {
   enviandoReporte.value = true;
   try {
     const { data } = await axios.post('/api/reportes/historial-semanal');
     if (data.success) {
-      alert(data.mensaje || `Reporte enviado con éxito. Registros encontrados: ${data.registros}`);
+      toast.add({ 
+        severity: 'success', 
+        summary: 'Reporte Enviado', 
+        detail: data.mensaje || `Reporte enviado con éxito. Registros encontrados: ${data.registros}`, 
+        life: 4000 
+      });
     } else {
-      alert('Hubo un problema al generar el reporte.');
+      toast.add({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: 'Hubo un problema al generar el reporte.', 
+        life: 4000 
+      });
     }
   } catch (error) {
     console.error('Error al solicitar el reporte semanal:', error);
-    alert('Ocurrió un error en el servidor al enviar el correo.');
+    toast.add({ 
+      severity: 'error', 
+      summary: 'Error del Servidor', 
+      detail: 'Ocurrió un error en el servidor al enviar el correo.', 
+      life: 4000 
+    });
   } finally {
     enviandoReporte.value = false;
+  }
+};
+
+// Función para disparar la alerta de stock manualmente
+const enviarAlertaStock = async () => {
+  enviandoAlertaStock.value = true;
+  try {
+    const { data } = await axios.post('/api/reportes/alertas-stock');
+    if (data.success) {
+      if (data.registros) {
+        toast.add({ 
+          severity: 'warn', 
+          summary: 'Alerta Enviada', 
+          detail: `Se notificaron ${data.registros} herramientas en estado crítico.`, 
+          life: 4000 
+        });
+      } else {
+        toast.add({ 
+          severity: 'info', 
+          summary: 'Inventario Sano', 
+          detail: data.mensaje || 'No hay herramientas en stock mínimo.', 
+          life: 4000 
+        });
+      }
+    } else {
+      toast.add({ 
+        severity: 'error', 
+        summary: 'Error', 
+        detail: 'Hubo un problema al generar la alerta de stock.', 
+        life: 4000 
+      });
+    }
+  } catch (error) {
+    console.error('Error al solicitar la alerta de stock:', error);
+    toast.add({ 
+      severity: 'error', 
+      summary: 'Error del Servidor', 
+      detail: 'Ocurrió un error al procesar la alerta de inventario.', 
+      life: 4000 
+    });
+  } finally {
+    enviandoAlertaStock.value = false;
   }
 };
 
@@ -266,6 +326,24 @@ const menuFiltrado = computed(() => {
             :disabled="enviandoReporte"
             @click="generarReporteSemanal" 
             class="p-button-sm btn-nuevo"
+          />
+        </div>
+      </div>
+
+      <!-- Botón para Enviar Alerta de Stock Mínimo -->
+      <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
+        <span class="label-blanco font-semibold">Alerta de Stock Mínimo</span>
+        <div class="flex align-items-center justify-content-between p-3 surface-100 border-round">
+          <div>
+            <span class="text-white text-sm font-bold block">Verificar Inventario</span>
+            <span class="text-xs text-400">Notifica herramientas con stock crítico</span>
+          </div>
+          <Button 
+            icon="pi pi-exclamation-triangle" 
+            :label="enviandoAlertaStock ? 'Verificando...' : 'Verificar'" 
+            :disabled="enviandoAlertaStock"
+            @click="enviarAlertaStock" 
+            class="p-button-sm p-button-warning"
           />
         </div>
       </div>

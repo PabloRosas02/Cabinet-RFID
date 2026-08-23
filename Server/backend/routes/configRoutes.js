@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { enviarNotificacionPendientes, enviarReporteSemanal } from '../services/emailService.js';
+import { enviarNotificacionPendientes, enviarReporteSemanal, enviarAlertaStockMinimo } from '../services/emailService.js';
 import { generarExcelEnMemoria } from '../utils/excelHelper.js';
 
 const prisma = new PrismaClient();
@@ -155,6 +155,54 @@ router.post('/reportes/historial-semanal', async (req, res) => {
 
     } catch (error) {
         console.error('Error al enviar reporte semanal:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// =======================================================
+// ALERTA DE STOCK MÍNIMO (INVENTARIO)
+// =======================================================
+
+router.post('/reportes/alertas-stock', async (req, res) => {
+    try {
+        // 1. Traer herramientas activas o en mantenimiento (ignoramos las dadas de baja)
+        const herramientas = await prisma.herramienta.findMany({
+            where: {
+                estado: {
+                    not: 'DADA_DE_BAJA' 
+                }
+            }
+        });
+
+        // 2. Filtrar únicamente las que estén en estado crítico usando los nombres exactos de tu base de datos
+        const bajoStock = herramientas.filter(h => h.cantidadDisponible <= h.cantidadMinima);
+
+        if (bajoStock.length === 0) {
+            console.log('Solicitud de alerta de stock: Todo el inventario está sano.');
+            return res.json({ success: true, mensaje: 'No hay herramientas en stock mínimo actualmente.' });
+        }
+
+        // 3. Formatear la información para tu helper de Excel
+        const listaFormateada = bajoStock.map(h => ({
+            'Código': h.codigo || 'N/A',
+            'Nombre': h.nombre || 'N/A',
+            'Tipo / Categoría': h.tipo || 'N/A',
+            'Ubicación': h.ubicacion || 'N/A',
+            'Stock Mínimo': h.cantidadMinima,
+            'Stock Físico': h.cantidadDisponible
+        }));
+
+        // 4. Generar el Excel en memoria
+        const excelBuffer = await generarExcelEnMemoria(listaFormateada);
+        
+        // 5. Enviar el correo usando la variable de entorno que ya manejas
+        await enviarAlertaStockMinimo(process.env.ADMIN_EMAIL, excelBuffer);
+
+        console.log(`Alerta de stock enviada exitosamente. ${listaFormateada.length} herramientas críticas.`);
+        res.json({ success: true, registros: listaFormateada.length });
+
+    } catch (error) {
+        console.error('Error crítico al enviar alerta de stock:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
