@@ -30,7 +30,13 @@ export function useHerramientas() {
 
     // PREPARAR FORMULARIOS
     const prepararNuevaHerramienta = () => {
-        herramientaActual.value = { 
+        console.log("DATOS ENTRANTES A EDICIÓN:", {
+            cantidadTotal: herramienta.cantidad,
+            cantidadFisica: herramienta.cantidadDisponible,
+            cantidadMax: herramienta.cantidadMaxima
+        });
+        
+        herramientActual.value = { 
             codigo: '', 
             nombre: '', 
             descripcion: '',
@@ -73,9 +79,15 @@ export function useHerramientas() {
             let herramientaGuardada;
 
             const payload = { ...herramientaActual.value };
-            payload.cantidadMinima = parseInt(payload.cantidadMinima || payload.stockMinimo, 10) || 0;
-            payload.cantidadDisponible = parseInt(payload.cantidadDisponible || payload.stockFisico, 10) || 0;
-            payload.cantidad = payload.cantidadDisponible; // Sincronizamos el total con el disponible
+            
+            payload.cantidadMinima = parseInt(payload.cantidadMinima ?? payload.stockMinimo ?? 0, 10);
+            payload.cantidadDisponible = parseInt(payload.cantidadDisponible ?? payload.stockFisico ?? 0, 10);
+            
+            // SOLO sincronizamos el Total (cantidad) con el Físico (cantidadDisponible) si es NUEVA.
+            // Si es edición, mantenemos el total intacto para no borrar el stock prestado.
+            if (!esActEdicion) {
+                payload.cantidad = payload.cantidadDisponible; 
+            }
 
             if (esActEdicion) {
                 herramientaGuardada = await HerramientasService.actualizar(payload.id, payload);
@@ -120,9 +132,7 @@ export function useHerramientas() {
 
     // ELIMINAR (Soft Delete con Toast dinámico y recepción del motivo)
     const eliminarHerramienta = async (herramienta, datosBaja) => {
-        // La confirmación ya se hizo en el Modal de la vista, así que procedemos directo
         try {
-            // Se envía el id y el objeto con los motivos al servicio
             await HerramientasService.eliminar(herramienta.id, datosBaja);
             
             herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
