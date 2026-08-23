@@ -30,12 +30,6 @@ export function useHerramientas() {
 
     // PREPARAR FORMULARIOS
     const prepararNuevaHerramienta = () => {
-        console.log("DATOS ENTRANTES A EDICIÓN:", {
-            cantidadTotal: herramienta.cantidad,
-            cantidadFisica: herramienta.cantidadDisponible,
-            cantidadMax: herramienta.cantidadMaxima
-        });
-        
         herramientActual.value = { 
             codigo: '', 
             nombre: '', 
@@ -53,7 +47,15 @@ export function useHerramientas() {
     };
 
     const prepararEdicion = (herramienta) => {
-        herramientaActual.value = { ...herramienta };
+        // Hacemos la copia de la herramienta, pero forzamos la sincronización de los nombres 
+        // de las variables para que el modal lea lo mismo que muestra la tabla.
+        herramientaActual.value = { 
+            ...herramienta,
+            cantidadMinima: herramienta.stockMinimo ?? herramienta.cantidadMinima ?? 0,
+            cantidadMaxima: herramienta.stockMaximo ?? herramienta.cantidadMaxima ?? 0,
+            cantidadDisponible: herramienta.stockFisico ?? herramienta.cantidadDisponible ?? 0,
+            cantidad: herramienta.stockTotal ?? herramienta.cantidad ?? 0
+        };
         esEdicion.value = true;
         mostrarModal.value = true;
     };
