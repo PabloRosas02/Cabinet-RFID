@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useHerramientas } from '@/composables/useHerramientas';
 import { useI18n } from 'vue-i18n'; 
+import { useToast } from 'primevue/usetoast';
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
@@ -18,6 +19,7 @@ import DetalleHerramientas from '@/components/herramientas/DetalleHerramientas.v
 
 const router = useRouter(); 
 const { t } = useI18n(); 
+const toast = useToast();
 
 const { 
     herramientas, cargando, mostrarModal, herramientaActual, esEdicion, 
@@ -71,6 +73,21 @@ const prepararEdicionSeleccionada = () => {
 // Abre el modal de confirmación en lugar de eliminar directamente
 const confirmarBaja = () => {
     if (herramientaSeleccionada.value) {
+
+        // Si el total físico es mayor al disponible, hay piezas prestadas
+        if (herramientaSeleccionada.value.cantidad > herramientaSeleccionada.value.cantidadDisponible) {
+            const unidadesPrestadas = herramientaSeleccionada.value.cantidad - herramientaSeleccionada.value.cantidadDisponible;
+            
+            toast.add({ 
+                severity: 'warn', 
+                summary: 'Acción Denegada', 
+                detail: `No puedes dar de baja esta herramienta. Actualmente hay ${unidadesPrestadas} unidad(es) en uso/prestada(s).`, 
+                life: 5000 
+            });
+            
+            return; // Detenemos la ejecución aquí, el modal NO se abre
+        }
+        // Si pasa la validación, limpiamos los campos y abrimos el modal
         motivoBaja.value = null;
         motivoOtro.value = '';
         mostrarModalBaja.value = true;

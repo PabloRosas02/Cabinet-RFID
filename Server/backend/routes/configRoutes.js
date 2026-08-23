@@ -87,10 +87,9 @@ router.post('/reportes/historial-semanal', async (req, res) => {
             include: {
                 detalles: {
                     include: { herramienta: true } 
-                }
-                // Si tienes relaciones con la tabla de usuarios para los nombres, inclúyelas aquí:
-                // almacenistaPrestador: true,
-                // almacenistaReceptor: true
+                },
+                prestador: true,
+                receptor: true
             },
             orderBy: {
                 fechaSalida: 'desc'
@@ -121,19 +120,25 @@ router.post('/reportes/historial-semanal', async (req, res) => {
             // Unimos todas las herramientas prestadas en esa salida
             const resumenHerramientas = salida.detalles.map(d => {
                 const nombre = d.herramienta?.nombre || 'Desconocida';
-                const cantidad = d.cantidadPrestada || d.cantidad || 1;
+                const cantidad = d.cantidadPrestada || 1;
                 const regresada = d.cantidadRegresada ? ` (Regresó ${d.cantidadRegresada})` : '';
                 return `${cantidad}x ${nombre}${regresada}`;
             }).join(' | ');
+
+            // Lógica para formatear el Motivo de Salida
+            let motivoFinal = salida.motivo || 'N/A';
+            if (salida.motivo === 'Otro' && salida.motivoOtro) {
+                motivoFinal = `Otro: ${salida.motivoOtro}`;
+            }
 
             return {
                 'Folio': `#${salida.id}`,
                 'Orden': salida.numeroOrden || 'N/A',
                 'Máquina': salida.numeroMaquina || 'N/A',
-                'Prestó (Almacenista)': salida.prestadorNombre || salida.almacenistaPrestador?.nombre || 'Admin Principal',
-                'Recibió / Devolución': salida.receptorNombre || salida.almacenistaReceptor?.nombre || 'Pendiente / En curso',
+                'Prestó (Almacenista)': salida.prestador?.nombre || 'Admin Principal',
+                'Recibió / Devolución': salida.receptor?.nombre || 'Pendiente / En curso',
                 'Solicitó (Empleado)': `${salida.trabajadorNumero || ''} - ${salida.trabajadorNombre || 'N/A'}`.trim(),
-                'Motivo de Salida': salida.motivoSalida || salida.motivo || 'N/A',
+                'Motivo de Salida': motivoFinal, 
                 'Fecha de Salida': formatFecha(salida.fechaSalida),
                 'Fecha Devolución': formatFecha(salida.fechaDevolucion),
                 'Herramientas': resumenHerramientas,

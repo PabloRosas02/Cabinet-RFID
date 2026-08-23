@@ -93,7 +93,7 @@ const filtros = ref({
             <!-- Slot Personalizado: Motivo -->
             <template #motivo="{ data }">
                 <span class="capitalize">
-                    {{ data.motivo === 'otro' && data.motivoOtro ? `Otro (${data.motivoOtro})` : data.motivo }}
+                    {{ data.motivo && data.motivo.toLowerCase() === 'otro' && data.motivoOtro ? `Otro: ${data.motivoOtro}` : (data.motivo || 'N/A') }}
                 </span>
             </template>
 

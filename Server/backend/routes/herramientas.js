@@ -208,21 +208,36 @@ router.put('/:id', verificarToken, async (req, res) => {
             const nuevaDispRecibida = parseInt(cantidadDisponible, 10);
             const nuevaCantRecibida = parseInt(cantidad, 10);
 
-            if (!isNaN(nuevaDispRecibida)) {
-                dataToUpdate.cantidadDisponible = nuevaDispRecibida;
-                dataToUpdate.cantidad = nuevaDispRecibida; 
-            } else if (!isNaN(nuevaCantRecibida)) {
-                dataToUpdate.cantidad = nuevaCantRecibida;
-                dataToUpdate.cantidadDisponible = nuevaCantRecibida;
+            // 1. Calculamos cuántas piezas están prestadas actualmente
+            const unidadesPrestadas = herramientaVieja.cantidad - herramientaVieja.cantidadDisponible;
+
+            // 2. Determinamos el nuevo stock TOTAL
+            let nuevaCantidadTotal = herramientaVieja.cantidad;
+            if (!isNaN(nuevaCantRecibida)) {
+                nuevaCantidadTotal = nuevaCantRecibida;
+            } else if (!isNaN(nuevaDispRecibida)) {
+                // Si desde el frontend nos envían el "Físico", asumimos que es el nuevo Total que quieren fijar
+                nuevaCantidadTotal = nuevaDispRecibida; 
             }
 
-            const cantidadFinal = dataToUpdate.cantidad ?? herramientaVieja.cantidad;
+            // 3. Calculamos cuál será el nuevo stock disponible en almacén
+            const nuevaCantidadDisponible = nuevaCantidadTotal - unidadesPrestadas;
+
+            // 4. Validamos que el nuevo total no sea menor a lo que ya está prestado (evita stock negativo)
+            if (nuevaCantidadDisponible < 0) {
+                throw new Error(`VALIDATION_ERROR: No puedes reducir el stock a ${nuevaCantidadTotal}. Actualmente hay ${unidadesPrestadas} unidad(es) prestada(s).`);
+            }
+
+            // 5. Validamos contra el máximo usando el TOTAL real (lo que hay en estante + lo prestado)
             const maxFinal = dataToUpdate.cantidadMaxima ?? herramientaVieja.cantidadMaxima;
-            
-            if (maxFinal > 0 && cantidadFinal > maxFinal) {
-                throw new Error(`VALIDATION_ERROR: El stock resultante (${cantidadFinal}) superaría la cantidad máxima permitida (${maxFinal}).`);
+            if (maxFinal > 0 && nuevaCantidadTotal > maxFinal) {
+                throw new Error(`VALIDATION_ERROR: El stock total resultante (${nuevaCantidadTotal}) superaría la cantidad máxima permitida (${maxFinal}).`);
             }
 
+            // 6. Asignamos los valores correctos para actualizar
+            dataToUpdate.cantidad = nuevaCantidadTotal;
+            dataToUpdate.cantidadDisponible = nuevaCantidadDisponible;
+            
             let detallesCambio = [];
             const camposAComparar = [
                 { key: 'codigo', label: 'Código' },
@@ -310,6 +325,42 @@ router.delete('/:id', verificarToken, async (req, res) => {
 
         const herramientaId = parseInt(id, 10);
 
+        // -------------------------------------------------------------------------
+        // VALIDACIONES ANTES DE DAR DE BAJA
+        // -------------------------------------------------------------------------
+        
+        // 1. Validar por stock (Rápido)
+        const herramienta = await prisma.herramienta.findUnique({
+            where: { id: herramientaId }
+        });
+
+        if (!herramienta) {
+            return res.status(404).json({ error: "Herramienta no encontrada." });
+        }
+
+        if (herramienta.cantidad > herramienta.cantidadDisponible) {
+            return res.status(400).json({ 
+                error: `No se puede dar de baja. La herramienta tiene ${herramienta.cantidad - herramienta.cantidadDisponible} unidad(es) prestada(s).` 
+            });
+        }
+
+        // 2. Validar relacionalmente por salidas pendientes (Estricto / A prueba de fallos)
+        const salidaPendiente = await prisma.detalleSalida.findFirst({
+            where: {
+                herramientaId: herramientaId,
+                salida: {
+                    estado: 'PENDIENTE'
+                }
+            }
+        });
+
+        if (salidaPendiente) {
+            return res.status(400).json({ 
+                error: "No se puede dar de baja. Existen registros de salidas pendientes de devolución para esta herramienta." 
+            });
+        }
+
+        // Si pasa las validaciones, ejecutamos la transacción de baja
         await prisma.$transaction(async (tx) => {
             await tx.herramienta.update({
                 where: { id: herramientaId },

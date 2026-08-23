@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch} from 'vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
@@ -38,6 +38,15 @@ const opcionesMotivo = ref([
 // Variables para controlar el Select y el Input libre
 const motivoSeleccionado = ref(props.trabajador.motivo || '');
 const motivoOtro = ref(props.trabajador.motivoOtro || '');
+
+watch(() => props.trabajador, (nuevoTrabajador) => {
+        if (!nuevoTrabajador.motivo) {
+            motivoSeleccionado.value = '';
+            motivoOtro.value = '';
+        }
+    },
+    { deep: true }
+);
 
 // Función directa para asignar el motivo sin romper el objeto reactivo original
 const manejarCambioMotivo = (e) => {
