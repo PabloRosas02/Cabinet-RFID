@@ -153,7 +153,8 @@ const procesarImagen = (evento) => {
         <InputNumber inputId="cantidadMinima" name="cantidadMinima" v-model="herramienta.cantidadMinima" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>
       <div class="col-12 md:col-4 flex flex-column gap-2">
-        <label for="cantidadMaxima" class="label-blanco">{{ t('formulario_herramientas.stock_maximo', 'Stock Máximo') }}</label>
+        <!-- Se removió el string duro 'Stock Máximo' del t() -->
+        <label for="cantidadMaxima" class="label-blanco">{{ t('formulario_herramientas.stock_maximo') }}</label>
         <InputNumber inputId="cantidadMaxima" name="cantidadMaxima" v-model="herramienta.cantidadMaxima" integeronly class="w-full" inputClass="w-full input-oscuro" />
       </div>
       <div class="col-12 md:col-4 flex flex-column gap-2">
@@ -176,7 +177,6 @@ const procesarImagen = (evento) => {
    ELEMENTOS EXCLUSIVOS DE ESTE COMPONENTE
    ========================================================= */
 
-/* Input Tipo File Nativo (Subida de Imagen) */
 .input-archivo-oscuro {
     background-color: #121820 !important;
     color: #94a3b8 !important;
@@ -186,7 +186,6 @@ const procesarImagen = (evento) => {
     font-family: inherit;
 }
 
-/* Estilo para el botón interno del Input File ("Choose File") */
 .input-archivo-oscuro::file-selector-button {
     background-color: #313a46;
     color: #ffffff;
@@ -202,7 +201,6 @@ const procesarImagen = (evento) => {
     background-color: #3f4b5b;
 }
 
-/* Placeholder cuando no hay imagen seleccionada */
 .fondo-imagen-vacia {
     background-color: #121820 !important;
     border: 1px dashed #4a5568 !important;

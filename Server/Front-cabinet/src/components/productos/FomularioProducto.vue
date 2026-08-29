@@ -27,6 +27,7 @@ const formularioBasico = {
 
 const herramienta = ref({ ...formularioBasico });
 const camposInvalidos = ref(false); 
+const inputArchivoImagen = ref(null);
 
 // =====================================================================
 // Procesamiento y Optimización de Imagen (Usando el Helper)
@@ -44,9 +45,19 @@ const procesarImagen = async (evento) => {
     }
 };
 
+const removerImagen = () => {
+    herramienta.value.imagen = null;
+    if (inputArchivoImagen.value) {
+        inputArchivoImagen.value.value = '';
+    }
+};
+
 const limpiar = () => {
     herramienta.value = { ...formularioBasico };
     camposInvalidos.value = false; 
+    if (inputArchivoImagen.value) {
+        inputArchivoImagen.value.value = '';
+    }
     emit('limpiar-mensajes');
 };
 
@@ -79,7 +90,7 @@ defineExpose({ limpiar });
             
             <div class="col-12 lg:col-8 grid m-0 p-0">
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="codigoProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_codigo') }}</label>
+                    <label for="codigoProducto" class="font-bold text-color">{{ t('formulario_producto.label_codigo') }}</label>
                     <InputText 
                         id="codigoProducto" 
                         name="codigoProducto" 
@@ -87,13 +98,12 @@ defineExpose({ limpiar });
                         required 
                         :placeholder="t('formulario_producto.ph_codigo')" 
                         autocomplete="off" 
-                        class="input-oscuro"
                         :class="{'p-invalid': camposInvalidos && !herramienta.codigo?.trim()}" 
                     />
                 </div>
                 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="nombreProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_nombre') }}</label>
+                    <label for="nombreProducto" class="font-bold text-color">{{ t('formulario_producto.label_nombre') }}</label>
                     <InputText 
                         id="nombreProducto" 
                         name="nombreProducto" 
@@ -101,71 +111,84 @@ defineExpose({ limpiar });
                         required 
                         :placeholder="t('formulario_producto.ph_nombre')" 
                         autocomplete="off" 
-                        class="input-oscuro"
                         :class="{'p-invalid': camposInvalidos && !herramienta.nombre?.trim()}"
                     />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="tipoProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_tipo') }}</label>
-                    <InputText id="tipoProducto" name="tipoProducto" v-model="herramienta.tipo" :placeholder="t('formulario_producto.ph_tipo')" autocomplete="off" class="input-oscuro" />
+                    <label for="tipoProducto" class="font-bold text-color">{{ t('formulario_producto.label_tipo') }}</label>
+                    <InputText id="tipoProducto" name="tipoProducto" v-model="herramienta.tipo" :placeholder="t('formulario_producto.ph_tipo')" autocomplete="off" />
                 </div>
 
                 <div class="col-12 md:col-6 mb-3 flex flex-column gap-2">
-                    <label for="marcaProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_marca') }}</label>
-                    <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" :placeholder="t('formulario_producto.ph_marca')" autocomplete="off" class="input-oscuro" />
+                    <label for="marcaProducto" class="font-bold text-color">{{ t('formulario_producto.label_marca') }}</label>
+                    <InputText id="marcaProducto" name="marcaProducto" v-model="herramienta.marca" :placeholder="t('formulario_producto.ph_marca')" autocomplete="off" />
                 </div>
 
                 <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
-                    <label for="stockFisico" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_fisico') }}</label>
-                    <InputNumber inputId="stockFisico" name="stockFisico" v-model="herramienta.cantidadDisponible" integeronly inputClass="input-oscuro" />
+                    <label for="stockFisico" class="font-bold text-color">{{ t('formulario_producto.label_stock_fisico') }}</label>
+                    <InputNumber inputId="stockFisico" name="stockFisico" v-model="herramienta.cantidadDisponible" integeronly />
                 </div>
 
                 <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
-                    <label for="stockMinimo" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_minimo') }}</label>
-                    <InputNumber inputId="stockMinimo" name="stockMinimo" v-model="herramienta.cantidadMinima" integeronly inputClass="input-oscuro" />
+                    <label for="stockMinimo" class="font-bold text-color">{{ t('formulario_producto.label_stock_minimo') }}</label>
+                    <InputNumber inputId="stockMinimo" name="stockMinimo" v-model="herramienta.cantidadMinima" integeronly />
                 </div>
 
                 <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
-                    <label for="stockMaximo" class="font-bold label-blanco">{{ t('formulario_producto.label_stock_maximo', 'Stock Máximo') }}</label>
-                    <InputNumber inputId="stockMaximo" name="stockMaximo" v-model="herramienta.cantidadMaxima" integeronly inputClass="input-oscuro" />
+                    <label for="stockMaximo" class="font-bold text-color">{{ t('formulario_producto.label_stock_maximo', 'Stock Máximo') }}</label>
+                    <InputNumber inputId="stockMaximo" name="stockMaximo" v-model="herramienta.cantidadMaxima" integeronly />
                 </div>
 
                 <div class="col-12 mb-3 flex flex-column gap-2">
-                    <label for="ubicacionFisica" class="font-bold label-blanco">{{ t('formulario_producto.label_ubicacion') }}</label>
-                    <InputText id="ubicacionFisica" name="ubicacionFisica" v-model="herramienta.ubicacion" :placeholder="t('formulario_producto.ph_ubicacion')" autocomplete="off" class="input-oscuro" />
+                    <label for="ubicacionFisica" class="font-bold text-color">{{ t('formulario_producto.label_ubicacion') }}</label>
+                    <InputText id="ubicacionFisica" name="ubicacionFisica" v-model="herramienta.ubicacion" :placeholder="t('formulario_producto.ph_ubicacion')" autocomplete="off" />
                 </div>
             </div>
 
             <div class="col-12 lg:col-4 mb-3 flex flex-column gap-2">
-                <label for="inputFileImagen" class="font-bold label-blanco">{{ t('formulario_producto.label_fotografia') }}</label>
-                <div class="area-imagen flex flex-column align-items-center justify-content-center p-3 border-round shadow-1 w-full h-full" style="min-height: 250px;">
+                <label for="inputFileImagen" class="font-bold text-color">{{ t('formulario_producto.label_fotografia') }}</label>
+                <div class="area-imagen-dinamica flex flex-column align-items-center justify-content-center p-3 border-round shadow-1 w-full h-full" style="min-height: 250px;">
                     
-                    <img v-if="herramienta.imagen" 
-                         :src="herramienta.imagen" 
-                         class="shadow-2 border-round mb-3" 
-                         style="width: 100%; max-height: 240px; object-fit: contain; background-color: #121820;" />
+                    <div v-if="herramienta.imagen" class="relative w-full flex flex-column align-items-center">
+                        <img 
+                             :src="herramienta.imagen" 
+                             class="shadow-2 border-round mb-3" 
+                             style="width: 100%; max-height: 240px; object-fit: contain; background-color: transparent;" />
+                        
+                        <Button 
+                            icon="pi pi-times" 
+                            severity="danger" 
+                            rounded 
+                            class="absolute" 
+                            style="top: 0.5rem; right: 0.5rem;" 
+                            @click="removerImagen" 
+                            aria-label="Remover imagen"
+                        />
+                    </div>
                     
-                    <div v-else class="placeholder-imagen flex align-items-center justify-content-center border-round mb-3" style="width: 100%; height: 240px;">
-                        <i class="pi pi-image text-6xl" style="color: #4a5568;"></i>
+                    <div v-else class="placeholder-imagen-dinamica flex align-items-center justify-content-center border-round mb-3" style="width: 100%; height: 240px;">
+                        <i class="pi pi-image text-6xl text-color-secondary"></i>
                     </div>
                     
                     <input 
+                        v-show="!herramienta.imagen"
                         id="inputFileImagen" 
                         name="inputFileImagen"
                         type="file" 
                         accept="image/*" 
                         capture="environment"
+                        ref="inputArchivoImagen"
                         @change="procesarImagen" 
-                        class="p-inputtext p-component p-2 w-full text-sm mt-auto input-file-oscuro" 
+                        class="p-inputtext p-component p-2 w-full text-sm mt-auto input-file-dinamico" 
                     />
                 </div>
             </div>
 
             <!-- Descripción -->
             <div class="col-12 mb-4 flex flex-column gap-2">
-                <label for="descripcionProducto" class="font-bold label-blanco">{{ t('formulario_producto.label_descripcion') }}</label>
-                <Textarea id="descripcionProducto" name="descripcionProducto" v-model="herramienta.descripcion" rows="3" :placeholder="t('formulario_producto.ph_descripcion')" class="input-oscuro" />
+                <label for="descripcionProducto" class="font-bold text-color">{{ t('formulario_producto.label_descripcion') }}</label>
+                <Textarea id="descripcionProducto" name="descripcionProducto" v-model="herramienta.descripcion" rows="3" :placeholder="t('formulario_producto.ph_descripcion')" />
             </div>
             
             <!-- Botones de Acción -->
@@ -177,19 +200,3 @@ defineExpose({ limpiar });
     </div>
 </template>
 
-<style scoped>
-/* ESTILO PARA LOS BORDES ROJOS CUANDO HAY ERROR EN EL FORMULARIO */
-:deep(.p-invalid) {
-    border-color: #ef4444 !important;
-    box-shadow: 0 0 0 1px #ef4444 !important;
-}
-
-/* INPUT FILE ESPECÍFICO */
-.input-file-oscuro { background-color: #121820 !important; color: #ffffff !important; border: 1px solid #4a5568 !important; border-radius: 6px; cursor: pointer; }
-.area-imagen { background-color: #1e252d !important; border: 1px solid #3f4b5b !important; }
-.placeholder-imagen { background-color: #121820 !important; border: 1px dashed #4a5568 !important; }
-
-/* BOTÓN DE LIMPIAR */
-.btn-limpiar { background-color: #4a5568 !important; border: none !important; padding: 0.75rem 1.5rem !important; color: white !important; }
-.btn-limpiar:hover { background-color: #3f4b5b !important; }
-</style>

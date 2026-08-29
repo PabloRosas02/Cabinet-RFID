@@ -39,14 +39,15 @@ const mostrarModalBaja = ref(false);
 const motivoBaja = ref(null);
 const motivoOtro = ref('');
 
-const opcionesMotivos = [
-    'Fin de vida útil', 
-    'Daño por operador', 
-    'Extravío', 
-    'Set up', 
-    'Mala calidad', 
-    'Otro'
-];
+// Computed property to translate labels while keeping the original values for the backend/logic
+const opcionesMotivos = computed(() => [
+    { label: t('view_movimientos.motivos.end_of_life'), value: 'Fin de vida útil' },
+    { label: t('view_movimientos.motivos.operator_damage'), value: 'Daño por operador' },
+    { label: t('view_movimientos.motivos.loss'), value: 'Extravío' },
+    { label: t('view_movimientos.motivos.setup'), value: 'Set up' },
+    { label: t('view_movimientos.motivos.poor_quality'), value: 'Mala calidad' },
+    { label: t('view_movimientos.motivos.other'), value: 'Otro' }
+]);
 
 // Validación dinámica para habilitar/deshabilitar el botón de confirmar
 const esValidoParaBaja = computed(() => {
@@ -70,7 +71,6 @@ const prepararEdicionSeleccionada = () => {
     }
 };
 
-// Abre el modal de confirmación en lugar de eliminar directamente
 const confirmarBaja = () => {
     if (herramientaSeleccionada.value) {
 
@@ -80,14 +80,14 @@ const confirmarBaja = () => {
             
             toast.add({ 
                 severity: 'warn', 
-                summary: 'Acción Denegada', 
-                detail: `No puedes dar de baja esta herramienta. Actualmente hay ${unidadesPrestadas} unidad(es) en uso/prestada(s).`, 
+                summary: t('view_movimientos.toast.denied_summary'), 
+                detail: t('view_movimientos.toast.denied_detail', { units: unidadesPrestadas }), 
                 life: 5000 
             });
             
-            return; // Detenemos la ejecución aquí, el modal NO se abre
+            return; 
         }
-        // Si pasa la validación, limpiamos los campos y abrimos el modal
+        
         motivoBaja.value = null;
         motivoOtro.value = '';
         mostrarModalBaja.value = true;
@@ -98,29 +98,24 @@ const cerrarModalBaja = () => {
     mostrarModalBaja.value = false;
 };
 
-// Procesa la eliminación enviando el motivo
 const procesarBaja = async () => {
     if (herramientaSeleccionada.value && esValidoParaBaja.value) {
-        // Armamos el objeto con los motivos para enviarlo al composable/API
         const datosBaja = {
             motivo: motivoBaja.value,
             motivoOtro: motivoOtro.value.trim()
         };
 
-        // NOTA: Asegúrate de que `eliminarHerramienta` reciba el segundo parámetro en tu composable
         await eliminarHerramienta(herramientaSeleccionada.value, datosBaja);
         
         herramientaSeleccionada.value = null; 
         mostrarModalBaja.value = false;
         
-        // Refrescamos por seguridad
         await cargarHerramientas();
     }
 };
 
 const manejarGuardado = async () => {
     await guardarHerramienta();
-    
     await cargarHerramientas();
 
     if (herramientaSeleccionada.value) {
@@ -170,7 +165,6 @@ onMounted(() => {
             @click="prepararEdicionSeleccionada" 
         />
         
-        <!-- Cambiamos la acción aquí para abrir el modal -->
         <Button 
             :label="t('view_movimientos.btn_eliminar')" 
             icon="pi pi-trash" 
@@ -220,42 +214,44 @@ onMounted(() => {
     <!-- MODAL DE CONFIRMACIÓN DE BAJA -->
     <Dialog 
         v-model:visible="mostrarModalBaja" 
-        header="Confirmar Baja de Herramienta" 
+        :header="t('view_movimientos.modal.header')" 
         :modal="true" 
         :style="{ width: '450px' }" 
         :closable="false"
     >
         <div class="flex flex-column gap-4 py-3">
             <span>
-                ¿Estás seguro de que deseas dar de baja 
+                {{ t('view_movimientos.modal.confirm_text') }} 
                 <b v-if="herramientaSeleccionada">{{ herramientaSeleccionada.nombre }} ({{ herramientaSeleccionada.codigo }})</b>?
             </span>
 
             <div class="flex flex-column gap-2">
-                <label for="motivoBaja" class="font-semibold">Motivo de la baja *</label>
+                <label for="motivoBaja" class="font-semibold">{{ t('view_movimientos.modal.reason_label') }} *</label>
                 <Dropdown 
                     id="motivoBaja" 
                     v-model="motivoBaja" 
-                    :options="opcionesMotivos" 
-                    placeholder="Selecciona un motivo" 
+                    :options="opcionesMotivos"
+                    optionLabel="label"
+                    optionValue="value"
+                    :placeholder="t('view_movimientos.modal.placeholder_motivo')" 
                     class="w-full" 
                 />
             </div>
 
             <div v-if="motivoBaja === 'Otro'" class="flex flex-column gap-2">
-                <label for="motivoOtro" class="font-semibold">Especificar motivo *</label>
+                <label for="motivoOtro" class="font-semibold">{{ t('view_movimientos.modal.specify_reason_label') }} *</label>
                 <InputText 
                     id="motivoOtro" 
                     v-model="motivoOtro" 
-                    placeholder="Describe la razón detalladamente..." 
+                    :placeholder="t('view_movimientos.modal.placeholder_specify')" 
                     class="w-full" 
                 />
             </div>
         </div>
 
         <template #footer>
-            <Button label="Cancelar" icon="pi pi-times" text severity="secondary" @click="cerrarModalBaja" />
-            <Button label="Confirmar Baja" icon="pi pi-check" severity="danger" :disabled="!esValidoParaBaja" @click="procesarBaja" />
+            <Button :label="t('view_movimientos.modal.btn_cancel')" icon="pi pi-times" text severity="secondary" @click="cerrarModalBaja" />
+            <Button :label="t('view_movimientos.modal.btn_confirm')" icon="pi pi-check" severity="danger" :disabled="!esValidoParaBaja" @click="procesarBaja" />
         </template>
     </Dialog>
 

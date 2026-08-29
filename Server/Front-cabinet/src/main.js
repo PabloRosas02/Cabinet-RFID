@@ -53,7 +53,13 @@ const app = createApp(App)
 app.use(i18n);
 app.use(router)
 app.use(PrimeVue, {
-    theme: { preset: Aura }
+    theme: { 
+        preset: Aura,
+        options: {
+            darkModeSelector: ".dark-theme" ,
+            cssLater: false
+        }
+    }
 })
 app.use(ToastService) 
 

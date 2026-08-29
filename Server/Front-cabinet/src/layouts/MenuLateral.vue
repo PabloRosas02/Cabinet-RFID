@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputSwitch from 'primevue/inputswitch'; 
-import InputText from 'primevue/inputtext'; // Importamos InputText
+import InputText from 'primevue/inputtext';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
@@ -276,24 +276,24 @@ const menuFiltrado = computed(() => {
     :modal="true" 
     :breakpoints="{ '1199px': '75vw', '575px': '95vw' }" 
     :style="{ width: '450px' }" 
-    class="modal-oscuro"
+    class="modal-configuracion"
     dismissableMask
   >
     <div class="flex flex-column gap-4 pt-2">
       
       <!-- Selector de Idioma -->
       <div class="field flex flex-column gap-2">
-        <span class="label-blanco font-semibold">{{ t('configuracion_modal.idioma') }}</span>
+        <span class="text-color font-semibold">{{ t('configuracion_modal.idioma') }}</span>
         <div class="flex gap-2">
           <Button 
             label="Español" 
-            :class="locale === 'es' ? 'btn-nuevo' : 'p-button-outlined btn-cancelar'" 
+            :class="locale === 'es' ? 'p-button-primary' : 'p-button-outlined p-button-secondary'" 
             @click="cambiarIdioma('es')" 
             class="flex-1"
           />
           <Button 
             label="English" 
-            :class="locale === 'en' ? 'btn-nuevo' : 'p-button-outlined btn-cancelar'" 
+            :class="locale === 'en' ? 'p-button-primary' : 'p-button-outlined p-button-secondary'" 
             @click="cambiarIdioma('en')" 
             class="flex-1"
           />
@@ -302,19 +302,19 @@ const menuFiltrado = computed(() => {
 
       <!-- Selector de Tema -->
       <div class="field flex flex-column gap-2">
-        <span class="label-blanco font-semibold">{{ t('configuracion_modal.tema') }}</span>
+        <span class="text-color font-semibold">{{ t('configuracion_modal.tema') }}</span>
         <div class="flex gap-2">
           <Button 
             :label="t('configuracion_modal.tema_oscuro')" 
             icon="pi pi-moon"
-            :class="temaActual === 'dark' ? 'btn-nuevo' : 'p-button-outlined btn-cancelar'" 
+            :class="temaActual === 'dark' ? 'p-button-primary' : 'p-button-outlined p-button-secondary'" 
             @click="cambiarTema('dark')" 
             class="flex-1"
           />
           <Button 
             :label="t('configuracion_modal.tema_claro')" 
             icon="pi pi-sun"
-            :class="temaActual === 'light' ? 'btn-nuevo' : 'p-button-outlined btn-cancelar'" 
+            :class="temaActual === 'light' ? 'p-button-primary' : 'p-button-outlined p-button-secondary'" 
             @click="cambiarTema('light')" 
             class="flex-1"
           />
@@ -322,13 +322,13 @@ const menuFiltrado = computed(() => {
       </div>
 
       <!-- Switch de Devoluciones Pendientes -->
-      <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
-        <span class="label-blanco font-semibold">Correos de Devoluciones Pendientes</span>
-        <div class="flex flex-column gap-2 p-3 surface-100 border-round">
+      <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
+        <span class="text-color font-semibold">Correos de Devoluciones Pendientes</span>
+        <div class="flex flex-column gap-2 p-3 surface-ground border-round">
           <div class="flex align-items-center justify-content-between">
             <div>
-              <span class="text-white text-sm font-bold block">Envío automático (Prueba)</span>
-              <span class="text-xs text-400">Manda correo cada 1 minuto si hay pendientes</span>
+              <span class="text-color text-sm font-bold block">Envío automático (Prueba)</span>
+              <span class="text-color-secondary text-xs">Manda correo cada 1 minuto si hay pendientes</span>
             </div>
             <InputSwitch 
               v-model="correosActivos" 
@@ -344,12 +344,12 @@ const menuFiltrado = computed(() => {
       </div>
 
       <!-- Botón para Enviar Reporte Semanal -->
-      <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
-        <span class="label-blanco font-semibold">Reporte Semanal de Salidas</span>
-        <div class="flex flex-column gap-2 p-3 surface-100 border-round">
+      <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
+        <span class="text-color font-semibold">Reporte Semanal de Salidas</span>
+        <div class="flex flex-column gap-2 p-3 surface-ground border-round">
           <div>
-            <span class="text-white text-sm font-bold block">Generar Historial</span>
-            <span class="text-xs text-400">Envía Excel con salidas de los últimos 7 días</span>
+            <span class="text-color text-sm font-bold block">Generar Historial</span>
+            <span class="text-color-secondary text-xs">Envía Excel con salidas de los últimos 7 días</span>
           </div>
           <div class="flex gap-2 w-full mt-1">
             <InputText 
@@ -362,7 +362,7 @@ const menuFiltrado = computed(() => {
               :label="enviandoReporte ? 'Enviando...' : 'Enviar'" 
               :disabled="enviandoReporte"
               @click="generarReporteSemanal" 
-              class="p-button-sm btn-nuevo"
+              class="p-button-sm p-button-primary"
               style="white-space: nowrap;"
             />
           </div>
@@ -370,12 +370,12 @@ const menuFiltrado = computed(() => {
       </div>
 
       <!-- Botón para Enviar Alerta de Stock Mínimo -->
-      <div class="field flex flex-column gap-2 border-top-1 border-gray-600 pt-3">
-        <span class="label-blanco font-semibold">Alerta de Stock Mínimo</span>
-        <div class="flex flex-column gap-2 p-3 surface-100 border-round">
+      <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
+        <span class="text-color font-semibold">Alerta de Stock Mínimo</span>
+        <div class="flex flex-column gap-2 p-3 surface-ground border-round">
           <div>
-            <span class="text-white text-sm font-bold block">Verificar Inventario</span>
-            <span class="text-xs text-400">Notifica herramientas con stock crítico</span>
+            <span class="text-color text-sm font-bold block">Verificar Inventario</span>
+            <span class="text-color-secondary text-xs">Notifica herramientas con stock crítico</span>
           </div>
           <div class="flex gap-2 w-full mt-1">
             <InputText 
@@ -399,7 +399,7 @@ const menuFiltrado = computed(() => {
 
     <template #footer>
       <div class="flex justify-content-end gap-2 mt-2">
-        <Button :label="t('configuracion_modal.btn_cerrar')" icon="pi pi-check" class="btn-nuevo font-bold" @click="mostrarModalConfig = false" />
+        <Button :label="t('configuracion_modal.btn_cerrar')" icon="pi pi-check" class="p-button-primary font-bold" @click="mostrarModalConfig = false" />
       </div>
     </template>
   </Dialog>
@@ -438,10 +438,18 @@ const menuFiltrado = computed(() => {
 }
 
 .titulo-menu { 
-  color: white; margin: 0; font-size: 1.25rem; font-weight: 900; 
-  letter-spacing: 0.5px; text-transform: uppercase;
+  color: #ffffff !important; 
+  margin: 0; 
+  font-size: 1.25rem; 
+  font-weight: 900; 
+  letter-spacing: 0.5px; 
+  text-transform: uppercase;
 }
-.icono-central { font-size: 1.5rem; }
+
+.icono-central { 
+  color: #ffffff !important;
+  font-size: 1.5rem; 
+}
 
 .nav-list { 
   list-style: none; padding: 0.75rem; margin: 0; 

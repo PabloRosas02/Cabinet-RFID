@@ -26,13 +26,13 @@ const props = defineProps({
 const emit = defineEmits(['quitar', 'registrar']);
 const { t } = useI18n(); 
 
-const opcionesMotivo = ref([
-    'Fin de vida util',
-    'Daño por operador',
-    'Extravio',
-    'Set up',
-    'Mala calidad de la herramienta',
-    'Otro'
+const opcionesMotivo = computed(() => [
+    { label: t('detalle_pedido.motivos.fin_vida'), value: 'End of life' },
+    { label: t('detalle_pedido.motivos.dano_operador'), value: 'Operator damage' },
+    { label: t('detalle_pedido.motivos.extravio'), value: 'Lost' },
+    { label: t('detalle_pedido.motivos.set_up'), value: 'Set up' },
+    { label: t('detalle_pedido.motivos.mala_calidad'), value: 'Poor tool quality' },
+    { label: t('detalle_pedido.motivos.otro'), value: 'Other' }
 ]);
 
 // Variables para controlar el Select y el Input libre
@@ -51,17 +51,17 @@ watch(() => props.trabajador, (nuevoTrabajador) => {
 // Función directa para asignar el motivo sin romper el objeto reactivo original
 const manejarCambioMotivo = (e) => {
     const valor = e.value;
-    if (valor !== 'Otro') {
+    if (valor !== 'Other') {
         props.trabajador.motivo = valor;
         props.trabajador.motivoOtro = null; // Limpiamos el texto libre si selecciona una opción normal
         motivoOtro.value = '';
     } else {
-        props.trabajador.motivo = 'Otro';
+        props.trabajador.motivo = 'Other';
         props.trabajador.motivoOtro = motivoOtro.value;
     }
 };
 
-// Función para capturar cuando escribe en la opción "Otro"
+// Función para capturar cuando escribe en la opción "Other"
 const manejarMotivoOtro = (e) => {
     const texto = e.target.value;
     motivoOtro.value = texto;
@@ -111,7 +111,7 @@ const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
 
 const verDetalles = (item) => {
-    herramientaActual.value = item; 
+    herramientActual.value = item; 
     mostrarDetalles.value = true;
 };
 
@@ -193,51 +193,52 @@ const obtenerTextoStock = (h) => {
 
             <!-- Orden de Trabajo -->
             <div class="field mb-3">
-                <label for="ordenTrabajo" class="label-blanco">No. de Orden</label>
+                <label for="ordenTrabajo" class="label-blanco">{{ t('detalle_pedido.label_orden') }}</label>
                 <InputText 
                     id="ordenTrabajo"
                     v-model="trabajador.orden" 
-                    placeholder="Ej. OT-1024..." 
+                    :placeholder="t('detalle_pedido.ph_num_orden')" 
                     class="w-full input-oscuro" 
                 />
             </div>
 
             <!-- Máquina / Equipo -->
             <div class="field mb-3">
-                <label for="maquinaTrabajo" class="label-blanco">Máquina / Equipo</label>
+                <label for="maquinaTrabajo" class="label-blanco">{{ t('detalle_pedido.label_maquina') }}</label>
                 <InputText 
-                    id="maquinaTrabajo"
+                    id="label_maquinaTrabajo"
                     v-model="trabajador.maquina" 
-                    placeholder="Ej. CNC-02..." 
+                    :placeholder="t('detalle_pedido.ph_maquina')" 
                     class="w-full input-oscuro" 
                 />
             </div>
             
             <!-- Motivo de Salida  -->
             <div class="field mb-3">
-                <label for="motivoSalida" class="label-blanco">Motivo de Salida</label>
+                <label for="motivoSalida" class="text-700 font-semibold block mb-2">{{ t('detalle_pedido.label_motivo') }}</label>
                 
                 <Select 
                     id="motivoSalida"
                     v-model="motivoSeleccionado" 
                     :options="opcionesMotivo"
-                    placeholder="Selecciona el motivo" 
-                    class="w-full input-oscuro" 
-                    panelClass="panel-autocomplete-oscuro"
+                    optionLabel="label"
+                    optionValue="value"
+                    :placeholder="t('detalle_pedido.ph_motivo_select')" 
+                    class="w-full select-borde-verde" 
                     @change="manejarCambioMotivo"
                 />
 
-                <!-- Input extra que solo aparece si eligen "Otro" -->
+                <!-- Input extra que solo aparece si eligen "Other" -->
                 <InputText 
-                    v-if="motivoSeleccionado === 'Otro'"
+                    v-if="motivoSeleccionado === 'Other'"
                     :value="motivoOtro"
                     @input="manejarMotivoOtro"
-                    placeholder="Escribe el motivo..." 
-                    class="w-full input-oscuro mt-2" 
+                    :placeholder="t('detalle_pedido.ph_motivo_escribe')" 
+                    class="w-full mt-2 input-borde-verde" 
                     autocomplete="off"
                 />
             </div>
-            
+
         </div>
 
         <!-- Lista de Herramientas Seleccionadas -->
@@ -249,38 +250,44 @@ const obtenerTextoStock = (h) => {
             {{ t('detalle_pedido.mensaje_vacio') }}
         </div>
 
-        <ul v-else class="lista-pedido">
-            <li v-for="item in pedido" :key="item.id" class="item-pedido flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center gap-3 sm:gap-0">
+        <ul v-else class="list-none p-0 m-0">
+            <li v-for="item in pedido" :key="item.id" class="caja-herramienta mb-3 flex flex-column sm:flex-row align-items-start sm:align-items-center justify-content-between p-3 border-round gap-3 sm:gap-0">
 
-                <div class="item-info w-full sm:w-5">
-                    <span class="item-codigo block mb-1 sm:mb-0">{{ item.codigo }}</span>
-                    <span class="item-nombre block text-lg sm:text-base">{{ item.nombre }}</span>
+                <!-- Información de la Herramienta (Izquierda) -->
+                <div class="flex flex-column w-full sm:w-auto">
+                    <span class="text-sm label-gris mb-1">{{ item.codigo }}</span>
+                    <span class="text-lg sm:text-base font-bold texto-valor">{{ item.nombre }}</span>
                 </div>
 
-                <div class="item-acciones w-full sm:w-7 flex justify-content-between sm:justify-content-end align-items-center">
+                <!-- Controles y Acciones (Derecha) -->
+                <div class="flex align-items-center justify-content-between sm:justify-content-end w-full sm:w-auto gap-3">
+                    
+                    <!-- Botón Ver Detalles -->
                     <Button 
                         icon="pi pi-eye" 
-                        class="p-button-rounded p-button-info p-button-text p-button-sm mr-2" 
+                        class="p-button-rounded p-button-text p-button-sm text-blue-400 p-0 w-2rem h-2rem flex-shrink-0" 
                         @click="verDetalles(item)" 
                         :aria-label="t('detalle_pedido.aria_ver_detalles')" 
                     />
                     
-                    <div class="control-cantidad">
-                        <span class="etiqueta-cant">{{ t('detalle_pedido.etiqueta_cant') }}</span>
+                    <!-- Control de Cantidad (Tipo Pastilla) -->
+                    <div class="caja-cantidad flex align-items-center border-round px-3 py-2 gap-2">
+                        <span class="text-sm label-gris font-medium">{{ t('detalle_pedido.etiqueta_cant') }}</span>
                         <input 
                             type="number" 
                             v-model.number="item.cantidadLlevada" 
                             min="1" 
                             :max="item.cantidadDisponible" 
-                            class="input-oscuro input-numero" 
+                            class="input-cantidad text-center font-bold border-round" 
                             :aria-label="t('detalle_pedido.aria_cantidad')"
                         />
-                        <span class="etiqueta-stock">/ {{ item.cantidadDisponible }}</span>
+                        <span class="text-sm label-gris font-medium">/ {{ item.cantidadDisponible }}</span>
                     </div>
                     
+                    <!-- Botón Quitar -->
                     <Button 
                         icon="pi pi-trash" 
-                        class="p-button-rounded p-button-danger p-button-text p-button-sm ml-2" 
+                        class="p-button-rounded p-button-text p-button-sm text-red-400 p-0 w-2rem h-2rem flex-shrink-0" 
                         @click="emit('quitar', item.id)" 
                         :aria-label="t('detalle_pedido.aria_quitar')" 
                     />
@@ -353,7 +360,8 @@ const obtenerTextoStock = (h) => {
                     </div>
                     
                     <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }} / Máx</span>
+                        <!-- Pequeño ajuste aquí: de '/ Máx' a '/ Max' -->
+                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }} / Max</span>
                         <span class="text-lg font-bold text-white">
                             {{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} / <span class="text-green-400">{{ herramientaActual.cantidadMaxima || 'N/A' }}</span> {{ t('detalle_pedido.modal_unidades') }}
                         </span>
@@ -383,39 +391,6 @@ const obtenerTextoStock = (h) => {
     </div>
 </template>
 
-<style scoped>
-.label-blanco {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #cbd5e1;
-    font-size: 0.9rem;
-    font-weight: 500;
-}
-
-.mensaje-vacio { color: #94a3b8; font-style: italic; text-align: center; padding: 1rem 0; }
-.lista-pedido { list-style: none; padding: 0; margin: 0; flex-grow: 1; overflow-y: auto; max-height: 350px; }
-.item-pedido { padding: 0.75rem; background-color: #1e252d; border: 1px solid #4a5568; border-radius: 8px; margin-bottom: 0.5rem; }
-
-.item-info { display: flex; flex-direction: column; }
-.item-codigo { font-size: 0.8rem; color: #94a3b8; }
-.item-nombre { font-weight: bold; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.item-acciones { display: flex; }
-.control-cantidad { display: flex; align-items: center; background-color: #2a323d; padding: 0.2rem 0.5rem; border-radius: 6px; border: 1px solid #3f4b5b; }
-.etiqueta-cant, .etiqueta-stock { color: #94a3b8; font-size: 0.85rem; }
-.input-numero { width: 50px; text-align: center; margin: 0 0.5rem; padding: 0.3rem; border-radius: 4px; color: #ffffff; }
-.input-numero::-webkit-outer-spin-button, .input-numero::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.input-numero[type=number] { -moz-appearance: textfield; appearance: textfield; }
-
-.boton-registrar { background-color: #3b82f6 !important; border: none !important; padding: 1rem !important; font-weight: bold !important; transition: all 0.2s; }
-.boton-registrar:disabled { background-color: #4a5568 !important; color: #94a3b8 !important; cursor: not-allowed; }
-
-:deep(.surface-100) { background-color: #313a46 !important; border: 1px solid #3f4b5b !important; }
-:deep(.surface-200) { background-color: #1e252d !important; }
-:deep(.text-500) { color: #94a3b8 !important; }
-:deep(.text-300) { color: #cbd5e1 !important; }
-</style>
-
 <style>
 .panel-autocomplete-oscuro {
     background-color: #1e252d !important;
@@ -423,6 +398,8 @@ const obtenerTextoStock = (h) => {
     color: #ffffff !important;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
 }
+
+/* Reglas para AutoComplete */
 .panel-autocomplete-oscuro .p-autocomplete-list {
     background-color: transparent !important;
     padding: 0 !important;
@@ -436,5 +413,95 @@ const obtenerTextoStock = (h) => {
 .panel-autocomplete-oscuro .p-autocomplete-option.p-focus {
     background-color: #36464d !important;
     color: #ffffff !important;
+}
+
+/* Reglas para Select (Motivo de Salida) */
+.panel-autocomplete-oscuro .p-select-list {
+    background-color: transparent !important;
+    padding: 0 !important;
+}
+.panel-autocomplete-oscuro .p-select-option {
+    color: #cbd5e1 !important;
+    background-color: transparent !important;
+    padding: 0.75rem 1rem !important;
+}
+.panel-autocomplete-oscuro .p-select-option:hover,
+.panel-autocomplete-oscuro .p-select-option.p-focus,
+.panel-autocomplete-oscuro .p-select-option[data-p-highlight="true"] {
+    background-color: #36464d !important;
+    color: #ffffff !important;
+}
+
+/* ========================================================
+   ESTILOS LISTA DE HERRAMIENTAS (TEMA OSCURO - POR DEFECTO)
+   ======================================================== */
+.caja-herramienta {
+    background-color: transparent !important;
+    border: 1px solid #4a5568 !important; /* Borde gris oscuro */
+}
+
+.label-gris {
+    color: #94a3b8 !important;
+}
+
+.texto-valor {
+    color: #ffffff !important;
+}
+
+.caja-cantidad {
+    background-color: transparent !important;
+    border: 1px solid #4a5568 !important; /* Borde de la pastilla */
+}
+
+.input-cantidad {
+    background-color: #121820 !important; /* Fondo del input muy oscuro */
+    color: #ffffff !important;
+    border: 1px solid #3f4b5b !important;
+    width: 45px;
+    height: 30px;
+    outline: none;
+    -moz-appearance: textfield; /* Ocultar flechas en Firefox */
+}
+
+/* Ocultar flechas nativas en Chrome/Safari/Edge */
+.input-cantidad::-webkit-outer-spin-button,
+.input-cantidad::-webkit-inner-spin-button {
+    -webkit-appearance: none; 
+    margin: 0;
+}
+
+.input-cantidad:focus {
+    border-color: #38bdf8 !important;
+}
+
+/* ========================================================
+   TEMA CLARO (Sobreescrituras dinámicas)
+   ======================================================== */
+html.light-theme .caja-herramienta {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+html.light-theme .label-gris {
+    color: #64748b !important;
+}
+
+html.light-theme .texto-valor {
+    color: #334155 !important; 
+}
+
+html.light-theme .caja-cantidad {
+    background-color: transparent !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+html.light-theme .input-cantidad {
+    background-color: #ffffff !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+html.light-theme .input-cantidad:focus {
+    border-color: #0ea5e9 !important;
 }
 </style>

@@ -43,7 +43,8 @@
     "estado_pendiente": "Pending",
     "btn_devolver": "Return",
     "num_orden": "Order",
-    "num_maquina": "Machine Number"
+    "num_maquina": "Machine Number",
+    "motivo": "Reason"
   },
   "view_devoluciones": {
     "titulo": "Tool Returns",
@@ -68,7 +69,8 @@
     "sin_descripcion": "No additional description or notes for this tool.",
     "no_aplica": "N/A",
     "sin_marca": "N/B",
-    "btn_cerrar": "Close"
+    "btn_cerrar": "Close",
+    "stock_niveles": "Stock Levels (Physical / Min / Max)"
   },
   "formulario_herramientas": {
     "titulo_editar": "Edit Tool",
@@ -90,7 +92,8 @@
     "stock_minimo": "Minimum Stock",
     "stock_fisico": "Physical Stock",
     "btn_cancelar": "Cancel",
-    "btn_guardar": "Save"
+    "btn_guardar": "Save",
+    "stock_maximo": "Maximum Stock"
   },
   "tabla_herramientas": {
     "codigo": "Code",
@@ -98,6 +101,7 @@
     "tipo": "Type",
     "ubicacion": "Location",
     "stock_min": "Min. Stock",
+    "stock_max": "Max. Stock",
     "stock_fisico": "Physical Stock",
     "mensaje_vacio": "No tools found with current filters."
   },
@@ -117,7 +121,29 @@
     "btn_volver": "Go Back",
     "btn_editar": "Edit Selected",
     "btn_eliminar": "Remove (Decommission)",
-    "ph_buscar": "Search to edit or view..."
+    "ph_buscar": "Search to edit or view...",
+    "toast": {
+      "denied_summary": "Action Denied",
+      "denied_detail": "You cannot decommission this tool. There are currently {units} unit(s) in use/borrowed."
+    },
+    "modal": {
+      "header": "Confirm Tool Decommission",
+      "confirm_text": "Are you sure you want to decommission",
+      "reason_label": "Decommission reason",
+      "placeholder_motivo": "Select a reason",
+      "specify_reason_label": "Specify reason",
+      "placeholder_specify": "Describe the reason in detail...",
+      "btn_cancel": "Cancel",
+      "btn_confirm": "Confirm Decommission"
+    },
+    "motivos": {
+      "end_of_life": "End of life",
+      "operator_damage": "Operator damage",
+      "loss": "Loss",
+      "setup": "Set up",
+      "poor_quality": "Poor quality",
+      "other": "Other"
+    }
   },
   "modal_detalles_pedido": {
     "titulo": "Movement Details",
@@ -140,7 +166,10 @@
     "estado_pendiente": "PENDING",
     "estado_devuelto": "RETURNED",
     "pendiente_curso": "Pending / In progress",
-    "pendiente_fecha": "Pending"
+    "pendiente_fecha": "Pending",
+    "motivo_salida": "Reason for Issue",
+    "otro_motivo": "Other",
+    "no_especificado": "NOT SPECIFIED"
   },
   "tabla_historial": {
     "folio": "ID",
@@ -259,7 +288,8 @@
     "no_aplica": "N/A",
     "btn_cerrar": "Close",
     "btn_anadir": "Add to Order",
-    "estado_agotado": "Sold Out"
+    "estado_agotado": "Sold Out",
+    "modal_stock": "Stock (Physical / Min / Max)"
   },
   "detalle_pedido": {
     "titulo": "Order Details",
@@ -290,7 +320,22 @@
     "modal_sin_descripcion": "No description available.",
     "no_aplica": "N/A",
     "btn_cerrar": "Close",
-    "estado_agotado":"Sold Out"
+    "estado_agotado":"Sold Out",
+    "label_orden": "Order No.",
+    "ph_num_orden": "e.g., OT-1024...",
+    "label_maquina": "Machine / Equipment",
+    "ph_maquina": "e.g., CNC-02...",
+    "label_motivo": "Reason for Issue",
+    "ph_motivo_select": "Select a reason",
+    "ph_motivo_escribe": "Type the reason...",
+    "motivos": {
+      "fin_vida": "End of life",
+      "dano_operador": "Operator damage",
+      "extravio": "Lost",
+      "set_up": "Set up",
+      "mala_calidad": "Poor tool quality",
+      "otro": "Other"
+    }
   },
   "view_salidas": {
     "toast_limite_titulo": "Limit reached",
@@ -321,7 +366,8 @@
     "label_descripcion": "Description / Details",
     "ph_descripcion": "Additional specifications...",
     "btn_registrar": "Register Product",
-    "btn_limpiar": "Clear"
+    "btn_limpiar": "Clear",
+    "label_stock_maximo": "Maximum Stock"
   },
   "view_nuevo_producto": {
     "titulo": "Register New Product",

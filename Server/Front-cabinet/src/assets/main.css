@@ -161,34 +161,124 @@
 .badge-eliminacion { background-color: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.3); }
 .badge-default { background-color: rgba(148, 163, 184, 0.15); color: #94a3b8; }
 
+/* 7. TABLAS (DATATABLE) - MODO OSCURO (POR DEFECTO) */
+.p-datatable,
+.p-datatable-wrapper,
+.p-datatable table {
+    background-color: #1e252d !important;
+    background: #1e252d !important;
+    border: none !important;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+    background-color: #1e252d !important;
+    color: #cbd5e1 !important;
+    font-weight: 600 !important;
+    border: none !important;
+    border-bottom: 2px solid #2a323d !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover,
+.p-datatable .p-datatable-tbody > tr:hover > td,
+.p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover,
+.p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover > td {
+    background: #2a323d !important;
+    background-color: #2a323d !important;
+    color: #ffffff !important;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover,
+.p-datatable .p-datatable-tbody > tr:hover > td {
+    background-color: #2a323d !important;
+    color: #ffffff !important;
+}
+
+.p-datatable .p-datatable-empty-message > td {
+    background-color: #1e252d !important;
+    color: #94a3b8 !important;
+}
 
 /* =====================================================================
-   ESTILOS GLOBALES DEL TEMA CLARO (LIGHT THEME) - ARMONIZADO
+   CONTENEDOR DE FOTOGRAFÍA (TEMA OSCURO - POR DEFECTO)
+   ===================================================================== */
+/* Contenedor exterior */
+.area-imagen-dinamica {
+    background-color: #1e252d !important;
+    border: 1px solid #4a5568 !important;
+}
+
+/* Recuadro punteado interior */
+.placeholder-imagen-dinamica {
+    background-color: #121820 !important;
+    border: 2px dashed #4a5568 !important;
+}
+
+/* Ícono de la imagen */
+.placeholder-imagen-dinamica i {
+    color: #94a3b8 !important;
+}
+
+/* Contenedor del input (Fondo y texto "No file chosen") */
+.input-file-dinamico {
+    background-color: #121820 !important;
+    color: #ffffff !important;
+    border: 1px solid #4a5568 !important;
+    color-scheme: dark; /* Adapta el texto base nativo al modo oscuro */
+}
+
+/* Botón nativo de "Choose File" */
+.input-file-dinamico::file-selector-button {
+    background-color: #3b82f6 !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 4px !important;
+    margin-right: 1rem !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+    transition: background-color 0.2s;
+}
+
+.input-file-dinamico::file-selector-button:hover {
+    background-color: #2563eb !important;
+}
+
+/* =====================================================================
+   ESTILOS GLOBALES DEL TEMA CLARO (LIGHT THEME) - LIMPIO Y MINIMALISTA
    ===================================================================== */
 html.light-theme {
-  background-color: #f1f5f9;
-  color: #0f172a;
+    background-color: #f4f6f9;
+    color: #334155;
 }
 
 html.light-theme body {
-  background-color: #f1f5f9;
-  color: #0f172a;
+    background-color: #f4f6f9;
+    color: #334155;
 }
 
-/* 1. CONTENEDORES Y PANELES (CLARO) */
+/* 1. CONTENEDORES Y PANELES (SIN BORDES DUROS, CON SOMBRA SUAVE) */
 html.light-theme .panel-principal, 
 html.light-theme .panel-inventario, 
 html.light-theme .panel-bitacora { 
     background-color: #ffffff !important; 
-    color: #0f172a !important; 
-    border: 1px solid #cbd5e1 !important; 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    color: #334155 !important; 
+    border: none !important; 
+    border-radius: 12px !important; 
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important; 
 }
+
+/* Hacer que la barra de botones no tenga fondo gris */
 html.light-theme .toolbar-oscuro { 
-    background-color: #e2e8f0 !important; 
+    background-color: transparent !important; 
+    border: none !important;
 }
-html.light-theme .label-blanco { 
-    color: #1e293b !important; 
+
+/* Color del título principal ("Control de Inventario") */
+html.light-theme .label-blanco,
+html.light-theme h1,
+html.light-theme h2 { 
+    color: #063b69 !important; 
+    font-weight: 700;
 }
 
 /* 2. INPUTS Y SELECTS (CLARO) */
@@ -295,41 +385,41 @@ html.light-theme .modal-oscuro-primeflex .p-dialog-header-icon:hover {
     color: #0f172a !important; 
 }
 
-/* 5. TABLAS (DATATABLE) EN TEMA CLARO - CORRECCIÓN DEFINITIVA */
+/* 5. TABLAS (DATATABLE) - MODO CLARO */
 html.light-theme .p-datatable,
-html.light-theme .p-datatable-wrapper {
+html.light-theme .p-datatable-wrapper,
+html.light-theme .p-datatable table {
     background-color: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    border: none !important;
 }
 
 html.light-theme .p-datatable .p-datatable-thead > tr > th {
-    background-color: #e2e8f0 !important;
-    color: #1e293b !important;
-    border-bottom: 1px solid #cbd5e1 !important;
-}
-
-/* Aplicar fondo blanco TANTO a la fila (tr) como a la celda (td) para evitar fondos negros */
-html.light-theme .p-datatable .p-datatable-tbody > tr,
-html.light-theme .p-datatable .p-datatable-tbody > tr > td {
     background-color: #ffffff !important;
-    color: #0f172a !important;
-    border-bottom: 1px solid #e2e8f0 !important;
+    color: #64748b !important;
+    font-weight: 600 !important;
+    border: none !important;
+    border-bottom: 2px solid #e2e8f0 !important;
 }
 
-/* Forzar que el texto interno (como el Nombre) sea oscuro, protegiendo las etiquetas de estado */
-html.light-theme .p-datatable .p-datatable-tbody > tr > td span:not([class*="badge"]):not([class*="tag"]):not([class*="p-tag"]) {
-    color: #0f172a !important;
+html.light-theme .p-datatable .p-datatable-tbody > tr:hover,
+html.light-theme .p-datatable .p-datatable-tbody > tr:hover > td,
+html.light-theme .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover,
+html.light-theme .p-datatable.p-datatable-hoverable-rows .p-datatable-tbody > tr:not(.p-highlight):hover > td {
+    background: #f1f5f9 !important;
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
 }
 
-/* Color al pasar el mouse por encima de la fila */
 html.light-theme .p-datatable .p-datatable-tbody > tr:hover,
 html.light-theme .p-datatable .p-datatable-tbody > tr:hover > td {
-    background-color: #f8fafc !important;
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
 }
 
 html.light-theme .p-datatable .p-datatable-empty-message > td {
     background-color: #ffffff !important;
-    color: #64748b !important;
+    color: #94a3b8 !important;
 }
 
 /* 6. BOTONES Y BADGES (CLARO) */
@@ -375,3 +465,37 @@ html.light-theme .badge-creacion { background-color: rgba(22, 163, 74, 0.1); col
 html.light-theme .badge-modificacion { background-color: rgba(2, 132, 199, 0.1); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.3); }
 html.light-theme .badge-eliminacion { background-color: rgba(220, 38, 38, 0.1); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3); }
 html.light-theme .badge-default { background-color: rgba(100, 116, 139, 0.1); color: #475569; }
+
+/* =====================================================================
+   CONTENEDOR DE FOTOGRAFÍA (TEMA CLARO)
+   ===================================================================== */
+html.light-theme .area-imagen-dinamica {
+    background-color: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+html.light-theme .placeholder-imagen-dinamica {
+    background-color: #f8fafc !important;
+    border: 2px dashed #cbd5e1 !important;
+}
+
+html.light-theme .placeholder-imagen-dinamica i {
+    color: #64748b !important;
+}
+
+html.light-theme .input-file-dinamico {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    color-scheme: light;
+}
+
+html.light-theme .input-file-dinamico::file-selector-button {
+    background-color: #e2e8f0 !important;
+    color: #334155 !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+html.light-theme .input-file-dinamico::file-selector-button:hover {
+    background-color: #cbd5e1 !important;
+}

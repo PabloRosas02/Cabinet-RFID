@@ -66,18 +66,16 @@ const columnasUsuarios = computed(() => {
     >
         <!-- Slot Personalizado: No. Empleado -->
         <template #numTrabajador="{ data }">
-            <span class="font-bold text-400">{{ data.numTrabajador }}</span>
+            <span class="font-bold">{{ data.numTrabajador }}</span>
         </template>
 
         <!-- Slot Personalizado: Nombre -->
         <template #nombre="{ data }">
-            <span class="text-white">{{ data.nombre }}</span>
+            <span>{{ data.nombre }}</span>
         </template>
 
         <!-- Slot Personalizado: Rol -->
         <template #rol="{ data }">
-            <!-- Quitamos tag-rol porque main.css ya estiliza los p-tag globales -->
-            <!-- Nota: Si decides traducir los roles del backend, podrías crear un bloque de i18n para ellos en el futuro -->
             <Tag :value="data.rol.replace('_', ' ')" :severity="getSeverityRol(data.rol)" class="px-3 py-1 font-bold" />
         </template>
 

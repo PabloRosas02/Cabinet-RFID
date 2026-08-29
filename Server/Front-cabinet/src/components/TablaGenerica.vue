@@ -40,24 +40,24 @@ const textoVacio = computed(() => props.mensajeVacio || t('tabla_generica.mensaj
 <template>
   <div class="tabla-contenedor mt-4">
     <DataTable 
-      :value="datos" 
-      v-model:selection="filaSeleccionada" 
-      @update:selection="onSelectionChange"
-      @row-dblclick="onRowDoubleClick"
-      :selectionMode="seleccionable ? 'single' : null" 
-      :paginator="true" 
-      :rows="10" 
-      :filters="filtros"
-      :globalFilterFields="globalFilterFields" 
-      :loading="cargando"
-      :dataKey="dataKey"
-      stateStorage="session"
-      :stateKey="llaveMemoria"
-      class="tabla-oscura w-full"
-      :rowClass="obtenerClaseFila" 
-      scrollable
-      paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
-      :currentPageReportTemplate="t('tabla_generica.reporte_paginacion', { first: '{first}', last: '{last}', totalRecords: '{totalRecords}' })"
+        :value="datos" 
+        v-model:selection="filaSeleccionada" 
+        @update:selection="onSelectionChange"
+        @row-dblclick="onRowDoubleClick"
+        :selectionMode="seleccionable ? 'single' : null" 
+        :paginator="true" 
+        :rows="10" 
+        :filters="filtros"
+        :globalFilterFields="globalFilterFields" 
+        :loading="cargando"
+        :dataKey="dataKey"
+        stateStorage="session"
+        :stateKey="llaveMemoria"
+        class="tabla-generica w-full"
+        :rowClass="obtenerClaseFila" 
+        scrollable
+        paginatorTemplate="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
+        :currentPageReportTemplate="t('tabla_generica.reporte_paginacion', { first: '{first}', last: '{last}', totalRecords: '{totalRecords}' })"
     >
 
       <template #empty>
@@ -85,93 +85,137 @@ const textoVacio = computed(() => props.mensajeVacio || t('tabla_generica.mensaj
   </div>
 </template>
 
-<style scoped>
+<!-- <style scoped>
 /* =====================================================================
-   CONTENEDOR PRINCIPAL Y BORDES
+   VARIABLES DE TEMA (Modo OSCURO por defecto)
    ===================================================================== */
-.tabla-contenedor { width: 100%; }
+.tabla-contenedor {
+    --tbl-bg: #1e252d;
+    --tbl-border: #2a323d;
+    --tbl-text: #e2e8f0;
+    --tbl-text-muted: #94a3b8;
+    --tbl-header-bg: #1e252d;
+    --tbl-header-text: #cbd5e1;
+    --tbl-hover-bg: #2a323d;
+    --tbl-header-hover-bg: #36464d;
+    --tbl-header-hover-text: #ffffff;
+    --tbl-active-bg: rgba(90, 177, 206, 0.15);
+    --tbl-active-text: #5ab1ce;
+    --tbl-paginator-hover: #2a323d;
+    --tbl-paginator-text: #94a3b8;
+    --tbl-paginator-hover-text: #ffffff;
+    --tbl-scrollbar: #3f4b5b;
+    --tbl-scrollbar-hover: #4a5568;
+    
+    width: 100%;
+}
 
-:deep(.tabla-oscura .p-datatable-wrapper) {
-    border: 1px solid #3f4b5b !important; 
-    border-radius: 10px !important;       
-    overflow: hidden !important;          
-    background-color: #121820 !important; 
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+/* =====================================================================
+   VARIABLES DE TEMA (Modo CLARO)
+   ===================================================================== */
+:global(html.light-theme) .tabla-contenedor {
+    --tbl-bg: #ffffff;
+    --tbl-border: #e2e8f0;
+    --tbl-text: #334155;
+    --tbl-text-muted: #64748b;
+    --tbl-header-bg: #f8fafc;
+    --tbl-header-text: #475569;
+    --tbl-hover-bg: #f1f5f9;
+    --tbl-header-hover-bg: #e2e8f0;
+    --tbl-header-hover-text: #0f172a;
+    --tbl-active-bg: rgba(90, 177, 206, 0.1);
+    --tbl-active-text: #0369a1;
+    --tbl-paginator-hover: #e2e8f0;
+    --tbl-paginator-text: #64748b;
+    --tbl-paginator-hover-text: #0f172a;
+    --tbl-scrollbar: #cbd5e1;
+    --tbl-scrollbar-hover: #94a3b8;
+}
+
+/* =====================================================================
+   ESTILOS APLICADOS (Forzando a PrimeVue a usar nuestras variables)
+   ===================================================================== */
+
+/* Wrapper Principal */
+:deep(.tabla-generica .p-datatable-wrapper) {
+    background-color: var(--tbl-bg) !important;
+    border: 1px solid var(--tbl-border) !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
 }
 
 /* Encabezados (Header) */
-:deep(.tabla-oscura .p-datatable-thead > tr > th) { 
-    background-color: #1e252d !important; 
-    color: #cbd5e1 !important; 
-    border: none !important; 
-    border-bottom: 1px solid #3f4b5b !important; 
-    padding: 1.2rem 1rem; 
+:deep(.tabla-generica .p-datatable-thead > tr > th) {
+    background-color: var(--tbl-header-bg) !important;
+    color: var(--tbl-header-text) !important;
+    border: none !important;
+    border-bottom: 1px solid var(--tbl-border) !important;
+    padding: 1.2rem 1rem !important;
     font-weight: 600;
 }
-:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover) { 
-    background-color: #2a323d !important; 
-    color: #ffffff !important; 
+:deep(.tabla-generica .p-datatable-thead > tr > th.p-sortable-column:hover) {
+    background-color: var(--tbl-header-hover-bg) !important;
+    color: var(--tbl-header-hover-text) !important;
 }
-:deep(.tabla-oscura .p-datatable-thead > tr > th .p-sortable-column-icon) { color: #94a3b8 !important; }
-:deep(.tabla-oscura .p-datatable-thead > tr > th.p-sortable-column:hover .p-sortable-column-icon),
-:deep(.tabla-oscura .p-datatable-thead > tr > th.p-highlight .p-sortable-column-icon) { color: #ffffff !important; }
-
-/* Cuerpo de la tabla (Body) */
-:deep(.tabla-oscura .p-datatable-tbody > tr > td) { 
-    background-color: #121820 !important; 
-    color: #ffffff !important; 
-    border: none !important; 
-    border-bottom: 1px solid #1e252d !important; 
-    padding: 1rem; 
-    transition: all 0.2s ease; 
+:deep(.tabla-generica .p-datatable-thead > tr > th .p-sortable-column-icon) {
+    color: var(--tbl-text-muted) !important;
+}
+:deep(.tabla-generica .p-datatable-thead > tr > th.p-sortable-column:hover .p-sortable-column-icon),
+:deep(.tabla-generica .p-datatable-thead > tr > th.p-highlight .p-sortable-column-icon) {
+    color: var(--tbl-active-text) !important;
 }
 
-/* Evitar línea inferior del último registro */
-:deep(.tabla-oscura .p-datatable-tbody > tr:last-child > td) {
-    border-bottom: none !important;
+/* Cuerpo (Body) */
+:deep(.tabla-generica .p-datatable-tbody > tr > td) {
+    background-color: var(--tbl-bg) !important;
+    color: var(--tbl-text) !important;
+    border: none !important;
+    border-bottom: 1px solid var(--tbl-border) !important;
+    padding: 1rem !important;
+    transition: all 0.2s ease;
 }
 
-/* =====================================================================
-   ESTADOS VACÍOS (Asegurando que la celda se expanda y cierre bien)
-   ===================================================================== */
-:deep(.tabla-oscura .p-datatable-tbody > tr.p-datatable-empty-message > td) {
-    background-color: #121820 !important;
+/* Hover en filas */
+:deep(.tabla-generica .p-datatable-tbody > tr:not(.fila-activa-crissair):not(.p-datatable-empty-message):hover > td) {
+    background-color: var(--tbl-hover-bg) !important;
+    cursor: pointer;
+}
+
+/* Fila Activa (Seleccionada) */
+:deep(.tabla-generica .p-datatable-tbody > tr.fila-activa-crissair > td),
+:deep(.tabla-generica .p-datatable-tbody > tr.p-highlight > td) {
+    background-color: var(--tbl-active-bg) !important;
+    color: var(--tbl-active-text) !important;
+}
+
+/* Estado Vacío */
+:deep(.tabla-generica .p-datatable-tbody > tr.p-datatable-empty-message > td) {
+    background-color: var(--tbl-bg) !important;
     border-bottom: none !important;
     padding: 2rem !important;
     text-align: center !important;
 }
 
-/* Hover y Selección en filas */
-:deep(.tabla-oscura .p-datatable-tbody > tr:not(.fila-activa-crissair):not(.p-datatable-empty-message):hover > td) { 
-    background-color: #1a2129 !important; 
-    cursor: pointer; 
-}
-:deep(.tabla-oscura .p-datatable-tbody > tr.fila-activa-crissair > td),
-:deep(.tabla-oscura .p-datatable-tbody > tr.p-highlight > td),
-:deep(.tabla-oscura .p-datatable-tbody > tr[data-p-highlight="true"] > td),
-:deep(.tabla-oscura .p-datatable-tbody > tr[aria-selected="true"] > td) { 
-    background-color: rgba(90, 177, 206, 0.1) !important; 
-    color: #5ab1ce !important; 
-    border-bottom: 1px solid #1e252d !important; 
+/* Evitar línea inferior del último registro */
+:deep(.tabla-generica .p-datatable-tbody > tr:last-child > td) { 
+    border-bottom: none !important; 
 }
 
-/* =====================================================================
-   PAGINADOR
-   ===================================================================== */
-:deep(.p-paginator) { 
-    background-color: transparent !important; 
-    border: none !important; 
-    margin-top: 1rem; 
-    padding-top: 0.5rem !important; 
+/* Paginador */
+:deep(.p-paginator) {
+    background-color: transparent !important;
+    border: none !important;
+    margin-top: 1rem;
+    padding-top: 0.5rem !important;
 }
-:deep(.p-paginator .p-paginator-page), 
-:deep(.p-paginator .p-paginator-first), 
-:deep(.p-paginator .p-paginator-prev), 
-:deep(.p-paginator .p-paginator-next), 
-:deep(.p-paginator .p-paginator-last) { 
-    color: #94a3b8 !important; 
-    background-color: transparent !important; 
-    border-radius: 6px !important; 
+:deep(.p-paginator .p-paginator-page),
+:deep(.p-paginator .p-paginator-first),
+:deep(.p-paginator .p-paginator-prev),
+:deep(.p-paginator .p-paginator-next),
+:deep(.p-paginator .p-paginator-last) {
+    color: var(--tbl-paginator-text) !important;
+    background-color: transparent !important;
+    border-radius: 6px !important;
     transition: background-color 0.2s;
 }
 :deep(.p-paginator .p-paginator-first:hover),
@@ -179,24 +223,22 @@ const textoVacio = computed(() => props.mensajeVacio || t('tabla_generica.mensaj
 :deep(.p-paginator .p-paginator-next:hover),
 :deep(.p-paginator .p-paginator-last:hover),
 :deep(.p-paginator .p-paginator-page:not(.p-highlight):hover) {
-    background-color: #1e252d !important;
-    color: #ffffff !important;
+    background-color: var(--tbl-paginator-hover) !important;
+    color: var(--tbl-paginator-hover-text) !important;
 }
-:deep(.p-paginator .p-paginator-page.p-highlight), 
-:deep(.p-paginator .p-paginator-page[data-p-highlight="true"]), 
-:deep(.p-paginator .p-paginator-page-selected) { 
+:deep(.p-paginator .p-paginator-page.p-highlight) {
     background-color: #5ab1ce !important; 
-    color: #ffffff !important; 
-    font-weight: bold; 
+    color: #ffffff !important;
+    font-weight: bold;
 }
-:deep(.p-paginator .p-paginator-current) { 
-    color: #64748b !important; 
-    font-size: 0.85rem; 
+:deep(.p-paginator .p-paginator-current) {
+    color: var(--tbl-paginator-text) !important;
+    font-size: 0.85rem;
 }
 
-/* Scrollbar personalizado */
+/* Scrollbar */
 :deep(.p-datatable-wrapper::-webkit-scrollbar) { height: 8px; width: 8px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: #3f4b5b; border-radius: 4px; }
-:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb:hover) { background: #4a5568; }
 :deep(.p-datatable-wrapper::-webkit-scrollbar-track) { background: transparent; }
-</style>
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb) { background: var(--tbl-scrollbar); border-radius: 4px; }
+:deep(.p-datatable-wrapper::-webkit-scrollbar-thumb:hover) { background: var(--tbl-scrollbar-hover); }
+</style>     -->

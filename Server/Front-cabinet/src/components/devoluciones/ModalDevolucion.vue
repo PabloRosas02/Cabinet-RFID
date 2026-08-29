@@ -48,7 +48,8 @@ const totalHerramientasARegresar = computed(() => {
         dismissableMask
     >
         <div v-if="pedidoLocal" class="p-2 md:p-3">
-            <div class="mb-4 p-3 border-round surface-ground-custom">
+            <!-- Contenedor del encabezado adaptativo -->
+            <div class="mb-4 p-3 border-round surface-ground border-1 surface-border text-color">
                 <p class="m-0 mb-2">
                     <span class="text-500 font-bold">{{ t('modal_devolucion.empleado') }}</span> 
                     {{ pedidoLocal.trabajadorNumero }} - {{ pedidoLocal.trabajadorNombre }}
@@ -66,10 +67,10 @@ const totalHerramientasARegresar = computed(() => {
             <h3 class="text-lg font-bold mb-3" style="color: #5ab1ce;">{{ t('modal_devolucion.herramientas_regresar') }}</h3>
             
             <ul class="lista-herramientas p-0 m-0">
-                <!-- Usamos flex-1 para el texto y flex-shrink-0 para el input -->
-                <li v-for="item in pedidoLocal.herramientas" :key="item.detalleId" class="flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center p-3 mb-2 border-round item-herramienta gap-3">
+                <!-- Ítem de la lista adaptativo -->
+                <li v-for="item in pedidoLocal.herramientas" :key="item.detalleId" class="flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center p-3 mb-2 border-round surface-card border-1 surface-border gap-3 text-color">
                     
-                    <!-- Info de la herramienta (toma todo el espacio sobrante) -->
+                    <!-- Info de la herramienta -->
                     <div class="flex-1 min-w-0 pr-0 sm:pr-3 w-full">
                         <span class="font-bold block text-lg white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ item.nombre }}</span>
                         <span class="text-sm text-500 block mt-1">
@@ -81,7 +82,7 @@ const totalHerramientasARegresar = computed(() => {
                         </span>
                     </div>
                     
-                    <!-- Control de cantidad (tamaño fijo que no se encoge ni estira) -->
+                    <!-- Control de cantidad -->
                     <div class="flex-shrink-0 flex flex-column align-items-start sm:align-items-end w-full sm:w-auto">
                         <label class="text-xs text-400 mb-1">{{ t('modal_devolucion.cantidad_devolver') }}</label>
                         <InputNumber 
@@ -90,7 +91,7 @@ const totalHerramientasARegresar = computed(() => {
                             :max="item.cantidadPrestada - (item.cantidadRegresada || 0)" 
                             showButtons 
                             class="input-devolucion"
-                            inputClass="input-oscuro text-center"
+                            inputClass="text-center"
                         />
                     </div>
                 </li>
@@ -132,9 +133,7 @@ const totalHerramientasARegresar = computed(() => {
 .btn-limpiar { background-color: #4a5568 !important; border: none !important; color: white !important; }
 .btn-limpiar:hover:not(:disabled) { background-color: #3f4b5b !important; }
 
-.surface-ground-custom { background-color: #121820; border: 1px solid #3f4b5b; }
 .lista-herramientas { list-style: none; overflow-x: hidden; }
-.item-herramienta { background-color: #2a323d; border: 1px solid #3f4b5b; }
 
 .capitalize { text-transform: capitalize; }
 
@@ -142,21 +141,17 @@ const totalHerramientasARegresar = computed(() => {
    CORRECCIÓN DEL BUG DEL INPUT NUMBER
    ======================================================= */
 :deep(.input-devolucion) { 
-    width: 120px !important; /* Forzamos a que el contenedor principal nunca crezca de más */
+    width: 120px !important; 
     display: inline-flex !important;
 }
 :deep(.input-devolucion .p-inputtext) { 
-    width: 100% !important; /* Forzamos al input interno a respetar la caja de arriba */
+    width: 100% !important; 
     text-align: center; 
     padding: 0.5rem; 
 }
 :deep(.input-devolucion .p-inputnumber-button) { 
-    background-color: #3f4b5b !important; 
-    border: 1px solid #4a5568 !important; 
-    color: #ffffff !important; 
-}
-:deep(.input-devolucion .p-inputnumber-button:hover) { 
-    background-color: #4a5568 !important; 
+    /* Colores dinámicos manejados por el componente nativo de PrimeVue si eliminas el fondo forzado aquí. 
+       Para mejor adaptabilidad, se quitan los !important de fondo de los botones del input. */
 }
 
 @media (max-width: 575px) {

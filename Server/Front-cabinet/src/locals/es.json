@@ -43,7 +43,8 @@
     "estado_pendiente": "Pendiente",
     "btn_devolver": "Devolver",
     "num_orden": "Orden",
-    "num_maquina": "Máquina"
+    "num_maquina": "Máquina",
+    "motivo": "Motivo"
   },
   "view_devoluciones": {
     "titulo": "Devolución de Herramientas",
@@ -68,7 +69,8 @@
     "sin_descripcion": "Sin descripción o notas adicionales para esta herramienta.",
     "no_aplica": "N/A",
     "sin_marca": "S/M",
-    "btn_cerrar": "Cerrar"
+    "btn_cerrar": "Cerrar",
+    "stock_niveles": "Niveles de Stock (Físico / Mín / Máx)"
   },
   "formulario_herramientas": {
     "titulo_editar": "Editar Herramienta",
@@ -90,7 +92,8 @@
     "stock_minimo": "Stock Mínimo",
     "stock_fisico": "Stock Físico",
     "btn_cancelar": "Cancelar",
-    "btn_guardar": "Guardar"
+    "btn_guardar": "Guardar",
+    "stock_maximo": "Stock Máximo"
   },
   "tabla_herramientas": {
     "codigo": "Código",
@@ -98,6 +101,7 @@
     "tipo": "Tipo",
     "ubicacion": "Ubicación",
     "stock_min": "Stock Mín.",
+    "stock_max": "Stock Máx.",
     "stock_fisico": "Stock Físico",
     "mensaje_vacio": "No se encontraron herramientas con los filtros actuales."
   },
@@ -117,7 +121,29 @@
     "btn_volver": "Volver",
     "btn_editar": "Editar Seleccionado",
     "btn_eliminar": "Dar de Baja",
-    "ph_buscar": "Buscar para editar o ver..."
+    "ph_buscar": "Buscar para editar o ver...",
+    "toast": {
+      "denied_summary": "Acción Denegada",
+      "denied_detail": "No puedes dar de baja esta herramienta. Actualmente hay {units} unidad(es) en uso/prestada(s)."
+    },
+    "modal": {
+      "header": "Confirmar Baja de Herramienta",
+      "confirm_text": "¿Estás seguro de que deseas dar de baja",
+      "reason_label": "Motivo de la baja",
+      "placeholder_motivo": "Selecciona un motivo",
+      "specify_reason_label": "Especificar motivo",
+      "placeholder_specify": "Describe la razón detalladamente...",
+      "btn_cancel": "Cancelar",
+      "btn_confirm": "Confirmar Baja"
+    },
+    "motivos": {
+      "end_of_life": "Fin de vida útil",
+      "operator_damage": "Daño por operador",
+      "loss": "Extravío",
+      "setup": "Set up",
+      "poor_quality": "Mala calidad",
+      "other": "Otro"
+    }
   },
   "modal_detalles_pedido": {
     "titulo": "Detalles de los Movimientos",
@@ -140,7 +166,10 @@
     "estado_pendiente": "PENDIENTE",
     "estado_devuelto": "DEVUELTO",
     "pendiente_curso": "Pendiente / En curso",
-    "pendiente_fecha": "Pendiente"
+    "pendiente_fecha": "Pendiente",
+    "motivo_salida": "Motivo de Salida",
+    "otro_motivo": "Otro",
+    "no_especificado": "NO ESPECIFICADO"
   },
   "tabla_historial": {
     "folio": "Folio",
@@ -259,7 +288,8 @@
     "no_aplica": "N/A",
     "btn_cerrar": "Cerrar",
     "btn_anadir": "Añadir al Pedido",
-    "estado_agotado": "Agotado"
+    "estado_agotado": "Agotado",
+    "modal_stock": "Stock (Act / Mín / Máx)"
   },
   "detalle_pedido": {
     "titulo": "Detalle de la Salida",
@@ -290,7 +320,22 @@
     "modal_sin_descripcion": "Sin descripción disponible.",
     "no_aplica": "N/A",
     "btn_cerrar": "Cerrar",
-    "estado_agotado":"Agotado"
+    "estado_agotado":"Agotado",
+    "label_orden": "Num. de Orden",
+    "ph_num_orden": "e.j., OT-1024...",
+    "label_maquina": "Máquina / Equipo",
+    "ph_maquina": "e.j., CNC-02...",
+    "label_motivo": "Motivo de salida",
+    "ph_motivo_select": "Selecciona una razón",
+    "ph_motivo_escribe": "Escribe la razón...",
+    "motivos": {
+      "fin_vida": "Fin de vida útil",
+      "dano_operador": "Daño por operador",
+      "extravio": "Extravío",
+      "set_up": "Set up",
+      "mala_calidad": "Mala calidad de la herramienta",
+      "otro": "Otro"
+    }
   },
   "view_salidas": {
     "toast_limite_titulo": "Límite alcanzado",
@@ -321,7 +366,8 @@
     "label_descripcion": "Descripción / Detalles",
     "ph_descripcion": "Especificaciones adicionales...",
     "btn_registrar": "Registrar Producto",
-    "btn_limpiar": "Limpiar"
+    "btn_limpiar": "Limpiar",
+    "label_stock_maximo": "Stock Máximo"
   },
   "view_nuevo_producto": {
     "titulo": "Registrar Nuevo Producto",
