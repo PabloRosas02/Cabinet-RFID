@@ -83,7 +83,8 @@
     color: #16a34a !important; 
 }
 
-/* 4. VENTANAS EMERGENTES (MODALS / DIALOGS) */
+/* 4. VENTANAS EMERGENTES (MODALS / DIALOGS) - APLICACIÓN GLOBAL */
+.p-dialog,
 .modal-oscuro, 
 .modal-oscuro-primeflex { 
     background-color: #1e252d !important; 
@@ -91,34 +92,35 @@
     border-radius: 8px !important; 
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important; 
 }
+
+.p-dialog .p-dialog-header, 
+.p-dialog .p-dialog-content, 
+.p-dialog .p-dialog-footer,
 .modal-oscuro .p-dialog-header, 
 .modal-oscuro .p-dialog-content, 
-.modal-oscuro .p-dialog-footer,
-.modal-oscuro-primeflex .p-dialog-header, 
-.modal-oscuro-primeflex .p-dialog-content, 
-.modal-oscuro-primeflex .p-dialog-footer { 
+.modal-oscuro .p-dialog-footer { 
     background-color: #1e252d !important; 
     color: #ffffff !important; 
     border: none !important; 
     padding-left: 1.5rem !important; 
     padding-right: 1.5rem !important; 
 }
-.modal-oscuro .p-dialog-header, 
-.modal-oscuro-primeflex .p-dialog-header { 
+
+.p-dialog .p-dialog-header { 
     border-bottom: 1px solid #2a323d !important; 
     padding-top: 1.5rem !important; 
 }
-.modal-oscuro .p-dialog-footer, 
-.modal-oscuro-primeflex .p-dialog-footer { 
+
+.p-dialog .p-dialog-footer { 
     border-top: 1px solid #2a323d !important; 
     padding-bottom: 1.5rem !important; 
 }
-.modal-oscuro .p-dialog-header-icon, 
-.modal-oscuro-primeflex .p-dialog-header-icon { 
+
+.p-dialog .p-dialog-header-icon { 
     color: #94a3b8 !important; 
 }
-.modal-oscuro .p-dialog-header-icon:hover, 
-.modal-oscuro-primeflex .p-dialog-header-icon:hover { 
+
+.p-dialog .p-dialog-header-icon:hover { 
     background-color: rgba(255, 255, 255, 0.05) !important; 
     color: #ffffff !important; 
 }
@@ -239,10 +241,6 @@
     transition: background-color 0.2s;
 }
 
-.input-file-dinamico::file-selector-button:hover {
-    background-color: #2563eb !important;
-}
-
 /* =====================================================================
    ESTILOS GLOBALES DEL TEMA CLARO (LIGHT THEME) - LIMPIO Y MINIMALISTA
    ===================================================================== */
@@ -345,7 +343,8 @@ html.light-theme .menu-oscuro .p-menuitem-icon {
     color: #16a34a !important; 
 }
 
-/* 4. VENTANAS EMERGENTES / MODALS (CLARO) */
+/* 4. VENTANAS EMERGENTES / MODALS (CLARO) - APLICACIÓN GLOBAL */
+html.light-theme .p-dialog,
 html.light-theme .modal-oscuro, 
 html.light-theme .modal-oscuro-primeflex { 
     background-color: #ffffff !important; 
@@ -353,34 +352,32 @@ html.light-theme .modal-oscuro-primeflex {
     border-radius: 8px !important; 
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important; 
 }
-html.light-theme .modal-oscuro .p-dialog-header, 
-html.light-theme .modal-oscuro .p-dialog-content, 
-html.light-theme .modal-oscuro .p-dialog-footer,
-html.light-theme .modal-oscuro-primeflex .p-dialog-header, 
-html.light-theme .modal-oscuro-primeflex .p-dialog-content, 
-html.light-theme .modal-oscuro-primeflex .p-dialog-footer { 
+
+html.light-theme .p-dialog .p-dialog-header, 
+html.light-theme .p-dialog .p-dialog-content, 
+html.light-theme .p-dialog .p-dialog-footer { 
     background-color: #ffffff !important; 
     color: #0f172a !important; 
     border: none !important; 
     padding-left: 1.5rem !important; 
     padding-right: 1.5rem !important; 
 }
-html.light-theme .modal-oscuro .p-dialog-header, 
-html.light-theme .modal-oscuro-primeflex .p-dialog-header { 
+
+html.light-theme .p-dialog .p-dialog-header { 
     border-bottom: 1px solid #e2e8f0 !important; 
     padding-top: 1.5rem !important; 
 }
-html.light-theme .modal-oscuro .p-dialog-footer, 
-html.light-theme .modal-oscuro-primeflex .p-dialog-footer { 
+
+html.light-theme .p-dialog .p-dialog-footer { 
     border-top: 1px solid #e2e8f0 !important; 
     padding-bottom: 1.5rem !important; 
 }
-html.light-theme .modal-oscuro .p-dialog-header-icon, 
-html.light-theme .modal-oscuro-primeflex .p-dialog-header-icon { 
+
+html.light-theme .p-dialog .p-dialog-header-icon { 
     color: #64748b !important; 
 }
-html.light-theme .modal-oscuro .p-dialog-header-icon:hover, 
-html.light-theme .modal-oscuro-primeflex .p-dialog-header-icon:hover { 
+
+html.light-theme .p-dialog .p-dialog-header-icon:hover { 
     background-color: rgba(0, 0, 0, 0.05) !important; 
     color: #0f172a !important; 
 }
@@ -498,4 +495,87 @@ html.light-theme .input-file-dinamico::file-selector-button {
 
 html.light-theme .input-file-dinamico::file-selector-button:hover {
     background-color: #cbd5e1 !important;
+}
+
+/* =====================================================================
+   CORRECCIÓN DEFINITIVA PARA EL PANEL DEL AUTOCOMPLETE
+   ===================================================================== */
+.p-autocomplete-panel,
+.p-autocomplete-panel .p-autocomplete-items,
+.p-autocomplete-panel .p-autocomplete-item {
+    background-color: #1e252d !important;
+    color: #ffffff !important;
+}
+
+.p-autocomplete-panel {
+    border: 1px solid #4a5568 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+}
+
+.p-autocomplete-panel .p-autocomplete-item span {
+    color: #cbd5e1 !important;
+}
+
+.p-autocomplete-panel .p-autocomplete-item:hover,
+.p-autocomplete-panel .p-autocomplete-item.p-highlight {
+    background-color: #36464d !important;
+    color: #ffffff !important;
+}
+
+/* Modo Claro */
+html.light-theme .p-autocomplete-panel,
+html.light-theme .p-autocomplete-panel .p-autocomplete-items,
+html.light-theme .p-autocomplete-panel .p-autocomplete-item {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+}
+
+html.light-theme .p-autocomplete-panel {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light-theme .p-autocomplete-panel .p-autocomplete-item span {
+    color: #64748b !important;
+}
+
+html.light-theme .p-autocomplete-panel .p-autocomplete-item:hover,
+html.light-theme .p-autocomplete-panel .p-autocomplete-item.p-highlight {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* =====================================================================
+   AJUSTE DE BUSCADOR Y TÍTULO (SOPORTE MODOS CLARO / OSCURO)
+   ===================================================================== */
+
+/* 1. MODO OSCURO (Por defecto en tu app) */
+.titulo-catalogo {
+    color: #5ab1ce !important; /* Celeste de tu captura deseada */
+    font-weight: 700;
+}
+
+.input-buscador-custom {
+    background-color: #121820 !important; /* Fondo azul oscuro profundo */
+    border: 1px solid #4a5568 !important;
+    color: #ffffff !important;
+}
+
+.input-buscador-custom::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* 2. MODO CLARO (Se activa cuando html tiene la clase .light-theme) */
+html.light-theme .titulo-catalogo {
+    color: #063b69 !important; /* Azul marino de tu captura de modo claro */
+}
+
+html.light-theme .input-buscador-custom {
+    background-color: #ffffff !important; /* Blanco limpio */
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+html.light-theme .input-buscador-custom::placeholder {
+    color: #64748b !important;
 }

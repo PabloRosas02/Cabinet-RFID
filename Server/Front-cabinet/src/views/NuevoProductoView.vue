@@ -19,22 +19,22 @@ const formRef = ref(null);
 const fileInput = ref(null); 
 const menuDescarga = ref(null); 
 
-// Destructuramos las funciones expertas del composable
+// Solo conservamos la descarga de plantilla. Multer en el backend se encargará de extraer los datos.
 const { descargarPlantillaHerramientas, extraerDatosDeArchivo } = useGestorArchivos();
 
 // =====================================================================
-// Opciones del Menu Desplegable (Ahora reactivo con computed)
+// Opciones del Menu Desplegable
 // =====================================================================
 const opcionesDescarga = computed(() => [
     {
         label: t('view_nuevo_producto.menu_descargar_csv'),
         icon: 'pi pi-file',
-        command: () => descargarPlantillaHerramientas('csv') // Llamada directa
+        command: () => descargarPlantillaHerramientas('csv')
     },
     {
         label: t('view_nuevo_producto.menu_descargar_excel'),
         icon: 'pi pi-file-excel',
-        command: () => descargarPlantillaHerramientas('xlsx') // Llamada directa
+        command: () => descargarPlantillaHerramientas('xlsx')
     }
 ]);
 
@@ -46,7 +46,6 @@ const toggleMenu = (event) => {
 // Guardar Producto Manualmente
 // =====================================================================
 const guardarProducto = async (herramientaData) => {
-    // Limpiamos los toasts anteriores para evitar que se apilen (Spam)
     toast.removeAllGroups();
 
     if (!herramientaData.codigo?.trim() || !herramientaData.nombre?.trim()) {
@@ -84,16 +83,15 @@ const guardarProducto = async (herramientaData) => {
 };
 
 // =====================================================================
-// Procesar y Subir Archivo (.csv o .xlsx)
+// Procesar y Subir Archivo (.csv o .xlsx) a la API
 // =====================================================================
 const procesarArchivo = async (evento) => {
     const archivo = evento.target.files[0];
     if (!archivo) return;
 
-    // Limpiamos los toasts anteriores para evitar que se apilen (Spam)
     toast.removeAllGroups();
-
     cargandoImportacion.value = true;
+    
     toast.add({ 
         severity: 'info', 
         summary: t('view_nuevo_producto.toast_procesando_titulo'), 
@@ -102,15 +100,13 @@ const procesarArchivo = async (evento) => {
     });
 
     try {
-        // El composable se encarga de todo el parseo difícil y nos devuelve el arreglo limpio
-        const herramientas = await extraerDatosDeArchivo(archivo);
+        // 1. Extraer y formatear datos usando useGestorArchivos
+        const herramientasLista = await extraerDatosDeArchivo(archivo);
 
-        // Le pasamos el arreglo limpio al Servicio del backend
-        const dataResponse = await HerramientasService.importar(herramientas);
+        // 2. Enviar el arreglo JSON de herramientas parseado al servicio
+        const dataResponse = await HerramientasService.importar(herramientasLista);
         
-        toast.removeAllGroups(); // Limpiamos el aviso de "Procesando" para mostrar el éxito
-        
-        // Usamos interpolación de variables para el idioma correspondiente
+        toast.removeAllGroups(); 
         toast.add({ 
             severity: 'success', 
             summary: t('view_nuevo_producto.toast_importacion_exito_titulo'), 
@@ -119,7 +115,7 @@ const procesarArchivo = async (evento) => {
         });
         
     } catch (error) {
-        toast.removeAllGroups(); // Limpiamos el aviso de "Procesando" para mostrar el error
+        toast.removeAllGroups();
         const errorMsg = error.response?.data?.error || error.message;
         toast.add({ 
             severity: 'error', 
@@ -136,7 +132,6 @@ const procesarArchivo = async (evento) => {
 
 <template>
   <Toast /> 
-  <!-- Cambiamos a la clase .panel-principal -->
   <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 max-w-70rem mx-auto mt-4">
     <div class="flex flex-column lg:flex-row justify-content-between align-items-start lg:align-items-center mb-4 gap-4">
         <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_nuevo_producto.titulo') }}</h2>
@@ -147,7 +142,6 @@ const procesarArchivo = async (evento) => {
                 class="p-button-outlined text-white border-white hover:bg-white-alpha-10 w-full sm:w-auto" 
                 @click="toggleMenu" aria-haspopup="true" aria-controls="overlay_menu"
             />
-            <!-- Usamos la clase global .menu-oscuro -->
             <Menu ref="menuDescarga" id="overlay_menu" :model="opcionesDescarga" :popup="true" class="menu-oscuro" />
             
             <input 

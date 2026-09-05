@@ -3,38 +3,24 @@ import { computed } from 'vue';
 import Button from 'primevue/button';
 import TablaGenerica from '@/components/TablaGenerica.vue';
 import { formatearFecha } from '@/utils/dateHelper'; 
+import { traducirDetalleBitacora } from '@/utils/bitacoraFormatter';
 import { useI18n } from 'vue-i18n'; 
 
 const { t, locale } = useI18n(); 
 
 const props = defineProps({
-    bitacora: {
-        type: Array,
-        required: true
-    },
-    cargando: {
-        type: Boolean,
-        default: false
-    },
-    filtros: {
-        type: Object,
-        required: true
-    },
-    mensajeVacio: {
-        type: String,
-        default: null 
-    },
-    iconoVacio: {
-        type: String,
-        default: 'pi-list'
-    }
+    bitacora: { type: Array, required: true },
+    cargando: { type: Boolean, default: false },
+    filtros: { type: Object, required: true },
+    totalRecords: { type: Number, default: 0 },
+    paginaActual: { type: Number, default: 1 },
+    filasPorPagina: { type: Number, default: 10 },
+    mensajeVacio: { type: [String, null], default: null },
+    iconoVacio: { type: String, default: 'pi-list' }
 });
 
-const emit = defineEmits(['doble-click']);
+const emit = defineEmits(['doble-click', 'cambio-pagina']);
 
-// =====================================================
-// DEFINICIÓN DINÁMICA DE COLUMNAS
-// =====================================================
 const columnasBitacora = computed(() => [
     { header: t('tabla_bitacora.fecha_hora'), width: '15%', minWidth: '140px', slotName: 'fecha' },
     { header: t('tabla_bitacora.accion'), width: '12%', minWidth: '130px', slotName: 'accion' },
@@ -50,8 +36,22 @@ const getBadgeClase = (accion) => {
     return 'badge-default';
 };
 
-const abrirDetalles = (data) => {
-    emit('doble-click', data);
+const getTextoAccion = (accion) => {
+    const mapaAcciones = {
+        'CREACION': t('tabla_bitacora.accion_creacion'),
+        'MODIFICACION': t('tabla_bitacora.accion_modificacion'),
+        'ELIMINACION': t('tabla_bitacora.accion_eliminacion')
+    };
+    return mapaAcciones[accion] || accion;
+};
+
+const abrirDetalles = (data) => emit('doble-click', data);
+
+const manejarCambioPagina = (evento) => {
+    const nuevaPagina = (evento.page !== undefined ? evento.page + 1 : 1);
+    const limite = evento.rows || props.filasPorPagina;
+    
+    emit('cambio-pagina', { page: nuevaPagina, limit: limite });
 };
 </script>
 
@@ -61,35 +61,32 @@ const abrirDetalles = (data) => {
         :columnas="columnasBitacora"
         :cargando="cargando"
         :filtros="filtros"
+        :lazy="true"
+        :totalRecords="totalRecords"
+        :paginaActual="paginaActual"
+        :filasPorPagina="filasPorPagina"
         llaveMemoria="vista_bitacora"
         dataKey="id"
         :iconoVacio="iconoVacio"
         :mensajeVacio="mensajeVacio || t('tabla_bitacora.mensaje_vacio')"
         @doble-click="abrirDetalles"
+        @page="manejarCambioPagina"
     >
-        <!-- Slot Personalizado: Fecha (Pasando 'locale') -->
         <template #fecha="{ data }">
             {{ formatearFecha(data.fecha, locale) }}
         </template>
 
-        <!-- Slot Personalizado: Acción (Interceptando valores de BD) -->
         <template #accion="{ data }">
             <span :class="['badge-accion', getBadgeClase(data.accion)]">
-                {{ 
-                    data.accion === 'CREACION' ? t('tabla_bitacora.accion_creacion') :
-                    data.accion === 'MODIFICACION' ? t('tabla_bitacora.accion_modificacion') :
-                    data.accion === 'ELIMINACION' ? t('tabla_bitacora.accion_eliminacion') : data.accion
-                }}
+                {{ getTextoAccion(data.accion) }}
             </span>
         </template>
 
-        <!-- Slot Personalizado: Herramienta -->
         <template #herramienta="{ data }">
-            <div class="font-bold text-blue-300">{{ data.herramienta?.codigo || t('tabla_bitacora.no_aplica') }}</div>
-            <div class="text-sm text-gray-400">{{ data.herramienta?.nombre || t('tabla_bitacora.herramienta_eliminada') }}</div>
+            <div class="font-bold text-primary">{{ data.herramienta?.codigo || t('tabla_bitacora.no_aplica') }}</div>
+            <div class="text-sm text-color-secondary">{{ data.herramienta?.nombre || t('tabla_bitacora.herramienta_eliminada') }}</div>
         </template>
 
-        <!-- Slot Personalizado: Detalle -->
         <template #detalle="{ data }">
             <div class="flex align-items-center gap-2">
                 <Button 
@@ -99,16 +96,15 @@ const abrirDetalles = (data) => {
                     :aria-label="t('tabla_bitacora.aria_ver_detalles')"
                     @click.stop="abrirDetalles(data)" 
                 />
-                <span class="text-sm text-gray-400 overflow-hidden text-overflow-ellipsis white-space-nowrap" style="max-width: 200px;">
-                    {{ data.detalle || t('tabla_bitacora.registro_estandar') }}
+                <span class="text-sm text-color-secondary overflow-hidden text-overflow-ellipsis white-space-nowrap" style="max-width: 200px;">
+                    {{ traducirDetalleBitacora(data.detalle, t) || t('tabla_bitacora.registro_estandar') }}
                 </span>
             </div>
         </template>
 
-        <!-- Slot Personalizado: Usuario -->
         <template #usuario="{ data }">
-            <div class="font-bold"><i class="pi pi-user mr-2 text-gray-400"></i>{{ data.usuario?.nombre || t('tabla_bitacora.sistema') }}</div>
-            <div class="text-sm text-gray-400">{{ data.usuario?.rol || t('tabla_bitacora.no_aplica') }}</div>
+            <div class="font-bold"><i class="pi pi-user mr-2 text-color-secondary"></i>{{ data.usuario?.nombre || t('tabla_bitacora.sistema') }}</div>
+            <div class="text-sm text-color-secondary">{{ data.usuario?.rol || t('tabla_bitacora.no_aplica') }}</div>
         </template>
     </TablaGenerica>
 </template>

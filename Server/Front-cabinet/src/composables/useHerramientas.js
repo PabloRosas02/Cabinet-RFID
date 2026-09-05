@@ -9,20 +9,79 @@ export function useHerramientas() {
     // ESTADO
     const herramientas = ref([]);
     const cargando = ref(false);
+    const totalRegistros = ref(0);
+    const paginaActual = ref(1);
     
     // CONTROL DEL MODAL
     const mostrarModal = ref(false);
     const herramientaActual = ref({});
     const esEdicion = ref(false);
 
-    const cargarHerramientas = async () => {
+    // CARGAR HERRAMIENTAS (Soporta paginación y búsqueda backend)
+    const cargarHerramientas = async (params = {}) => {
         cargando.value = true;
         try {
-            herramientas.value = await HerramientasService.obtenerTodas();
+            const respuesta = await HerramientasService.obtenerTodas(params);
+            
+            // Extraer la carga util sin importar si el service retorna res o res.data
+            const payload = respuesta?.data?.data !== undefined ? respuesta.data : respuesta;
+            
+            if (payload && Array.isArray(payload.data)) {
+                herramientas.value = payload.data;
+                totalRegistros.value = payload.meta?.total 
+                    ?? payload.total 
+                    ?? payload.totalRecords 
+                    ?? payload.data.length;
+                    
+                paginaActual.value = payload.meta?.page ?? payload.page ?? 1;
+            } else if (Array.isArray(payload)) {
+                herramientas.value = payload;
+                totalRegistros.value = payload.length;
+            }
         } catch (error) {
             console.error("Error al cargar herramientas:", error);
             toast.removeAllGroups();
-            toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar las herramientas.', life: 4000 });
+            toast.add({ 
+                severity: 'error', 
+                summary: 'Error', 
+                detail: error.response?.data?.error || 'No se pudieron cargar las herramientas.', 
+                life: 4000 
+            });
+        } finally {
+            cargando.value = false;
+        }
+    };
+
+    // IMPORTACIÓN MASIVA DESDE ARCHIVO
+    const importarHerramientas = async (herramientasArray) => {
+        cargando.value = true;
+        try {
+            const respuesta = await HerramientasService.importar(herramientasArray);
+            
+            toast.removeAllGroups();
+            toast.add({ 
+                severity: 'success', 
+                summary: '¡Importación Exitosa!', 
+                detail: `Creados: ${respuesta.creados} | Actualizados: ${respuesta.actualizados}`, 
+                life: 4000 
+            });
+
+            if (respuesta.advertencias && respuesta.advertencias.length > 0) {
+                respuesta.advertencias.forEach(adv => {
+                    toast.add({ severity: 'warn', summary: 'Omitido', detail: adv, life: 5000 });
+                });
+            }
+
+            // Recargar la lista actual
+            await cargarHerramientas({ page: paginaActual.value });
+            return respuesta;
+        } catch (error) {
+            console.error("Error al importar herramientas:", error);
+            const mensajeError = error.response?.data?.error || error.message || "Error al procesar la importación.";
+            
+            toast.removeAllGroups();
+            toast.add({ severity: 'error', summary: 'Error de Importación', detail: mensajeError, life: 5000 });
+            throw error;
         } finally {
             cargando.value = false;
         }
@@ -30,7 +89,7 @@ export function useHerramientas() {
 
     // PREPARAR FORMULARIOS
     const prepararNuevaHerramienta = () => {
-        herramientActual.value = { 
+        herramientaActual.value = { 
             codigo: '', 
             nombre: '', 
             descripcion: '',
@@ -39,7 +98,9 @@ export function useHerramientas() {
             ubicacion: '',
             cantidad: 1, 
             cantidadDisponible: 1,
-            cantidadMinima: 1,
+            cantidadMinima: 0,
+            cantidadMaxima: 0,
+            esDesechable: false,
             imagen: null
         };
         esEdicion.value = false;
@@ -47,17 +108,15 @@ export function useHerramientas() {
     };
 
     const prepararEdicion = (herramientaSeleccionada) => {
-        // 1.Buscamos la versión más reciente en nuestro arreglo
-        // usando el ID
-        const herramientaActualizada = herramientas.value.find(h => h.id === herramientaSeleccionada.id) || herramientaSeleccionada;
+        const hActual = herramientas.value.find(h => h.id === herramientaSeleccionada.id) || herramientaSeleccionada;
 
-        // 2. Pasamos los datos frescos al modal
         herramientaActual.value = { 
-            ...herramientaActualizada,
-            cantidadMinima: herramientaActualizada.stockMinimo ?? herramientaActualizada.cantidadMinima ?? 0,
-            cantidadMaxima: herramientaActualizada.stockMaximo ?? herramientaActualizada.cantidadMaxima ?? 0,
-            cantidadDisponible: herramientaActualizada.stockFisico ?? herramientaActualizada.cantidadDisponible ?? 0,
-            cantidad: herramientaActualizada.stockTotal ?? herramientaActualizada.cantidad ?? 0
+            ...hActual,
+            cantidadMinima: hActual.cantidadMinima ?? hActual.stockMinimo ?? 0,
+            cantidadMaxima: hActual.cantidadMaxima ?? hActual.stockMaximo ?? 0,
+            cantidadDisponible: hActual.cantidadDisponible ?? hActual.stockFisico ?? 0,
+            cantidad: hActual.cantidad ?? hActual.stockTotal ?? 0,
+            esDesechable: Boolean(hActual.esDesechable)
         };
         
         esEdicion.value = true;
@@ -66,31 +125,32 @@ export function useHerramientas() {
 
     // PROCESAR FOTOGRAFÍA 
     const procesarImagen = async (evento) => {
-        const archivo = evento.target.files[0];
-        if (!archivo) return;
+        const archivo = evento.target?.files?.[0] || evento;
+        if (!archivo || !(archivo instanceof File)) return;
 
         try {
             herramientaActual.value.imagen = await comprimirImagenWebP(archivo);
         } catch (mensajeError) {
-            evento.target.value = ''; 
+            if (evento.target) evento.target.value = ''; 
             toast.removeAllGroups();
             toast.add({ severity: 'error', summary: 'Error de imagen', detail: mensajeError, life: 4000 });
         }
     };
 
-    // GUARDAR (Crear o Actualizar usando el Servicio)
+    // GUARDAR (Crear o Actualizar)
     const guardarHerramienta = async () => {
         try {
             const esActEdicion = esEdicion.value;
             let herramientaGuardada;
 
-            const payload = { ...herramientaActual.value };
+            const payload = { 
+                ...herramientaActual.value,
+                cantidadMinima: parseInt(herramientaActual.value.cantidadMinima ?? 0, 10),
+                cantidadMaxima: parseInt(herramientaActual.value.cantidadMaxima ?? 0, 10),
+                cantidadDisponible: parseInt(herramientaActual.value.cantidadDisponible ?? 0, 10),
+                esDesechable: Boolean(herramientaActual.value.esDesechable)
+            };
             
-            payload.cantidadMinima = parseInt(payload.cantidadMinima ?? payload.stockMinimo ?? 0, 10);
-            payload.cantidadDisponible = parseInt(payload.cantidadDisponible ?? payload.stockFisico ?? 0, 10);
-            
-            // SOLO sincronizamos el Total (cantidad) con el Físico (cantidadDisponible) si es NUEVA.
-            // Si es edición, mantenemos el total intacto para no borrar el stock prestado.
             if (!esActEdicion) {
                 payload.cantidad = payload.cantidadDisponible; 
             }
@@ -101,21 +161,6 @@ export function useHerramientas() {
                 herramientaGuardada = await HerramientasService.crear(payload);
             }
 
-            if (esActEdicion) {
-                const index = herramientas.value.findIndex(h => h.id === herramientaActual.value.id);
-                if (index !== -1) {
-                    const nuevaLista = [...herramientas.value];
-                    nuevaLista[index] = { 
-                        ...nuevaLista[index], 
-                        ...payload, 
-                        ...(herramientaGuardada || {}) 
-                    };
-                    herramientas.value = nuevaLista;
-                }
-            } else {
-                herramientas.value = [...herramientas.value, herramientaGuardada || payload];
-            }
-
             mostrarModal.value = false;
             
             const mensajeExito = esActEdicion 
@@ -124,6 +169,9 @@ export function useHerramientas() {
             
             toast.removeAllGroups();
             toast.add({ severity: 'success', summary: '¡Éxito!', detail: mensajeExito, life: 3000 });
+
+            // Recargamos el listado para reflejar los cambios exactos del backend
+            await cargarHerramientas({ page: paginaActual.value });
 
             return herramientaGuardada;
         } catch (error) {
@@ -136,12 +184,10 @@ export function useHerramientas() {
         }
     };
 
-    // ELIMINAR (Soft Delete con Toast dinámico y recepción del motivo)
+    // ELIMINAR (Soft Delete)
     const eliminarHerramienta = async (herramienta, datosBaja) => {
         try {
             await HerramientasService.eliminar(herramienta.id, datosBaja);
-            
-            herramientas.value = herramientas.value.filter(h => h.id !== herramienta.id);
             
             toast.removeAllGroups();
             toast.add({ 
@@ -151,6 +197,7 @@ export function useHerramientas() {
                 life: 4000 
             });
             
+            await cargarHerramientas({ page: paginaActual.value });
             return true;
         } catch (error) {
             console.error("Error al eliminar:", error);
@@ -165,6 +212,8 @@ export function useHerramientas() {
     return {
         herramientas,
         cargando,
+        totalRegistros,
+        paginaActual,
         mostrarModal,
         herramientaActual,
         esEdicion,
@@ -173,6 +222,7 @@ export function useHerramientas() {
         prepararEdicion,
         procesarImagen,
         guardarHerramienta,
-        eliminarHerramienta 
+        eliminarHerramienta,
+        importarHerramientas
     };
 }

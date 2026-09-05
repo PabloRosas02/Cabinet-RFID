@@ -47,34 +47,31 @@ const revisarDevolucion = (pedido) => {
     mostrarModal.value = true;
 };
 
-const confirmarDevolucion = async (pedidoModificado) => {
+// =========================================================================
+// FUNCIÓN ACTUALIZADA: Recibe la nueva estructura del ModalDevolucion
+// =========================================================================
+const confirmarDevolucion = async (datosEmitidos) => {
     procesandoDevolucion.value = true;
     try {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
-            // Traducimos el error de sesión
             throw new Error(t('view_devoluciones.error_sesion'));
         }
 
-        const payload = {
+        // Armamos el payload final combinando el ID del usuario y el array que mandó el modal
+        const payloadFinal = {
             receptorId: usuarioSesion.id, 
-            herramientasDevueltas: pedidoModificado.herramientas
-                .filter(h => h.cantidadARegresar > 0)
-                .map(h => ({
-                    detalleId: h.detalleId,
-                    cantidad: h.cantidadARegresar
-                }))
+            herramientasDevueltas: datosEmitidos.payload.herramientasDevueltas
         };
 
-        if (payload.herramientasDevueltas.length === 0) {
-            // Traducimos el error de herramienta inválida
+        if (payloadFinal.herramientasDevueltas.length === 0) {
             throw new Error(t('view_devoluciones.error_herramienta_invalida'));
         }
 
-        await axios.put(`/api/salidas/${pedidoModificado.id}/devolver`, payload);
+        // Hacemos el PUT usando el salidaId proporcionado por el modal
+        await axios.put(`/api/salidas/${datosEmitidos.salidaId}/devolver`, payloadFinal);
         
-        // Traducimos el mensaje de éxito
         mensajeFeedback.value = { visible: true, texto: t('view_devoluciones.exito_devolucion'), tipo: 'success' };
         mostrarModal.value = false;
         
@@ -85,7 +82,6 @@ const confirmarDevolucion = async (pedidoModificado) => {
     } catch (error) {
         console.error("Error al procesar la devolución:", error);
         
-        // Traducimos el mensaje de error del catch (si el backend no mandó un error específico)
         mensajeFeedback.value = { 
             visible: true, 
             texto: error.response?.data?.error || error.message || t('view_devoluciones.error_procesar'), 
@@ -101,7 +97,6 @@ const confirmarDevolucion = async (pedidoModificado) => {
 <template>
   <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
     <div class="flex justify-content-between align-items-center mb-4">
-        <!-- Traducimos el título principal -->
         <h2 class="text-xl md:text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_devoluciones.titulo') }}</h2>
     </div>
 

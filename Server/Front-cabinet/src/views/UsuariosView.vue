@@ -27,7 +27,12 @@ const {
 const opcionesDepartamentos = ref(['INGENIERIA', 'MANTENIMIENTO', 'ADMINISTRACION']);
 const opcionesRoles = ref(['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA', 'OPERADOR']);
 
-// Función de validación de campos obligatorios
+// Validación básica de correo electrónico
+const esCorreoValido = (email) => {
+    if (!email) return true; // Es opcional en BD
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
 const validarYGuardar = async () => {
     let camposFaltantes = [];
 
@@ -45,6 +50,16 @@ const validarYGuardar = async () => {
     }
     if (!usuarioActual.value.rol || usuarioActual.value.rol.toString().trim() === '') {
         camposFaltantes.push(t('view_usuarios.val_rol'));
+    }
+
+    if (usuarioActual.value.correo && !esCorreoValido(usuarioActual.value.correo)) {
+        toast.add({ 
+            severity: 'warn', 
+            summary: 'Correo inválido', 
+            detail: 'Por favor ingrese un correo electrónico con formato válido.', 
+            life: 4000 
+        });
+        return;
     }
 
     if (camposFaltantes.length > 0) {
@@ -97,9 +112,6 @@ const validarYGuardar = async () => {
             </div>
         </div>
 
-        <!-- ========================================================= -->
-        <!-- LLAMADA A NUESTRO NUEVO COMPONENTE EXTRAÍDO -->
-        <!-- ========================================================= -->
         <TablaUsuarios
             :usuarios="usuarios"
             :filtros="filtros"
@@ -108,22 +120,22 @@ const validarYGuardar = async () => {
             @eliminar="eliminarUsuario"
         />
 
-        <!-- VENTANA EMERGENTE (MODAL) PARA CREAR/EDITAR -->
+        <!-- VENTANA EMERGENTE (MODAL) CON LOS NUEVOS CAMPOS -->
         <Dialog 
             v-model:visible="mostrarModal" 
             :header="esEdicion ? t('view_usuarios.modal_titulo_editar') : t('view_usuarios.modal_titulo_nuevo')" 
             :modal="true" 
             :breakpoints="{ '1199px': '75vw', '575px': '95vw' }" 
-            :style="{ width: '420px' }" 
+            :style="{ width: '480px' }" 
             class="modal-oscuro"
             dismissableMask
         >
             <div class="flex flex-column gap-2 pt-2">
+                <!-- No. Trabajador -->
                 <div class="field flex flex-column gap-1">
                     <span class="label-blanco">{{ t('view_usuarios.label_num_empleado') }}</span>
                     <InputNumber 
                         name="numTrabajador"
-                        :aria-label="t('view_usuarios.val_num_empleado')"
                         v-model="usuarioActual.numTrabajador" 
                         :useGrouping="false" 
                         class="w-full" 
@@ -131,23 +143,59 @@ const validarYGuardar = async () => {
                     />
                 </div>
 
+                <!-- Nombre Completo -->
                 <div class="field flex flex-column gap-1">
                     <span class="label-blanco">{{ t('view_usuarios.label_nombre') }}</span>
                     <InputText 
                         name="nombreCompleto"
-                        :aria-label="t('view_usuarios.val_nombre')"
                         v-model="usuarioActual.nombre" 
                         class="w-full input-oscuro" 
                     />
                 </div>
 
+                <!-- Correo Electrónico (NUEVO) -->
+                <div class="field flex flex-column gap-1">
+                    <span class="label-blanco">Correo Electrónico</span>
+                    <InputText 
+                        name="correo"
+                        type="email"
+                        v-model="usuarioActual.correo" 
+                        placeholder="ejemplo@crissair.com"
+                        class="w-full input-oscuro" 
+                    />
+                </div>
+
+                <!-- Teléfono (NUEVO) -->
+                <div class="field flex flex-column gap-1">
+                    <span class="label-blanco">Teléfono / Extensión</span>
+                    <InputText 
+                        name="telefono"
+                        v-model="usuarioActual.telefono" 
+                        placeholder="Ej. 6641234567"
+                        class="w-full input-oscuro" 
+                    />
+                </div>
+
+                <!-- Tarjeta RFID (NUEVO)
+                <div class="field flex flex-column gap-1">
+                    <span class="label-blanco">Tarjeta RFID (UID)</span>
+                    <InputNumber 
+                        name="tarjetaRfid"
+                        v-model="usuarioActual.tarjetaRfid" 
+                        :useGrouping="false" 
+                        placeholder="Número de tarjeta o tag"
+                        class="w-full" 
+                        inputClass="w-full input-oscuro" 
+                    />
+                </div> -->
+
+                <!-- Contraseña -->
                 <div class="field flex flex-column gap-1">
                     <span class="label-blanco">
                         {{ esEdicion ? t('view_usuarios.label_pass_editar') : t('view_usuarios.label_pass_nuevo') }}
                     </span>
                     <Password 
                         name="contrasena"
-                        :aria-label="t('view_usuarios.val_pass')"
                         v-model="usuarioActual.contrasena" 
                         :feedback="false" 
                         toggleMask 
@@ -157,11 +205,11 @@ const validarYGuardar = async () => {
                     />
                 </div>
 
+                <!-- Departamento -->
                 <div class="field flex flex-column gap-1">
                     <span class="label-blanco">{{ t('view_usuarios.label_departamento') }}</span>
                     <Select 
                         name="departamento"
-                        :aria-label="t('view_usuarios.val_departamento')"
                         v-model="usuarioActual.depart" 
                         :options="opcionesDepartamentos" 
                         :placeholder="t('view_usuarios.ph_departamento')"
@@ -171,11 +219,11 @@ const validarYGuardar = async () => {
                     />
                 </div>
 
+                <!-- Rol -->
                 <div class="field flex flex-column gap-1">
                     <span class="label-blanco">{{ t('view_usuarios.label_rol') }}</span>
                     <Select 
                         name="rol"
-                        :aria-label="t('view_usuarios.val_rol')"
                         v-model="usuarioActual.rol" 
                         :options="opcionesRoles" 
                         :placeholder="t('view_usuarios.ph_rol')"

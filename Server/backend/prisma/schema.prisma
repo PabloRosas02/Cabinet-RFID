@@ -44,6 +44,7 @@ enum TipoAccion {
 enum EstadoSalida {
   PENDIENTE
   DEVUELTO
+  CONSUMIDO
 }
 
 // ------------------------------------------------------
@@ -51,18 +52,20 @@ enum EstadoSalida {
 // ------------------------------------------------------
 
 model Usuario {
-  id            Int          @id @default(autoincrement())
-  nombre        String
-  numTrabajador Int          @unique
-  contrasena    String
-  depart        Departamento @default(INGENIERIA)
-  rol           RolUsuario   @default(OPERADOR)
-  tarjetaRfid   Int?         @unique 
-  creadoEn      DateTime     @default(now())
+  id               Int          @id @default(autoincrement())
+  nombre           String
+  numTrabajador    Int          @unique
+  correo           String?      @unique   
+  telefono         String?
+  contrasena       String
+  depart           Departamento @default(INGENIERIA)
+  rol              RolUsuario   @default(OPERADOR)
+  tarjetaRfid      Int?         @unique 
+  creadoEn         DateTime     @default(now())
 
-  movimientos          HistorialHerramienta[]
-  salidasPrestadas     Salida[] @relation("PrestadorSalida")
-  salidasRecibidas     Salida[] @relation("ReceptorSalida")
+  movimientos      HistorialHerramienta[]
+  salidasPrestadas Salida[] @relation("PrestadorSalida")
+  salidasRecibidas Salida[] @relation("ReceptorSalida")
   
   recepcionesParciales DevolucionParcial[] @relation("RecepcionesParciales")
 }
@@ -81,6 +84,7 @@ model Herramienta {
   
   imagen             String?             
   estado             EstadoHerramienta @default(ACTIVA)
+  esDesechable       Boolean           @default(false) 
   
   creadoEn           DateTime          @default(now())
   actualizadoEn      DateTime          @updatedAt
@@ -109,14 +113,14 @@ model HistorialHerramienta {
 model Salida {
   id               Int          @id @default(autoincrement())
   
-  trabajadorNumero String       
+  trabajadorNumero String        
   trabajadorNombre String
 
   numeroOrden      String?      // String por si la orden lleva letras (ej. OT-123)
   numeroMaquina    String?      // String por si la máquina es (ej. CNC-04)
 
-  motivo       String?  // Ej: "fin de vida util", "daño por operador", etc.
-  motivoOtro   String?  // Texto libre si el motivo es "otro"
+  motivo           String?  // Ej: "fin de vida util", "daño por operador", etc.
+  motivoOtro       String?  // Texto libre si el motivo es "otro"
 
   prestadorId      Int
   prestador        Usuario      @relation("PrestadorSalida", fields: [prestadorId], references: [id])
@@ -135,7 +139,7 @@ model Salida {
 model DetalleSalida {
   id                Int          @id @default(autoincrement())
   
-  salidaId          Int          // CAMBIO: de pedidoId a salidaId
+  salidaId          Int          
   salida            Salida       @relation(fields: [salidaId], references: [id])
   
   herramientaId     Int
@@ -158,4 +162,12 @@ model DevolucionParcial {
   
   cantidadDevuelta Int
   fechaDevolucion  DateTime      @default(now())
+}
+
+model DestinatarioCorreo {
+  id        Int      @id @default(autoincrement())
+  nombre    String?  // Nombre opcional (ej: "Almacén Principal")
+  correo    String   @unique
+  activo    Boolean  @default(true)
+  creadoEn  DateTime @default(now())
 }

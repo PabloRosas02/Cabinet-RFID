@@ -1,4 +1,4 @@
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { FilterMatchMode } from '@primevue/core/api';
 import axios from 'axios';
 import { useToast } from 'primevue/usetoast';
@@ -8,6 +8,7 @@ export function useUsuarios() {
     const toast = useToast();
 
     const usuarios = ref([]);
+    const metaPaginacion = ref({});
     const cargando = ref(false); 
     
     const filtros = ref({
@@ -18,25 +19,39 @@ export function useUsuarios() {
     const usuarioActual = ref({});
     const esEdicion = ref(false);
 
-    // Obtener datos al cargar la página
+    // Filtrar administradores para los selectores de autorización
+    const administradores = computed(() => 
+        Array.isArray(usuarios.value) ? usuarios.value.filter(u => u.rol === 'ADMINISTRADOR') : []
+    );
+
+    // Obtener datos al cargar la página (Soporta la nueva estructura paginada { data, meta })
+    // En useUsuarios.js
     const cargarUsuarios = async () => {
         cargando.value = true;
         try {
-            const respuesta = await axios.get(API_URL);
-            usuarios.value = respuesta.data;
+            // Solicitamos un límite alto al backend
+            const respuesta = await axios.get(API_URL, {
+                params: { limit: 100 } 
+            });
+            
+            if (respuesta.data && Array.isArray(respuesta.data.data)) {
+                usuarios.value = respuesta.data.data;
+                metaPaginacion.value = respuesta.data.meta || {};
+            }
         } catch (error) {
             console.error("Error al cargar usuarios:", error);
-            toast.add({ severity: 'error', summary: 'Error de conexión', detail: 'No se pudo conectar con la base de datos o sesión expirada.', life: 4000 });
         } finally {
             cargando.value = false;
         }
     };
 
-    // Preparar UI
+    // Preparar UI (Incluye los nuevos campos: correo y telefono)
     const prepararNuevoUsuario = () => {
         usuarioActual.value = { 
             nombre: '', 
             numTrabajador: null, 
+            correo: '',
+            telefono: '',
             contrasena: '',
             depart: null, 
             rol: null, 
@@ -47,7 +62,12 @@ export function useUsuarios() {
     };
 
     const prepararEdicion = (usuario) => {
-        usuarioActual.value = { ...usuario, contrasena: '' };
+        usuarioActual.value = { 
+            ...usuario, 
+            correo: usuario.correo || '',
+            telefono: usuario.telefono || '',
+            contrasena: '' 
+        };
         esEdicion.value = true;
         mostrarModal.value = true;
     };
@@ -73,17 +93,32 @@ export function useUsuarios() {
                 if (index !== -1) {
                     usuarios.value.splice(index, 1, usuarioGuardado);
                 }
-                toast.add({ severity: 'success', summary: 'Usuario Actualizado', detail: `El empleado ${usuarioGuardado.nombre} ha sido modificado.`, life: 3000 });
+                toast.add({ 
+                    severity: 'success', 
+                    summary: 'Usuario Actualizado', 
+                    detail: `El empleado ${usuarioGuardado.nombre} ha sido modificado.`, 
+                    life: 3000 
+                });
             } else {
-                usuarios.value = [...usuarios.value, usuarioGuardado];
-                toast.add({ severity: 'success', summary: 'Usuario Creado', detail: `El empleado ${usuarioGuardado.nombre} fue registrado exitosamente.`, life: 3000 });
+                usuarios.value = [usuarioGuardado, ...usuarios.value];
+                toast.add({ 
+                    severity: 'success', 
+                    summary: 'Usuario Creado', 
+                    detail: `El empleado ${usuarioGuardado.nombre} fue registrado exitosamente.`, 
+                    life: 3000 
+                });
             }
 
             mostrarModal.value = false;
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            toast.add({ severity: 'error', summary: 'Error al guardar', detail: mensajeError, life: 4000 });
+            toast.add({ 
+                severity: 'error', 
+                summary: 'Error al guardar', 
+                detail: mensajeError, 
+                life: 4000 
+            });
         }
     };
 
@@ -98,21 +133,32 @@ export function useUsuarios() {
             // Quitar de la tabla localmente
             usuarios.value = usuarios.value.filter(u => u.id !== usuario.id);
             
-            toast.add({ severity: 'success', summary: 'Baja Exitosa', detail: `El trabajador ${usuario.numTrabajador} fue dado de baja.`, life: 3000 });
+            toast.add({ 
+                severity: 'success', 
+                summary: 'Baja Exitosa', 
+                detail: `El trabajador ${usuario.numTrabajador} fue dado de baja.`, 
+                life: 3000 
+            });
         } catch (error) {
             console.error(error);
             const mensajeError = error.response?.data?.error || error.message;
-            toast.add({ severity: 'error', summary: 'Error al eliminar', detail: mensajeError, life: 4000 });
+            toast.add({ 
+                severity: 'error', 
+                summary: 'Error al eliminar', 
+                detail: mensajeError, 
+                life: 4000 
+            });
         }
     };
 
-    // Se ejecuta automáticamente en cuanto el componente Vue se monta en pantalla
     onMounted(() => {
         cargarUsuarios();
     });
 
     return {
         usuarios,
+        metaPaginacion,
+        administradores, 
         cargando,
         filtros,
         mostrarModal,

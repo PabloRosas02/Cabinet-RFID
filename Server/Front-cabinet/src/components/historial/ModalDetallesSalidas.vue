@@ -1,43 +1,62 @@
 <script setup>
+import { computed } from 'vue';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
 import { formatearFecha } from '@/utils/dateHelper';
 import { useI18n } from 'vue-i18n';
+import { useMotivoTraductor } from '@/utils/formatters';
 
-defineProps({
+const props = defineProps({
     mostrar: Boolean,
     pedido: Object
 });
 
 const emit = defineEmits(['cerrar']);
 const { t } = useI18n();
+const { obtenerMotivoTraducido } = useMotivoTraductor();
+
+// =====================================================================
+// Mapeo / Normalización de los datos del Backend
+// =====================================================================
+const pedidoNormalizado = computed(() => {
+    if (!props.pedido) return null;
+    
+    return {
+        id: props.pedido.id,
+        estado: props.pedido.estado,
+        trabajadorNumero: props.pedido.empleado_numero || props.pedido.trabajadorNumero,
+        trabajadorNombre: props.pedido.empleado_nombre || props.pedido.trabajadorNombre,
+        prestadorNombre: props.pedido.almacenista_salida || props.pedido.prestadorNombre,
+        receptorNombre: props.pedido.almacenista_entrada || props.pedido.receptorNombre,
+        motivo: props.pedido.motivo_salida || props.pedido.motivo,
+        motivoOtro: props.pedido.motivo_otro || props.pedido.motivoOtro,
+        fechaSalida: props.pedido.created_at || props.pedido.fechaSalida,
+        fechaDevolucion: props.pedido.fecha_devolucion || props.pedido.fechaDevolucion,
+        
+        herramientas: (props.pedido.herramientas || []).map(h => ({
+            ...h,
+            cantidadPrestada: h.pivot?.cantidad ?? h.cantidadPrestada ?? 0,
+            cantidadRegresada: h.pivot?.cantidad_devuelta ?? h.cantidadRegresada ?? 0,
+            historialDevoluciones: h.historialDevoluciones || []
+        }))
+    };
+});
 
 // =====================================================================
 // Funciones de ayuda para mantener limpio el template
 // =====================================================================
-const obtenerNombreReceptor = (pedido) => {
-    if (!pedido.receptorNombre) return t('modal_detalles_pedido.sin_entregas');
-    if (pedido.receptorNombre === 'Pendiente / En curso') return t('modal_detalles_pedido.pendiente_curso');
-    return pedido.receptorNombre;
+const obtenerNombreReceptor = (pedidoNorm) => {
+    if (!pedidoNorm.receptorNombre) return t('modal_detalles_pedido.sin_entregas');
+    if (pedidoNorm.receptorNombre === 'Pendiente / En curso') return t('modal_detalles_pedido.pendiente_curso');
+    return pedidoNorm.receptorNombre;
 };
 
-const obtenerFechaDevolucion = (pedido) => {
-    if (!pedido.fechaDevolucion) return t('modal_detalles_pedido.pendiente_fecha');
+const obtenerFechaDevolucion = (pedidoNorm) => {
+    if (!pedidoNorm.fechaDevolucion) return t('modal_detalles_pedido.pendiente_fecha');
     
-    const fecha = formatearFecha(pedido.fechaDevolucion);
+    const fecha = formatearFecha(pedidoNorm.fechaDevolucion);
     return fecha.includes('Pendiente') ? t('modal_detalles_pedido.pendiente_fecha') : fecha;
-};
-
-const obtenerMotivoSalida = (pedido) => {
-    if (!pedido.motivo) return t('modal_detalles_pedido.no_especificado');
-    
-    const motivoLower = pedido.motivo.toLowerCase();
-    if ((motivoLower === 'otro' || motivoLower === 'other') && pedido.motivoOtro) {
-        return `${t('modal_detalles_pedido.otro_motivo')}: ${pedido.motivoOtro}`;
-    }
-    
-    return pedido.motivo;
 };
 </script>
 
@@ -52,51 +71,51 @@ const obtenerMotivoSalida = (pedido) => {
         class="modal-oscuro"
         dismissableMask
     >
-        <div v-if="pedido" class="p-2 md:p-3">
+        <div v-if="pedidoNormalizado" class="p-2 md:p-3">
             <div class="grid mb-4">
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.folio_pedido') }}</span>
-                    <span class="text-xl font-bold text-color">#{{ pedido.id }}</span>
+                    <span class="text-xl font-bold text-color">#{{ pedidoNormalizado.id }}</span>
                 </div>
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.estado_actual') }}</span>
                     <Tag 
-                        :severity="pedido.estado === 'DEVUELTO' ? 'success' : 'danger'" 
-                        :value="pedido.estado === 'DEVUELTO' ? t('modal_detalles_pedido.estado_devuelto') : t('modal_detalles_pedido.estado_pendiente')" 
+                        :severity="pedidoNormalizado.estado === 'DEVUELTO' ? 'success' : 'danger'" 
+                        :value="pedidoNormalizado.estado === 'DEVUELTO' ? t('modal_detalles_pedido.estado_devuelto') : t('modal_detalles_pedido.estado_pendiente')" 
                     />
                 </div>
                 
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.empleado') }}</span>
-                    <span class="font-bold text-color">{{ pedido.trabajadorNumero }} - {{ pedido.trabajadorNombre }}</span>
+                    <span class="font-bold text-color">{{ pedidoNormalizado.trabajadorNumero }} - {{ pedidoNormalizado.trabajadorNombre }}</span>
                 </div>
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.almacenista_salida') }}</span>
-                    <span class="font-bold text-color">{{ pedido.prestadorNombre }}</span>
+                    <span class="font-bold text-color">{{ pedidoNormalizado.prestadorNombre }}</span>
                 </div>
 
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.motivo_salida') }}</span>
-                    <span class="font-bold text-color">
-                        {{ obtenerMotivoSalida(pedido) }}
+                    <span class="font-bold text-color capitalize">
+                        {{ obtenerMotivoTraducido(pedidoNormalizado.motivo, pedidoNormalizado.motivoOtro) }}
                     </span>
                 </div>
                 
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.fecha_prestamo') }}</span>
-                    <span class="text-color">{{ formatearFecha(pedido.fechaSalida) }}</span>
+                    <span class="text-color">{{ formatearFecha(pedidoNormalizado.fechaSalida) }}</span>
                 </div>
                 <div class="col-12 md:col-6 mb-3">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.almacenista_entrada') }}</span>
                     <span class="font-bold text-primary">
-                        {{ obtenerNombreReceptor(pedido) }}
+                        {{ obtenerNombreReceptor(pedidoNormalizado) }}
                     </span>
                 </div>
                 
                 <div class="col-12 mb-2">
                     <span class="text-color-secondary block">{{ t('modal_detalles_pedido.fecha_devolucion') }}</span>
                     <span class="text-color">
-                        {{ obtenerFechaDevolucion(pedido) }}
+                        {{ obtenerFechaDevolucion(pedidoNormalizado) }}
                     </span>
                 </div>
             </div>
@@ -104,8 +123,7 @@ const obtenerMotivoSalida = (pedido) => {
             <div class="border-top-1 surface-border pt-3">
                 <h3 class="text-lg font-bold mb-3 text-primary">{{ t('modal_detalles_pedido.desglose_titulo') }}</h3>
                 <ul class="list-none p-0 m-0">
-                    <li v-for="(h, index) in pedido.herramientas" :key="index" class="surface-card p-3 md:p-4 mb-3 border-round border-1 surface-border shadow-1">
-                        
+                    <li v-for="(h, index) in pedidoNormalizado.herramientas" :key="index" class="surface-card p-3 md:p-4 mb-3 border-round border-1 surface-border shadow-1">
                         <div class="flex flex-column sm:flex-row justify-content-between mb-2 border-bottom-1 surface-border pb-2 gap-3 sm:gap-0">
                             <div>
                                 <span class="font-bold text-color block text-lg">{{ h.nombre }}</span>
@@ -148,4 +166,5 @@ const obtenerMotivoSalida = (pedido) => {
 
 <style scoped>
 .last-border-none:last-child { border-bottom: none !important; }
+.capitalize { text-transform: capitalize; }
 </style>

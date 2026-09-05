@@ -27,5 +27,12 @@ export const SalidasService = {
     obtenerHistorial: async () => {
         const respuesta = await axios.get(`${API_URL}/historial`);
         return respuesta.data;
+    },
+
+    // 5. Solicitar código de autorización al administrador por daño o pérdida
+    solicitarCodigoDano: async (datosSolicitud) => {
+        // datosSolicitud debe contener { administradorId, folio, herramientaNombre, trabajadorNombre, comentario }
+        const respuesta = await axios.post(`${API_URL}/solicitar-codigo-dano`, datosSolicitud);
+        return respuesta.data;
     }
 };

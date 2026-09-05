@@ -1,10 +1,13 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'; 
 import { useRouter } from 'vue-router'; 
-import { FilterMatchMode } from '@primevue/core/api';
-import { useHerramientas } from '@/composables/useHerramientas';
 import { useI18n } from 'vue-i18n'; 
+
+// PrimeVue Core & Hooks
+import { FilterMatchMode } from '@primevue/core/api';
 import { useToast } from 'primevue/usetoast';
+
+// PrimeVue Components
 import Button from 'primevue/button';
 import InputText from 'primevue/inputtext';
 import IconField from 'primevue/iconfield';
@@ -13,33 +16,34 @@ import Toast from 'primevue/toast';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 
+// Composables & Components
+import { useHerramientas } from '@/composables/useHerramientas';
 import TablaHerramientas from '@/components/herramientas/TablaHerramientas.vue';
 import FormularioHerramienta from '@/components/herramientas/FormularioHerramientas.vue';
-import DetalleHerramientas from '@/components/herramientas/DetalleHerramientas.vue';
+import ModalDetalleHerramienta from '@/components/ModalDetalleHerramienta.vue';
 
 const router = useRouter(); 
 const { t } = useI18n(); 
 const toast = useToast();
 
 const { 
-    herramientas, cargando, mostrarModal, herramientaActual, esEdicion, 
+    herramientas, cargando, totalRegistros, paginaActual, mostrarModal, herramientaActual, esEdicion, 
     prepararEdicion, guardarHerramienta, eliminarHerramienta, cargarHerramientas
 } = useHerramientas();
 
-const herramientaSeleccionada = ref(null);
+const herramientaSeleccionada = ref<any | null>(null);
 const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
 
 const mostrarModalDetalles = ref(false);
-const herramientaViendo = ref(null);
+const herramientaViendo = ref<any | null>(null);
 
 // Variables para el Modal de Baja
 const mostrarModalBaja = ref(false);
-const motivoBaja = ref(null);
+const motivoBaja = ref<string | null>(null);
 const motivoOtro = ref('');
 
-// Computed property to translate labels while keeping the original values for the backend/logic
 const opcionesMotivos = computed(() => [
     { label: t('view_movimientos.motivos.end_of_life'), value: 'Fin de vida útil' },
     { label: t('view_movimientos.motivos.operator_damage'), value: 'Daño por operador' },
@@ -49,20 +53,23 @@ const opcionesMotivos = computed(() => [
     { label: t('view_movimientos.motivos.other'), value: 'Otro' }
 ]);
 
-// Validación dinámica para habilitar/deshabilitar el botón de confirmar
 const esValidoParaBaja = computed(() => {
     if (!motivoBaja.value) return false;
     if (motivoBaja.value === 'Otro' && !motivoOtro.value.trim()) return false;
     return true;
 });
 
-const manejarSeleccion = (seleccion) => {
+const manejarSeleccion = (seleccion: any) => {
     herramientaSeleccionada.value = seleccion;
 };
 
-const abrirDetalles = (herramienta) => {
-    herramientaViendo.value = herramienta;
+const abrirDetalles = (herramienta: any) => {
+    herramientaViendo.value = { ...herramienta };
     mostrarModalDetalles.value = true;
+};
+
+const cambiarPagina = ({ page, limit }: { page: number, limit: number }) => {
+    cargarHerramientas({ page, limit });
 };
 
 const prepararEdicionSeleccionada = () => {
@@ -73,10 +80,12 @@ const prepararEdicionSeleccionada = () => {
 
 const confirmarBaja = () => {
     if (herramientaSeleccionada.value) {
+        const h = herramientaSeleccionada.value;
+        const totalFisico = h.cantidad || h.stockFisico || 0;
+        const totalDisponible = h.cantidadDisponible ?? h.stockFisico ?? 0;
 
-        // Si el total físico es mayor al disponible, hay piezas prestadas
-        if (herramientaSeleccionada.value.cantidad > herramientaSeleccionada.value.cantidadDisponible) {
-            const unidadesPrestadas = herramientaSeleccionada.value.cantidad - herramientaSeleccionada.value.cantidadDisponible;
+        if (totalFisico > totalDisponible) {
+            const unidadesPrestadas = totalFisico - totalDisponible;
             
             toast.add({ 
                 severity: 'warn', 
@@ -109,18 +118,15 @@ const procesarBaja = async () => {
         
         herramientaSeleccionada.value = null; 
         mostrarModalBaja.value = false;
-        
-        await cargarHerramientas();
     }
 };
 
 const manejarGuardado = async () => {
     await guardarHerramienta();
-    await cargarHerramientas();
 
-    if (herramientaSeleccionada.value) {
+    if (herramientaSeleccionada.value?.id) {
         const idActual = herramientaSeleccionada.value.id;
-        const herramientaFresca = herramientas.value.find(h => h.id === idActual);
+        const herramientaFresca = herramientas.value.find((h: any) => h.id === idActual);
         if (herramientaFresca) {
             herramientaSeleccionada.value = herramientaFresca;
         }
@@ -132,7 +138,7 @@ const volverAInventario = () => {
 };
 
 onMounted(() => {
-    cargarHerramientas();
+    cargarHerramientas({ page: 1, limit: 10 });
 });
 </script>
 
@@ -145,6 +151,7 @@ onMounted(() => {
       <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_movimientos.titulo') }}</h2>
     </div>
 
+    <!-- Barra de Herramientas -->
     <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
 
       <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
@@ -175,12 +182,13 @@ onMounted(() => {
         />
       </div>
       
-      <div class="w-full xl:w-auto">
-        <IconField iconPosition="left" class="w-full xl:w-30rem">
+      <div class="w-full xl:w-25rem">
+        <IconField iconPosition="left" class="w-full">
           <InputIcon class="pi pi-search" />
           <InputText 
             id="buscador-movimientos" 
             name="buscador-movimientos" 
+            :aria-label="t('view_movimientos.ph_buscar')"
             v-model="filtros['global'].value" 
             :placeholder="t('view_movimientos.ph_buscar')" 
             class="input-oscuro w-full" 
@@ -190,15 +198,20 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Tabla Genérica con Paginación Servidor -->
     <TablaHerramientas
       :herramientas="herramientas"
       :cargando="cargando"
+      :totalRecords="totalRegistros"
+      :paginaActual="paginaActual"
       :filtros="filtros"
       llaveMemoria="vista_movimientos"
       @seleccion="manejarSeleccion"
       @doble-click="abrirDetalles"
+      @cambio-pagina="cambiarPagina"
     />
 
+    <!-- Modal Formulario de Edición -->
     <FormularioHerramienta
       v-model:visible="mostrarModal"
       :herramienta="herramientaActual"
@@ -206,18 +219,21 @@ onMounted(() => {
       @guardar="manejarGuardado"
     />
 
-    <DetalleHerramientas 
+    <!-- Modal Detalle Ficha (Solo Lectura) -->
+    <ModalDetalleHerramienta 
       v-model:visible="mostrarModalDetalles" 
       :herramienta="herramientaViendo" 
+      :ocultarBotonAgregar="true"
     />
 
-    <!-- MODAL DE CONFIRMACIÓN DE BAJA -->
+    <!-- Modal de Confirmación de Baja -->
     <Dialog 
         v-model:visible="mostrarModalBaja" 
         :header="t('view_movimientos.modal.header')" 
         :modal="true" 
         :style="{ width: '450px' }" 
         :closable="false"
+        dismissableMask
     >
         <div class="flex flex-column gap-4 py-3">
             <span>
@@ -228,7 +244,7 @@ onMounted(() => {
             <div class="flex flex-column gap-2">
                 <label for="motivoBaja" class="font-semibold">{{ t('view_movimientos.modal.reason_label') }} *</label>
                 <Dropdown 
-                    id="motivoBaja" 
+                    inputId="motivoBaja" 
                     v-model="motivoBaja" 
                     :options="opcionesMotivos"
                     optionLabel="label"
@@ -245,13 +261,16 @@ onMounted(() => {
                     v-model="motivoOtro" 
                     :placeholder="t('view_movimientos.modal.placeholder_specify')" 
                     class="w-full" 
+                    autofocus
                 />
             </div>
         </div>
 
         <template #footer>
-            <Button :label="t('view_movimientos.modal.btn_cancel')" icon="pi pi-times" text severity="secondary" @click="cerrarModalBaja" />
-            <Button :label="t('view_movimientos.modal.btn_confirm')" icon="pi pi-check" severity="danger" :disabled="!esValidoParaBaja" @click="procesarBaja" />
+            <div class="flex justify-content-end gap-2 mt-2">
+                <Button :label="t('view_movimientos.modal.btn_cancel')" icon="pi pi-times" text severity="secondary" @click="cerrarModalBaja" />
+                <Button :label="t('view_movimientos.modal.btn_confirm')" icon="pi pi-check" severity="danger" :disabled="!esValidoParaBaja" @click="procesarBaja" />
+            </div>
         </template>
     </Dialog>
 
@@ -259,9 +278,6 @@ onMounted(() => {
 </template>
 
 <style scoped>
-/* =========================================================
-   BOTONES DE ACCIÓN EXCLUSIVOS DE ESTA VISTA
-   ========================================================= */
 :deep(.btn-editar) {
     background-color: #0ea5e9 !important;
     border: none !important;
@@ -280,7 +296,6 @@ onMounted(() => {
     background-color: #dc2626 !important;
 }
 
-/* Opacidad cuando no hay nada seleccionado */
 :deep(.p-button:disabled) {
     opacity: 0.5 !important;
 }

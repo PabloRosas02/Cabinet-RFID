@@ -13,10 +13,43 @@
   "configuracion_modal": {
     "titulo": "System Settings",
     "idioma": "Language",
-    "tema": "Design Theme",
+    "tema": "Theme",
     "tema_oscuro": "Dark",
     "tema_claro": "Light",
-    "btn_cerrar": "Close"
+    "btn_cerrar": "Close",
+    "atencion": "Attention",
+    "exito": "Success",
+    "eliminado": "Removed",
+    "destinatarios": {
+      "titulo": "Permanent Recipients (Database)",
+      "subtitulo": "Active emails in this list will automatically receive notifications and reports.",
+      "placeholder_nombre": "Name (e.g. Warehouse)",
+      "placeholder_correo": "email{at}example.com",
+      "col_nombre": "Name",
+      "col_correo": "Email",
+      "col_activo": "Active",
+      "col_acciones": "Actions",
+      "msj_correo_invalido": "Please enter a valid email address.",
+      "msj_guardado_exito": "Email successfully registered.",
+      "msj_guardado_error": "Email already exists or is invalid.",
+      "msj_eliminado": "Recipient removed."
+    },
+    "pendientes": {
+      "titulo": "Pending Returns Emails",
+      "subtitulo_cron": "Automatically sends emails if returns are pending"
+    },
+    "reporte_semanal": {
+      "titulo": "Weekly Log Report",
+      "subtitulo": "Sends an Excel file with logs from the last 7 days to active recipients",
+      "btn_enviar": "Send Report",
+      "btn_enviando": "Sending..."
+    },
+    "stock_minimo": {
+      "titulo": "Minimum Stock Alert",
+      "subtitulo": "Notifies tools reaching critical stock levels to active recipients",
+      "btn_verificar": "Check Stock",
+      "btn_verificando": "Checking..."
+    }
   },
   "modal_devolucion": {
     "titulo": "Return Review",
@@ -33,18 +66,19 @@
   },
   "tabla_devoluciones": {
     "folio_salida": "Order ID",
+    "num_orden": "Order",
+    "num_maquina": "Machine Number",
     "no_empleado": "Employee No.",
     "nombre_trabajador": "Employee Name",
+    "motivo": "Reason",
     "fecha_salida": "Loan Date",
     "estado": "Status",
     "accion": "Action",
     "buscar_placeholder": "Search by ID or employee...",
-    "mensaje_vacio": "There are no pending returns at this time.",
-    "estado_pendiente": "Pending",
+    "mensaje_vacio": "No records found",
     "btn_devolver": "Return",
-    "num_orden": "Order",
-    "num_maquina": "Machine Number",
-    "motivo": "Reason"
+    "estado_pendiente": "Pending",
+    "estado_parcial": "Partial"
   },
   "view_devoluciones": {
     "titulo": "Tool Returns",
@@ -55,22 +89,21 @@
   },
   "detalle_herramientas": {
     "titulo": "Tool Details",
-    "estado_critico": "CRITICAL",
-    "estado_alerta": "WARNING",
-    "estado_normal": "NORMAL",
-    "codigo": "Code",
-    "nombre": "Name",
-    "tipo": "Type / Category",
-    "ubicacion": "Physical Location",
-    "marca": "Brand / Supplier",
-    "stock_vs_minimo": "Current Stock vs Minimum",
-    "unidades": "units",
-    "descripcion": "Description and Notes",
+    "estado_optimo": "Optimal Stock",
+    "estado_alerta": "Critical Stock",
+    "estado_agotado": "Out of Stock",
+    "consumible": "Consumable",
     "sin_descripcion": "No additional description or notes for this tool.",
-    "no_aplica": "N/A",
-    "sin_marca": "N/B",
-    "btn_cerrar": "Close",
-    "stock_niveles": "Stock Levels (Physical / Min / Max)"
+    "categoria": "Category",
+    "marca": "Supplier / Brand",
+    "ubicacion": "Physical Location",
+    "estado_logico": "Status",
+    "seccion_stock": "Stock Level",
+    "stock_min": "Min. Stock",
+    "stock_fisico": "Physical Stock",
+    "stock_max": "Max. Stock",
+    "btn_editar": "Edit Tool",
+    "btn_cerrar": "Close"
   },
   "formulario_herramientas": {
     "titulo_editar": "Edit Tool",
@@ -93,7 +126,8 @@
     "stock_fisico": "Physical Stock",
     "btn_cancelar": "Cancel",
     "btn_guardar": "Save",
-    "stock_maximo": "Maximum Stock"
+    "stock_maximo": "Maximum Stock",
+    "es_desechable": "Is it consumable?"
   },
   "tabla_herramientas": {
     "codigo": "Code",
@@ -103,15 +137,18 @@
     "stock_min": "Min. Stock",
     "stock_max": "Max. Stock",
     "stock_fisico": "Physical Stock",
-    "mensaje_vacio": "No tools found with current filters."
+    "mensaje_vacio": "No tools found with current filters.",
+    "btn_ver_detalles": "View details",
+    "desechable": "Consumable"
   },
   "view_inventario": {
     "titulo": "Inventory Control",
+    "btn_nueva": "New Tool",
     "btn_exportar": "Export Inventory",
-    "exportar_csv": "Export to CSV",
-    "exportar_excel": "Export to Excel (.xlsx)",
+    "exportar_csv": "Export CSV",
+    "exportar_excel": "Export Excel",
     "btn_solo_alertas": "Alerts Only",
-    "btn_mostrando_todo": "Showing All",
+    "btn_mostrando_todo": "Show All",
     "btn_actualizar": "Update Inventory",
     "btn_bitacora": "Audit Log",
     "ph_buscar": "Search code, name..."
@@ -226,7 +263,19 @@
     "btn_cerrar": "Close Details",
     "accion_creacion": "CREATION",
     "accion_modificacion": "MODIFICATION",
-    "accion_eliminacion": "DELETION"
+    "accion_eliminacion": "DELETION",
+    "registro_motivo": "Reason recorded"
+  },
+  "bitacora_detalles": {
+    "stock_maximo": "Max Stock",
+    "stock_minimo": "Min Stock",
+    "stock_fisico": "Physical Stock",
+    "motivo_baja": "Reason for removal",
+    "desechable": "Consumable",
+    "desechable_si": "Yes",
+    "desechable_no": "No",
+    "registro_inicial": "Initial tool registration",
+    "importacion_masiva": "Bulk Import Registration"
   },
   "tabla_bitacora": {
     "fecha_hora": "Date / Time",
@@ -289,7 +338,11 @@
     "btn_cerrar": "Close",
     "btn_anadir": "Add to Order",
     "estado_agotado": "Sold Out",
-    "modal_stock": "Stock (Physical / Min / Max)"
+    "modal_stock": "Stock (Physical / Min / Max)",
+    "modal_titulo_detalles": "Tool Details",
+    "modal_desechable": "Is Disposable?",
+    "tag_desechable_si": "YES (CONSUMABLE)",
+    "tag_desechable_no": "NO (REUSABLE)"
   },
   "detalle_pedido": {
     "titulo": "Order Details",
@@ -367,7 +420,8 @@
     "ph_descripcion": "Additional specifications...",
     "btn_registrar": "Register Product",
     "btn_limpiar": "Clear",
-    "label_stock_maximo": "Maximum Stock"
+    "label_stock_maximo": "Maximum Stock",
+    "label_es_desechable": "Is Consumable?"
   },
   "view_nuevo_producto": {
     "titulo": "Register New Product",
@@ -492,7 +546,9 @@
     "estado_devuelto": "RETURNED",
     "accion_creacion": "CREATION",
     "accion_modificacion": "MODIFICATION",
-    "accion_eliminacion": "DELETION"
+    "accion_eliminacion": "DELETION",
+    "cantidad_maxima": "Maximum Quantity",
+    "es_desechable": "Is Consumable?"
   },
   "filtros": {
     "hoy": "Today",

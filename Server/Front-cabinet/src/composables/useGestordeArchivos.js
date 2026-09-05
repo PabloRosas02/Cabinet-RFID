@@ -1,15 +1,10 @@
-import ExcelJS from 'exceljs';
 import { useI18n } from 'vue-i18n';
 
 export function useGestorArchivos() {
     const { t, locale } = useI18n();
     
-    // =======================================================
-    // 1. Descargar CSV Genérico
-    // =======================================================
-    const generarDescarga = (nombreArchivo, cabeceras, filas) => {
-        const contenidoCSV = cabeceras.join(',') + '\n' + filas.join('\n');
-        const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+    // 1. Helper para manejar la descarga en el navegador y limpiar la memoria
+    const triggerDownload = (blob, nombreArchivo) => {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         
@@ -20,12 +15,44 @@ export function useGestorArchivos() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url); 
+    };
+
+    // 2. Helper para generar sufijos de fecha consistentes
+    const generarSufijoFecha = (filtroTiempo) => {
+        const hoy = new Date();
+        const strLocale = locale.value;
+        
+        const esHoyOTodos = ['Hoy', 'Todos', t('filtros.hoy'), t('filtros.todos')].includes(filtroTiempo);
+        const esEsteMes = ['Este Mes', t('filtros.este_mes')].includes(filtroTiempo);
+        const esEsteAno = ['Este Año', t('filtros.este_anio')].includes(filtroTiempo);
+
+        if (esHoyOTodos) {
+            return `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString(strLocale, { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}`;
+        }
+        if (esEsteMes) {
+            return `${hoy.toLocaleString(strLocale, { month: 'long' })}_${hoy.getFullYear()}`;
+        }
+        if (esEsteAno) {
+            return `${hoy.getFullYear()}`;
+        }
+        return `${t('export.semana')}_${hoy.getDate()}`;
+    };
+
+    // =======================================================
+    // 1. Descargar CSV Genérico
+    // =======================================================
+    const generarDescarga = (nombreArchivo, cabeceras, filas) => {
+        const contenidoCSV = cabeceras.join(',') + '\n' + filas.join('\n');
+        const blob = new Blob(["\uFEFF" + contenidoCSV], { type: 'text/csv;charset=utf-8;' });
+        triggerDownload(blob, nombreArchivo);
     };
 
     // =======================================================
     // 2. Descargar Excel Genérico
     // =======================================================
     const generarDescargaExcel = async (nombreArchivo, datosJson) => {
+        const { default: ExcelJS } = await import('exceljs');
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Hoja1');
         
@@ -42,16 +69,7 @@ export function useGestorArchivos() {
         
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', nombreArchivo);
-        link.style.visibility = 'hidden';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        triggerDownload(blob, nombreArchivo);
     };
 
     // =======================================================
@@ -59,9 +77,34 @@ export function useGestorArchivos() {
     // =======================================================
     const descargarPlantillaHerramientas = (formato) => {
         const nombreArchivo = t('export.plantilla_herramientas');
+        const labelEsDesechable = t('export.es_desechable');
+        const labelCantidadMaxima = t('export.cantidad_maxima');
+
         if (formato === 'csv') {
-            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.marca'), t('export.descripcion'), t('export.cantidad'), t('export.cantidad_minima'), t('export.cantidad_maxima', 'Cantidad Máxima'), t('export.tipo'), t('export.ubicacion')];
-            const filaEjemplo = ['"HERR-EJEMPLO"', `"${t('export.ejemplo_taladro')}"`, '"DeWalt"', `"${t('export.ejemplo_desc')}"`, '"5"', '"1"', '"10"', `"${t('export.ejemplo_tipo')}"`, '"Estante A"'];
+            const cabeceras = [
+                t('export.codigo'), 
+                t('export.nombre'), 
+                t('export.marca'), 
+                t('export.descripcion'), 
+                t('export.cantidad'), 
+                t('export.cantidad_minima'), 
+                labelCantidadMaxima, 
+                labelEsDesechable,
+                t('export.tipo'), 
+                t('export.ubicacion')
+            ];
+            const filaEjemplo = [
+                '"HERR-EJEMPLO"', 
+                `"${t('export.ejemplo_taladro')}"`, 
+                '"DeWalt"', 
+                `"${t('export.ejemplo_desc')}"`, 
+                '"5"', 
+                '"1"', 
+                '"10"', 
+                '"NO"',
+                `"${t('export.ejemplo_tipo')}"`, 
+                '"Estante A"'
+            ];
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, [filaEjemplo.join(',')]);
         } else {
             const datosParaExcel = [{
@@ -71,12 +114,20 @@ export function useGestorArchivos() {
                 [t('export.descripcion')]: t('export.ejemplo_desc'),
                 [t('export.cantidad')]: 5,
                 [t('export.cantidad_minima')]: 1,
-                [t('export.cantidad_maxima', 'Cantidad Máxima')]: 10,
+                [labelCantidadMaxima]: 10,
+                [labelEsDesechable]: 'NO',
                 [t('export.tipo')]: t('export.ejemplo_tipo'),
                 [t('export.ubicacion')]: 'Estante A'
             }];
             generarDescargaExcel(`${nombreArchivo}.xlsx`, datosParaExcel);
         }
+    };
+
+    // Helper para interpretar booleanos al importar
+    const parsearBooleano = (val) => {
+        if (typeof val === 'boolean') return val;
+        const texto = String(val || '').toLowerCase().trim();
+        return ['si', 'sí', 'yes', '1', 'true', 's', 'y'].includes(texto);
     };
 
     // =======================================================
@@ -117,9 +168,18 @@ export function useGestorArchivos() {
                     if (cabecera.includes('nombre') || cabecera.includes('name')) obj.nombre = valor;
                     if (cabecera.includes('marca') || cabecera.includes('brand')) obj.marca = valor;
                     if (cabecera.includes('descripcion') || cabecera.includes('description')) obj.descripcion = valor;
-                    if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) obj.cantidadMinima = valor;
-                    if (cabecera.includes('cantidadmaxima') || cabecera.includes('maxquantity')) obj.cantidadMaxima = valor;
-                    else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) obj.cantidad = valor;
+                    if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) {
+                        obj.cantidadMinima = parseInt(valor, 10) || 0;
+                    }
+                    else if (cabecera.includes('cantidadmaxima') || cabecera.includes('maxquantity')) {
+                        obj.cantidadMaxima = parseInt(valor, 10) || 0;
+                    }
+                    else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) {
+                        obj.cantidad = parseInt(valor, 10) || 0;
+                    }
+                    if (cabecera.includes('consumible') || cabecera.includes('desechable') || cabecera.includes('consumable')) {
+                        obj.esDesechable = parsearBooleano(valor);
+                    }
                     if (cabecera.includes('tipo') || cabecera.includes('type')) obj.tipo = valor;
                     if (cabecera.includes('ubicacion') || cabecera.includes('location')) obj.ubicacion = valor;
                 });
@@ -127,6 +187,7 @@ export function useGestorArchivos() {
             }
         } 
         else if (archivo.name.toLowerCase().endsWith('.xlsx')) {
+            const { default: ExcelJS } = await import('exceljs');
             const arrayBuffer = await archivo.arrayBuffer();
             const workbook = new ExcelJS.Workbook();
             await workbook.xlsx.load(arrayBuffer);
@@ -163,6 +224,9 @@ export function useGestorArchivos() {
                     if (cabecera.includes('cantidadminima') || cabecera.includes('minquantity')) obj.cantidadMinima = valor;
                     if (cabecera.includes('cantidadmaxima') || cabecera.includes('maxquantity')) obj.cantidadMaxima = valor;
                     else if (cabecera.includes('cantidad') || cabecera.includes('quantity')) obj.cantidad = valor;
+                    if (cabecera.includes('consumible') || cabecera.includes('desechable') || cabecera.includes('consumable')) {
+                        obj.esDesechable = parsearBooleano(valor);
+                    }
                     if (cabecera.includes('tipo') || cabecera.includes('type')) obj.tipo = valor;
                     if (cabecera.includes('ubicacion') || cabecera.includes('location')) obj.ubicacion = valor;
                 });
@@ -189,21 +253,11 @@ export function useGestorArchivos() {
             return;
         }
         
-        const hoy = new Date();
-        const strLocale = locale.value; 
-        
-        const esHoyOTodos = ['Hoy', 'Todos', t('filtros.hoy'), t('filtros.todos')].includes(filtroTiempo);
-        const esEsteMes = ['Este Mes', t('filtros.este_mes')].includes(filtroTiempo);
-        const esEsteAno = ['Este Año', t('filtros.este_anio')].includes(filtroTiempo);
-
-        const sufijoFecha = esHoyOTodos ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString(strLocale, { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
-                            esEsteMes ? `${hoy.toLocaleString(strLocale, { month: 'long' })}_${hoy.getFullYear()}` : 
-                            esEsteAno ? `${hoy.getFullYear()}` : `${t('export.semana')}_${hoy.getDate()}`; 
-        
+        const sufijoFecha = generarSufijoFecha(filtroTiempo);
         const nombreArchivo = `${t('export.reporte_bitacora')}_${sufijoFecha}`;
         
         const formatearFechaReporte = (fechaString) => {
-            return new Date(fechaString).toLocaleDateString(strLocale, { 
+            return new Date(fechaString).toLocaleDateString(locale.value, { 
                 year: 'numeric', month: 'short', day: 'numeric', 
                 hour: '2-digit', minute: '2-digit' 
             });
@@ -246,13 +300,22 @@ export function useGestorArchivos() {
 
         const fecha = new Date().toISOString().split('T')[0];
         const nombreArchivo = `${t('export.reporte_inventario')}_${fecha}`;
+        const labelEsDesechable = t('export.es_desechable');
 
         if (formato === 'csv') {
-            // SE AGREGÓ: t('export.stock_max')
-            const cabeceras = [t('export.codigo'), t('export.nombre'), t('export.tipo'), t('export.ubicacion'), t('export.stock_min'), t('export.stock_max', 'Stock Máx.'), t('export.stock_fisico')];
+            const cabeceras = [
+                t('export.codigo'), 
+                t('export.nombre'), 
+                t('export.tipo'), 
+                t('export.ubicacion'), 
+                t('export.stock_min'), 
+                t('export.stock_max'), 
+                t('export.stock_fisico'),
+                labelEsDesechable
+            ];
             const filas = herramientasVisibles.map(h => {
-                // SE AGREGÓ: ${h.cantidadMaxima || ''}
-                return `"${h.codigo}","${h.nombre}","${h.tipo || ''}","${h.ubicacion || ''}","${h.cantidadMinima}","${h.cantidadMaxima || ''}","${h.cantidadDisponible}"`;
+                const esConsumible = h.esDesechable ? 'SÍ' : 'NO';
+                return `"${h.codigo}","${h.nombre}","${h.tipo || ''}","${h.ubicacion || ''}","${h.cantidadMinima}","${h.cantidadMaxima || ''}","${h.cantidadDisponible}","${esConsumible}"`;
             });
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
         } 
@@ -263,8 +326,9 @@ export function useGestorArchivos() {
                 [t('export.tipo')]: h.tipo || t('export.na'),
                 [t('export.ubicacion')]: h.ubicacion || t('export.na'),
                 [t('export.stock_min')]: h.cantidadMinima,
-                [t('export.stock_max', 'Stock Máx.')]: h.cantidadMaxima || '',
-                [t('export.stock_fisico')]: h.cantidadDisponible
+                [t('export.stock_max')]: h.cantidadMaxima || '',
+                [t('export.stock_fisico')]: h.cantidadDisponible,
+                [labelEsDesechable]: h.esDesechable ? 'SÍ' : 'NO'
             }));
             generarDescargaExcel(`${nombreArchivo}.xlsx`, datosParaExcel);
         }
@@ -278,22 +342,12 @@ export function useGestorArchivos() {
             throw new Error(t('export.alerta_sin_datos'));
         }
 
-        const hoy = new Date();
-        const strLocale = locale.value;
-        
-        const esHoyOTodos = ['Hoy', 'Todos', t('filtros.hoy'), t('filtros.todos')].includes(filtroTiempo);
-        const esEsteMes = ['Este Mes', t('filtros.este_mes')].includes(filtroTiempo);
-        const esEsteAno = ['Este Año', t('filtros.este_anio')].includes(filtroTiempo);
-
-        const sufijoFecha = esHoyOTodos ? `${hoy.getDate().toString().padStart(2, '0')}_${hoy.toLocaleString(strLocale, { month: 'short' }).replace('.', '')}_${hoy.getFullYear()}` : 
-                            esEsteMes ? `${hoy.toLocaleString(strLocale, { month: 'long' })}_${hoy.getFullYear()}` : 
-                            esEsteAno ? `${hoy.getFullYear()}` : `${t('export.semana')}_${hoy.getDate()}`; 
-                            
+        const sufijoFecha = generarSufijoFecha(filtroTiempo);
         const nombreArchivo = `${t('export.reporte_historial')}_${sufijoFecha}`; 
 
         const formatFecha = (fechaString) => {
             if (!fechaString) return t('export.pendiente');
-            return new Date(fechaString).toLocaleDateString(strLocale, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            return new Date(fechaString).toLocaleDateString(locale.value, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
         };
 
         const traducirEstado = (estado) => {

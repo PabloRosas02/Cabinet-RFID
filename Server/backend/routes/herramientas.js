@@ -49,15 +49,51 @@ const obtenerUsuarioIdValido = async (req) => {
 };
 
 // =====================================================================
-// 1. GET /api/herramientas -> Obtener herramientas 
+// 1. GET /api/herramientas -> Obtener herramientas (CON PAGINACIÓN, BÚSQUEDA Y ORDENAMIENTO)
 // =====================================================================
 router.get('/', verificarToken, async (req, res) => {
     try {
-        const herramientas = await prisma.herramienta.findMany({
-            where: { estado: { not: 'DADA_DE_BAJA' } },
-            orderBy: { id: 'asc' }
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const search = req.query.search || '';
+        
+        const sortField = req.query.sortField || 'id';
+        const sortOrder = req.query.sortOrder === 'DESC' ? 'desc' : 'asc';
+
+        const skip = (page - 1) * limit;
+
+        let filtrosConsulta = { estado: { not: 'DADA_DE_BAJA' } };
+
+        if (search && search.trim() !== '') {
+            const searchClean = search.trim();
+
+            filtrosConsulta.OR = [
+                { codigo: { contains: searchClean, mode: 'insensitive' } },
+                { nombre: { contains: searchClean, mode: 'insensitive' } },
+                { marca: { contains: searchClean, mode: 'insensitive' } },
+                { ubicacion: { contains: searchClean, mode: 'insensitive' } },
+                { tipo: { contains: searchClean, mode: 'insensitive' } }
+            ];
+        }
+
+        // Construir objeto de orden dinámico para Prisma
+        const orderBy = {};
+        orderBy[sortField] = sortOrder;
+
+        const [total, herramientas] = await prisma.$transaction([
+            prisma.herramienta.count({ where: filtrosConsulta }),
+            prisma.herramienta.findMany({
+                where: filtrosConsulta,
+                skip,
+                take: limit,
+                orderBy: orderBy 
+            })
+        ]);
+
+        res.json({ 
+            data: herramientas, 
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) } 
         });
-        res.json(herramientas);
     } catch (error) {
         console.error("Error al obtener herramientas:", error);
         res.status(500).json({ error: "Error interno del servidor al obtener herramientas." });
@@ -65,18 +101,89 @@ router.get('/', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 1.5 GET /api/herramientas/bitacora -> Historial 
+// 1.5 GET /api/herramientas/bitacora -> Historial (CON PAGINACIÓN Y FILTROS)
 // =====================================================================
 router.get('/bitacora', verificarToken, async (req, res) => {
     try {
-        const historial = await prisma.historialHerramienta.findMany({
-            include: {
-                herramienta: true, 
-                usuario: true      
-            },
-            orderBy: { fecha: 'desc' } 
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        
+        // 1. Normalizar parámetros recibidos desde el Frontend (soporta 'busqueda' o 'search')
+        const search = req.query.busqueda || req.query.search || '';
+        const accion = req.query.accion;
+        const tiempo = req.query.tiempo;
+        const skip = (page - 1) * limit;
+
+        let dondeCondiciones = [];
+
+        // 2. Filtro de búsqueda por texto 
+        if (search) {
+            // Normalizamos el texto ingresado
+            const searchTrimmed = search.trim();
+
+            dondeCondiciones.push({
+                OR: [
+                    { herramienta: { nombre: { contains: searchTrimmed } } },
+                    { herramienta: { codigo: { contains: searchTrimmed } } },
+                    { usuario: { nombre: { contains: searchTrimmed } } },
+                    { detalle: { contains: searchTrimmed } }
+                ]
+            });
+        }
+
+        // 3. Filtro por tipo de acción (CREACION, MODIFICACION, ELIMINACION)
+        if (accion && accion !== 'Todas') {
+            dondeCondiciones.push({ accion: accion });
+        }
+
+        // 4. Filtro por rango de tiempo
+        if (tiempo && tiempo !== 'Todos') {
+            const ahora = new Date();
+            let fechaInicio;
+
+            if (tiempo === 'Hoy') {
+                fechaInicio = new Date(ahora.setHours(0, 0, 0, 0));
+            } else if (tiempo === 'Esta Semana') {
+                const diaSemana = ahora.getDay();
+                fechaInicio = new Date(ahora.setDate(ahora.getDate() - diaSemana));
+                fechaInicio.setHours(0, 0, 0, 0);
+            } else if (tiempo === 'Este Mes') {
+                fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth(), 1);
+            } else if (tiempo === 'Este Año') {
+                fechaInicio = new Date(ahora.getFullYear(), 0, 1);
+            }
+
+            if (fechaInicio) {
+                dondeCondiciones.push({ fecha: { gte: fechaInicio } });
+            }
+        }
+
+        const filtrosConsulta = dondeCondiciones.length > 0 ? { AND: dondeCondiciones } : {};
+
+        // 5. Ejecución sincrónica de conteo total e historial paginado
+        const [total, historial] = await prisma.$transaction([
+            prisma.historialHerramienta.count({ where: filtrosConsulta }),
+            prisma.historialHerramienta.findMany({
+                where: filtrosConsulta,
+                skip,
+                take: limit,
+                include: {
+                    herramienta: true, 
+                    usuario: true      
+                },
+                orderBy: { fecha: 'desc' } 
+            })
+        ]);
+
+        res.json({ 
+            data: historial, 
+            meta: { 
+                total, 
+                page, 
+                limit, 
+                totalPages: Math.ceil(total / limit) 
+            } 
         });
-        res.json(historial);
     } catch (error) {
         console.error("Error al obtener bitácora de herramientas:", error);
         res.status(500).json({ error: "Error al obtener el historial de movimientos." });
@@ -90,7 +197,7 @@ router.post('/', verificarToken, async (req, res) => {
     try {
         const { 
             codigo, nombre, tipo, ubicacion, marca, 
-            descripcion, cantidadMinima, cantidadMaxima, cantidadDisponible, cantidad, imagen
+            descripcion, cantidadMinima, cantidadMaxima, cantidadDisponible, cantidad, imagen, esDesechable
         } = req.body;
 
         const usuarioBdId = await obtenerUsuarioIdValido(req);
@@ -102,13 +209,14 @@ router.post('/', verificarToken, async (req, res) => {
 
         const cantMinimaNum = parseInt(cantidadMinima, 10) || 0;
         const cantMaximaNum = parseInt(cantidadMaxima, 10) || 0; 
+        const esDesechableBool = esDesechable === true || esDesechable === 'true';
 
         let cantDisp = parseInt(cantidadDisponible, 10);
         let cantTot = parseInt(cantidad, 10);
-        
+
         if (isNaN(cantDisp)) cantDisp = 0;
         if (isNaN(cantTot)) cantTot = 0;
-        
+
         const stockInicial = (cantidadDisponible !== undefined) ? cantDisp : cantTot;
 
         if (cantMaximaNum > 0 && stockInicial > cantMaximaNum) {
@@ -129,6 +237,7 @@ router.post('/', verificarToken, async (req, res) => {
                     cantidadMaxima: cantMaximaNum,
                     cantidadDisponible: stockInicial,
                     cantidad: stockInicial,
+                    esDesechable: esDesechableBool,
                     estado: 'ACTIVA' 
                 }
             });
@@ -138,7 +247,7 @@ router.post('/', verificarToken, async (req, res) => {
                     accion: 'CREACION',
                     herramientaId: herramienta.id,
                     usuarioId: usuarioBdId,
-                    detalle: `Registro inicial de la herramienta. Stock inicial: ${stockInicial}`
+                    detalle: `Registro inicial. Stock: ${stockInicial} | Desechable: ${esDesechableBool ? 'Sí' : 'No'}`
                 }
             });
 
@@ -166,7 +275,7 @@ router.put('/:id', verificarToken, async (req, res) => {
         const { id } = req.params;
         const { 
             codigo, nombre, tipo, ubicacion, marca, 
-            descripcion, cantidadMinima, cantidadMaxima, cantidad, cantidadDisponible, imagen 
+            descripcion, cantidadMinima, cantidadMaxima, cantidad, cantidadDisponible, imagen, esDesechable 
         } = req.body;
 
         const usuarioBdId = await obtenerUsuarioIdValido(req);
@@ -195,6 +304,10 @@ router.put('/:id', verificarToken, async (req, res) => {
                 dataToUpdate.imagen = imagen || null;
             }
 
+            if (esDesechable !== undefined) {
+                dataToUpdate.esDesechable = esDesechable === true || esDesechable === 'true';
+            }
+
             const valorMinimo = cantidadMinima ?? herramientaVieja.cantidadMinima;
             if (valorMinimo !== undefined && valorMinimo !== null && valorMinimo !== '') {
                 dataToUpdate.cantidadMinima = parseInt(valorMinimo, 10) || 0;
@@ -208,36 +321,28 @@ router.put('/:id', verificarToken, async (req, res) => {
             const nuevaDispRecibida = parseInt(cantidadDisponible, 10);
             const nuevaCantRecibida = parseInt(cantidad, 10);
 
-            // 1. Calculamos cuántas piezas están prestadas actualmente
             const unidadesPrestadas = herramientaVieja.cantidad - herramientaVieja.cantidadDisponible;
 
             let nuevaCantidadTotal = herramientaVieja.cantidad;
             let nuevaCantidadDisponible = herramientaVieja.cantidadDisponible;
 
-            // 2. Ajustamos las cantidades basándonos en el campo del frontend
             if (!isNaN(nuevaDispRecibida)) {
-                // Si editas el "Stock Físico", ese es tu nuevo disponible.
                 nuevaCantidadDisponible = nuevaDispRecibida;
-                // El Total se recalcula sumando el físico + lo que está afuera.
                 nuevaCantidadTotal = nuevaCantidadDisponible + unidadesPrestadas; 
             } else if (!isNaN(nuevaCantRecibida)) {
-                // Por si acaso alguna vez decides enviar el "Total" directamente.
                 nuevaCantidadTotal = nuevaCantRecibida;
                 nuevaCantidadDisponible = nuevaCantidadTotal - unidadesPrestadas;
             }
 
-            // 3. Validar que no haya números negativos por error
             if (nuevaCantidadDisponible < 0) {
                 throw new Error(`VALIDATION_ERROR: Error matemático. El stock disponible resultante sería menor a 0.`);
             }
 
-            // 4. Validar contra el máximo usando el TOTAL real
             const maxFinal = dataToUpdate.cantidadMaxima ?? herramientaVieja.cantidadMaxima;
             if (maxFinal > 0 && nuevaCantidadTotal > maxFinal) {
-                throw new Error(`VALIDATION_ERROR: Al sumar las ${unidadesPrestadas} unidad(es) prestada(s) a tu stock físico, el total general (${nuevaCantidadTotal}) superaría la cantidad máxima permitida (${maxFinal}).`);
+                throw new Error(`VALIDATION_ERROR: Al sumar las ${unidadesPrestadas} unidad(es) prestada(s), el total general (${nuevaCantidadTotal}) superaría la cantidad máxima (${maxFinal}).`);
             }
 
-            // 5. Asignamos los valores correctos para actualizar
             dataToUpdate.cantidad = nuevaCantidadTotal;
             dataToUpdate.cantidadDisponible = nuevaCantidadDisponible;
 
@@ -245,9 +350,10 @@ router.put('/:id', verificarToken, async (req, res) => {
             const camposAComparar = [
                 { key: 'codigo', label: 'Código' },
                 { key: 'nombre', label: 'Nombre' },
-                { key: 'tipo', label: 'Tipo / Categoría' },
+                { key: 'tipo', label: 'Categoría' },
                 { key: 'ubicacion', label: 'Ubicación' },
                 { key: 'marca', label: 'Marca' },
+                { key: 'esDesechable', label: 'Desechable' },
                 { key: 'cantidadMinima', label: 'Stock Mínimo' },
                 { key: 'cantidadMaxima', label: 'Stock Máximo' }, 
                 { key: 'cantidadDisponible', label: 'Stock Físico' } 
@@ -255,8 +361,17 @@ router.put('/:id', verificarToken, async (req, res) => {
 
             camposAComparar.forEach(campo => {
                 if (dataToUpdate[campo.key] !== undefined) {
-                    const valorViejo = sanitizarTexto(herramientaVieja[campo.key]);
-                    const valorNuevo = sanitizarTexto(dataToUpdate[campo.key]);
+                    let valorViejo = herramientaVieja[campo.key];
+                    let valorNuevo = dataToUpdate[campo.key];
+
+                    if (typeof valorViejo === 'boolean') {
+                        valorViejo = valorViejo ? 'Sí' : 'No';
+                        valorNuevo = valorNuevo ? 'Sí' : 'No';
+                    } else {
+                        valorViejo = sanitizarTexto(valorViejo);
+                        valorNuevo = sanitizarTexto(valorNuevo);
+                    }
+
                     if (valorViejo !== valorNuevo && valorNuevo !== '') {
                         detallesCambio.push(`${campo.label}: ${valorViejo} ➔ ${valorNuevo}`);
                     }
@@ -296,7 +411,7 @@ router.put('/:id', verificarToken, async (req, res) => {
             return res.status(400).json({ error: "El código ingresado ya pertenece a otra herramienta." });
         }
         console.error("Error al actualizar herramienta:", error);
-        res.status(500).json({ error: "Error BD: " + (error.message ? error.message.substring(0, 150) : "Fallo desconocido al actualizar.") });
+        res.status(500).json({ error: "Error BD: " + (error.message ? error.message.substring(0, 150) : "Fallo desconocido.") });
     }
 });
 
@@ -317,7 +432,6 @@ router.delete('/:id', verificarToken, async (req, res) => {
             return res.status(400).json({ error: "Debe seleccionar un motivo de baja." });
         }
 
-        // Construimos el desglose limpio para la bitácora
         let detalleMotivo = `Motivo de baja: ${motivo}`;
         if (motivo.toLowerCase() === 'otro') {
             if (!motivoOtro || motivoOtro.trim() === '') {
@@ -328,11 +442,6 @@ router.delete('/:id', verificarToken, async (req, res) => {
 
         const herramientaId = parseInt(id, 10);
 
-        // -------------------------------------------------------------------------
-        // VALIDACIONES ANTES DE DAR DE BAJA
-        // -------------------------------------------------------------------------
-        
-        // 1. Validar por stock (Rápido)
         const herramienta = await prisma.herramienta.findUnique({
             where: { id: herramientaId }
         });
@@ -347,7 +456,6 @@ router.delete('/:id', verificarToken, async (req, res) => {
             });
         }
 
-        // 2. Validar relacionalmente por salidas pendientes (Estricto / A prueba de fallos)
         const salidaPendiente = await prisma.detalleSalida.findFirst({
             where: {
                 herramientaId: herramientaId,
@@ -363,7 +471,6 @@ router.delete('/:id', verificarToken, async (req, res) => {
             });
         }
 
-        // Si pasa las validaciones, ejecutamos la transacción de baja
         await prisma.$transaction(async (tx) => {
             await tx.herramienta.update({
                 where: { id: herramientaId },
@@ -453,6 +560,8 @@ router.post('/importar', verificarToken, async (req, res) => {
                         continue;
                     }
                     
+                    const esDesechableBool = item.esDesechable === true || item.esDesechable === 'true' || item.esDesechable === 'Sí';
+
                     const nuevaHerramienta = await tx.herramienta.create({
                         data: {
                             codigo: item.codigo,
@@ -465,6 +574,7 @@ router.post('/importar', verificarToken, async (req, res) => {
                             cantidadMaxima: cantidadMaxima, 
                             tipo: item.tipo || null,
                             ubicacion: item.ubicacion || null,
+                            esDesechable: esDesechableBool, 
                             estado: 'ACTIVA'
                         }
                     });

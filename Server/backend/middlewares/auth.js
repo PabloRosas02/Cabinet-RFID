@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 
 const getSecretKey = () => {
-  const secret = process.env.JWT_SECRET || 'FirmaSecretaCrissair2026';
+  const secret = process.env.JWT_SECRET;
   if (!secret) {
     throw new Error('CRÍTICO: La variable de entorno JWT_SECRET no está configurada.');
   }
@@ -9,41 +9,37 @@ const getSecretKey = () => {
 };
 
 export const generateToken = (payload, expiresIn = '8h') => {
-  if (!payload || typeof payload !== 'object') {
-    throw new Error('El payload debe ser un objeto válido.');
-  }
-
-  return jwt.sign(payload, getSecretKey(), { expiresIn });
+    return jwt.sign(payload, getSecretKey(), { expiresIn });
 };
 
 export const extractTokenFromHeader = (req) => {
-  const authHeader = req?.headers?.['authorization'] || req?.headers?.['Authorization'];
+    // Node.js automáticamente convierte las cabeceras a minúsculas, pero esta doble validación es segura
+    const authHeader = req?.headers?.['authorization'] || req?.headers?.['Authorization'];
 
-  if (!authHeader || typeof authHeader !== 'string') {
+    if (!authHeader || typeof authHeader !== 'string') {
+        return null;
+    }
+
+    const [scheme, token] = authHeader.split(' ');
+
+    // Valida que el esquema sea estricto 'Bearer' y exista el token
+    if (/^Bearer$/i.test(scheme) && token) {
+        return token;
+    }
+
     return null;
-  }
-
-  const [scheme, token] = authHeader.split(' ');
-
-  // Valida que el esquema sea estricto 'Bearer' y exista el token
-  if (/^Bearer$/i.test(scheme) && token) {
-    return token;
-  }
-
-  return null;
 };
 
 export const validateToken = (token) => {
-  if (!token) {
-    throw new Error('Token no proporcionado.');
-  }
-
-  return jwt.verify(token, getSecretKey());
+    if (!token) {
+        throw new Error('Token no proporcionado.');
+    }
+    return jwt.verify(token, getSecretKey());
 };
 
 export const verificarToken = (req, res, next) => {
-  // 1. Obtener el token
-  const token = extractTokenFromHeader(req);
+    // 1. Obtener el token
+    const token = extractTokenFromHeader(req);
 
   if (!token) {
     return res.status(401).json({ error: 'Acceso denegado. Se requiere iniciar sesión.' });
@@ -64,4 +60,14 @@ export const verificarToken = (req, res, next) => {
 
     return res.status(403).json({ error: message });
   }
+};
+
+export const verificarAdmin = (req, res, next) => {
+  // Se asume que req.user ya fue inyectado por 'verificarToken'
+  if (!req.user || req.user.rol !== 'ADMINISTRADOR') {
+    return res.status(403).json({ 
+      error: 'Acceso denegado. Se requieren permisos de Administrador.' 
+    });
+  }
+  next();
 };

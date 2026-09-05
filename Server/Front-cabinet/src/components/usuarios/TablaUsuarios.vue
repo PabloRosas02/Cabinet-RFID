@@ -33,20 +33,19 @@ const getSeverityRol = (rol) => {
     }
 };
 
-// =====================================================
-// DEFINICIÓN DINÁMICA DE COLUMNAS
-// =====================================================
+// DEFINICIÓN DINÁMICA DE COLUMNAS ACTUALIZADA
 const columnasUsuarios = computed(() => {
     const cols = [
-        { field: 'numTrabajador', header: t('tabla_usuarios.col_empleado'), sortable: true, width: '15%', minWidth: '140px', slotName: 'numTrabajador' },
-        { field: 'nombre', header: t('tabla_usuarios.col_nombre'), sortable: true, width: '25%', minWidth: '220px', slotName: 'nombre' },
-        { field: 'depart', header: t('tabla_usuarios.col_departamento'), sortable: true, width: '15%', minWidth: '160px' },
-        { field: 'rol', header: t('tabla_usuarios.col_rol'), width: '15%', minWidth: '200px', slotName: 'rol' }
+        { field: 'numTrabajador', header: t('tabla_usuarios.col_empleado'), sortable: true, width: '10%', minWidth: '120px', slotName: 'numTrabajador' },
+        { field: 'nombre', header: t('tabla_usuarios.col_nombre'), sortable: true, width: '20%', minWidth: '180px', slotName: 'nombre' },
+        { field: 'correo', header: 'Correo Electrónico', sortable: true, width: '20%', minWidth: '180px', slotName: 'correo' },
+        { field: 'telefono', header: 'Teléfono', width: '12%', minWidth: '130px', slotName: 'telefono' },
+        { field: 'depart', header: t('tabla_usuarios.col_departamento'), sortable: true, width: '13%', minWidth: '140px' },
+        { field: 'rol', header: t('tabla_usuarios.col_rol'), width: '15%', minWidth: '160px', slotName: 'rol' }
     ];
 
-    // La columna de acciones solo se inyecta si es administrador
     if (props.rolLogueado === 'ADMINISTRADOR') {
-        cols.push({ header: t('tabla_usuarios.col_acciones'), width: '15%', minWidth: '120px', slotName: 'acciones' });
+        cols.push({ header: t('tabla_usuarios.col_acciones'), width: '10%', minWidth: '110px', slotName: 'acciones' });
     }
 
     return cols;
@@ -58,31 +57,40 @@ const columnasUsuarios = computed(() => {
         :datos="usuarios"
         :columnas="columnasUsuarios"
         :filtros="filtros"
-        :globalFilterFields="['nombre', 'numTrabajador', 'depart']"
+        :globalFilterFields="['nombre', 'numTrabajador', 'depart', 'correo', 'telefono', 'tarjetaRfid']"
         llaveMemoria="usuarios_sistema"
         dataKey="id"
         iconoVacio="pi-users"
         :mensajeVacio="t('tabla_usuarios.mensaje_vacio')"
     >
-        <!-- Slot Personalizado: No. Empleado -->
+        <!-- Slot: No. Empleado -->
         <template #numTrabajador="{ data }">
             <span class="font-bold">{{ data.numTrabajador }}</span>
         </template>
 
-        <!-- Slot Personalizado: Nombre -->
+        <!-- Slot: Nombre -->
         <template #nombre="{ data }">
             <span>{{ data.nombre }}</span>
         </template>
 
-        <!-- Slot Personalizado: Rol -->
-        <template #rol="{ data }">
-            <Tag :value="data.rol.replace('_', ' ')" :severity="getSeverityRol(data.rol)" class="px-3 py-1 font-bold" />
+        <!-- Slot: Correo -->
+        <template #correo="{ data }">
+            <span class="text-sm">{{ data.correo || '-' }}</span>
         </template>
 
-        <!-- Slot Personalizado: Acciones -->
+        <!-- Slot: Teléfono -->
+        <template #telefono="{ data }">
+            <span class="text-sm">{{ data.telefono || '-' }}</span>
+        </template>
+
+        <!-- Slot: Rol -->
+        <template #rol="{ data }">
+            <Tag :value="data.rol ? data.rol.replace('_', ' ') : ''" :severity="getSeverityRol(data.rol)" class="px-2 py-1 font-bold text-xs" />
+        </template>
+
+        <!-- Slot: Acciones -->
         <template #acciones="{ data }">
             <div class="action-buttons flex gap-2">
-                <!-- Usamos las clases globales btn-accion y aplicamos la traducción al tooltip -->
                 <Button 
                     icon="pi pi-pencil" 
                     class="p-button-rounded btn-accion p-button-info" 

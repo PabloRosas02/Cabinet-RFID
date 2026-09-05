@@ -9,6 +9,7 @@ import { FilterMatchMode } from '@primevue/core/api';
 import TablaGenerica from '@/components/TablaGenerica.vue';
 import { useI18n } from 'vue-i18n';
 import { formatearFecha } from '@/utils/dateHelper';
+import { useMotivoTraductor } from '@/utils/formatters';
 
 const props = defineProps({
     salidas: {
@@ -23,6 +24,7 @@ const props = defineProps({
 
 const emit = defineEmits(['revisar']);
 const { t, locale } = useI18n();
+const { obtenerMotivoTraducido } = useMotivoTraductor();
 
 // =========================================================
 // LÓGICA RESPONSIVA DINÁMICA
@@ -43,7 +45,7 @@ const columnasSalidas = computed(() => [
     { field: 'id', header: t('tabla_devoluciones.folio_salida'), width: esMovil.value ? undefined : '8%', minWidth: '90px', slotName: 'folio' },
     { field: 'numeroOrden', header: t('tabla_devoluciones.num_orden'), width: esMovil.value ? undefined : '10%', minWidth: '110px' },
     { field: 'numeroMaquina', header: t('tabla_devoluciones.num_maquina'), width: esMovil.value ? undefined : '10%', minWidth: '110px' },
-    { field: 'trabajadorNumero', header: t('tabla_devoluciones.no_empleado'), width: esMovil.value ? undefined : '10%', minWidth: '120px' },
+    { field: 'trabajadorNumero', header: t('tabla_devoluciones.no_empleado'), width: esMovil.value ? undefined : '12%', minWidth: '120px' },
     { field: 'trabajadorNombre', header: t('tabla_devoluciones.nombre_trabajador'), width: esMovil.value ? undefined : '16%', minWidth: '180px' },
     { field: 'motivo', header: t('tabla_devoluciones.motivo', 'Motivo'), width: esMovil.value ? undefined : '14%', minWidth: '150px', slotName: 'motivo' },
     { field: 'fechaSalida', header: t('tabla_devoluciones.fecha_salida'), width: esMovil.value ? undefined : '12%', minWidth: '140px', slotName: 'fecha' },
@@ -54,6 +56,39 @@ const columnasSalidas = computed(() => [
 const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
+
+// =========================================================
+// CALCULADOR DE ESTADO PARCIAL VS PENDIENTE TRADUCIDO
+// =========================================================
+const obtenerInfoEstado = (data) => {
+    if (!data || !data.herramientas) {
+        return { texto: t('tabla_devoluciones.estado_pendiente', 'Pending'), color: 'bg-red-500', severity: 'danger' };
+    }
+    
+    let totalPrestadas = 0;
+    let totalRegresadas = 0;
+    
+    data.herramientas.forEach(h => {
+        totalPrestadas += h.cantidadPrestada;
+        totalRegresadas += (h.cantidadRegresada || 0);
+    });
+
+    if (totalRegresadas > 0 && totalRegresadas < totalPrestadas) {
+        // Traducción dinámica según el idioma activo
+        const textoParcial = t('tabla_devoluciones.estado_parcial', 'Partial');
+        return { 
+            texto: `${textoParcial} (${totalRegresadas}/${totalPrestadas})`, 
+            color: 'bg-orange-500', 
+            severity: 'warning' 
+        };
+    }
+
+    return { 
+        texto: t('tabla_devoluciones.estado_pendiente', 'Pending'), 
+        color: 'bg-red-500', 
+        severity: 'danger' 
+    };
+};
 </script>
 
 <template>
@@ -90,10 +125,10 @@ const filtros = ref({
                 <span class="font-bold text-400">#{{ data.id }}</span>
             </template>
 
-            <!-- Slot Personalizado: Motivo -->
+            <!-- Slot Personalizado: Motivo Dinámico reutilizando formatters.js -->
             <template #motivo="{ data }">
-                <span class="capitalize">
-                    {{ data.motivo && data.motivo.toLowerCase() === 'otro' && data.motivoOtro ? `Otro: ${data.motivoOtro}` : (data.motivo || 'N/A') }}
+                <span>
+                    {{ obtenerMotivoTraducido(data.motivo, data.motivoOtro) }}
                 </span>
             </template>
 
@@ -101,9 +136,15 @@ const filtros = ref({
                 {{ formatearFecha(data.fechaSalida, locale) }}
             </template>
 
-            <!-- Slot Personalizado: Estado -->
-            <template #estado>
-                <Tag severity="danger" :value="t('tabla_devoluciones.estado_pendiente')" class="px-3 py-1 bg-red-500 text-white font-bold" style="border-radius: 4px;" />
+            <!-- Slot Personalizado: Estado Dinámico -->
+            <template #estado="{ data }">
+                <Tag 
+                    :severity="obtenerInfoEstado(data).severity" 
+                    :value="obtenerInfoEstado(data).texto" 
+                    class="px-3 py-1 text-white font-bold" 
+                    :class="obtenerInfoEstado(data).color"
+                    style="border-radius: 4px;" 
+                />
             </template>
 
             <!-- Slot Personalizado: Acción -->
@@ -128,8 +169,5 @@ const filtros = ref({
 }
 .btn-accion-devolver:hover { 
     background-color: #2563eb !important; 
-}
-.capitalize {
-    text-transform: capitalize;
 }
 </style>

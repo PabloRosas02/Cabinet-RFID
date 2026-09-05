@@ -4,6 +4,7 @@ import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputNumber from 'primevue/inputnumber';
 import { useI18n } from 'vue-i18n';
+import { useMotivoTraductor } from '@/utils/formatters';
 
 const props = defineProps({
     mostrar: Boolean,
@@ -13,6 +14,7 @@ const props = defineProps({
 
 const emit = defineEmits(['cerrar', 'confirmar']);
 const { t } = useI18n();
+const { obtenerMotivoTraducido } = useMotivoTraductor();
 
 const pedidoLocal = ref(null);
 
@@ -20,7 +22,7 @@ watch(() => props.pedido, (nuevoPedido) => {
     if (nuevoPedido) {
         pedidoLocal.value = { 
             ...nuevoPedido,
-            herramientas: nuevoPedido.herramientas.map(h => ({
+            herramientas: (nuevoPedido.herramientas || []).map(h => ({
                 ...h,
                 cantidadARegresar: h.cantidadPrestada - (h.cantidadRegresada || 0)
             }))
@@ -34,6 +36,22 @@ const totalHerramientasARegresar = computed(() => {
         return total + (item.cantidadARegresar || 0);
     }, 0);
 });
+
+const confirmarDevolucion = () => {
+    if (!pedidoLocal.value) return;
+
+    const herramientasDevueltas = pedidoLocal.value.herramientas
+        .filter(item => item.cantidadARegresar > 0)
+        .map(item => ({
+            detalleId: item.detalleId,
+            cantidad: item.cantidadARegresar
+        }));
+
+    emit('confirmar', {
+        salidaId: pedidoLocal.value.id,
+        payload: { herramientasDevueltas }
+    });
+};
 </script>
 
 <template>
@@ -48,7 +66,6 @@ const totalHerramientasARegresar = computed(() => {
         dismissableMask
     >
         <div v-if="pedidoLocal" class="p-2 md:p-3">
-            <!-- Contenedor del encabezado adaptativo -->
             <div class="mb-4 p-3 border-round surface-ground border-1 surface-border text-color">
                 <p class="m-0 mb-2">
                     <span class="text-500 font-bold">{{ t('modal_devolucion.empleado') }}</span> 
@@ -60,17 +77,14 @@ const totalHerramientasARegresar = computed(() => {
                 </p>
                 <p class="m-0 capitalize">
                     <span class="text-500 font-bold">{{ t('tabla_devoluciones.motivo', 'Motivo') }}:</span> 
-                    {{ pedidoLocal.motivo === 'otro' && pedidoLocal.motivoOtro ? `Otro (${pedidoLocal.motivoOtro})` : (pedidoLocal.motivo || 'N/A') }}
+                    {{ obtenerMotivoTraducido(pedidoLocal.motivo, pedidoLocal.motivoOtro) }}
                 </p>
             </div>
 
             <h3 class="text-lg font-bold mb-3" style="color: #5ab1ce;">{{ t('modal_devolucion.herramientas_regresar') }}</h3>
             
             <ul class="lista-herramientas p-0 m-0">
-                <!-- Ítem de la lista adaptativo -->
                 <li v-for="item in pedidoLocal.herramientas" :key="item.detalleId" class="flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center p-3 mb-2 border-round surface-card border-1 surface-border gap-3 text-color">
-                    
-                    <!-- Info de la herramienta -->
                     <div class="flex-1 min-w-0 pr-0 sm:pr-3 w-full">
                         <span class="font-bold block text-lg white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ item.nombre }}</span>
                         <span class="text-sm text-500 block mt-1">
@@ -82,7 +96,6 @@ const totalHerramientasARegresar = computed(() => {
                         </span>
                     </div>
                     
-                    <!-- Control de cantidad -->
                     <div class="flex-shrink-0 flex flex-column align-items-start sm:align-items-end w-full sm:w-auto">
                         <label class="text-xs text-400 mb-1">{{ t('modal_devolucion.cantidad_devolver') }}</label>
                         <InputNumber 
@@ -116,7 +129,7 @@ const totalHerramientasARegresar = computed(() => {
                     :label="t('modal_devolucion.btn_confirmar')" 
                     icon="pi pi-check" 
                     class="btn-registrar w-full sm:w-auto" 
-                    @click="emit('confirmar', pedidoLocal)" 
+                    @click="confirmarDevolucion" 
                     :loading="procesando" 
                     :disabled="procesando || totalHerramientasARegresar === 0"
                 />
@@ -134,12 +147,8 @@ const totalHerramientasARegresar = computed(() => {
 .btn-limpiar:hover:not(:disabled) { background-color: #3f4b5b !important; }
 
 .lista-herramientas { list-style: none; overflow-x: hidden; }
-
 .capitalize { text-transform: capitalize; }
 
-/* =======================================================
-   CORRECCIÓN DEL BUG DEL INPUT NUMBER
-   ======================================================= */
 :deep(.input-devolucion) { 
     width: 120px !important; 
     display: inline-flex !important;
@@ -148,10 +157,6 @@ const totalHerramientasARegresar = computed(() => {
     width: 100% !important; 
     text-align: center; 
     padding: 0.5rem; 
-}
-:deep(.input-devolucion .p-inputnumber-button) { 
-    /* Colores dinámicos manejados por el componente nativo de PrimeVue si eliminas el fondo forzado aquí. 
-       Para mejor adaptabilidad, se quitan los !important de fondo de los botones del input. */
 }
 
 @media (max-width: 575px) {

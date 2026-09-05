@@ -1,34 +1,47 @@
 <script setup>
+import { computed } from 'vue';
 import Dialog from 'primevue/dialog';
 import Tag from 'primevue/tag';
 import Button from 'primevue/button';
-import { useI18n } from 'vue-i18n'; 
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
-    visible: Boolean,
-    herramienta: Object
+    visible: {
+        type: Boolean,
+        default: false
+    },
+    herramienta: {
+        type: Object,
+        default: null
+    }
 });
 
-const emit = defineEmits(['update:visible', 'agregar-orden']);
+const emit = defineEmits(['update:visible', 'editar']);
 
 const { t } = useI18n();
 
 const cerrar = () => emit('update:visible', false);
-const agregarAOrden = () => emit('agregar-orden', props.herramienta);
 
-const obtenerSeveridadStock = (h) => {
-    if (!h) return 'success';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'danger';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'warning';
-    return 'success';
-};
+const stockFisico = computed(() => props.herramienta?.cantidadDisponible ?? props.herramienta?.stockFisico ?? 0);
+const stockMinimo = computed(() => props.herramienta?.cantidadMinima ?? props.herramienta?.stockMinimo ?? 0);
+const stockMaximo = computed(() => props.herramienta?.cantidadMaxima ?? props.herramienta?.stockMaximo ?? 0);
+const tipoCategoria = computed(() => props.herramienta?.tipo ?? props.herramienta?.category ?? '-');
+const codigo = computed(() => props.herramienta?.codigo ?? props.herramienta?.code ?? '-');
+const nombre = computed(() => props.herramienta?.nombre ?? props.herramienta?.name ?? '-');
 
-const obtenerTextoStock = (h) => {
-    if (!h) return '';
-    if (h.cantidadDisponible < h.cantidadMinima) return t('detalle_herramientas.estado_critico');
-    if (h.cantidadDisponible === h.cantidadMinima) return t('detalle_herramientas.estado_alerta');
-    return t('detalle_herramientas.estado_normal');
-};
+const getEstadoStock = computed(() => {
+    if (!props.herramienta) return { label: t('detalle_herramientas.estado_optimo'), severity: 'success' };
+    const disponible = stockFisico.value;
+    const minimo = stockMinimo.value;
+
+    if (disponible <= 0 || disponible < minimo) {
+        return { label: t('detalle_herramientas.estado_agotado'), severity: 'danger' };
+    }
+    if (disponible === minimo) {
+        return { label: t('detalle_herramientas.estado_alerta'), severity: 'warn' };
+    }
+    return { label: t('detalle_herramientas.estado_optimo'), severity: 'success' };
+});
 </script>
 
 <template>
@@ -36,183 +49,145 @@ const obtenerTextoStock = (h) => {
     :visible="visible" 
     @update:visible="(val) => emit('update:visible', val)"
     :style="{ width: '600px' }" 
-    :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }" 
+    :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
     :header="t('detalle_herramientas.titulo')" 
-    :modal="true"
+    :modal="true" 
+    class="modal-oscuro" 
     dismissableMask
-    class="modal-oscuro-primeflex"
   >
-    <div v-if="herramienta" class="pt-2 pb-1 px-2 md:px-3">
-      
-      <!-- Imagen y Badge -->
-      <div class="flex flex-column align-items-center mb-5">
+    <div v-if="herramienta" class="flex flex-column gap-3 pt-2">
+      <!-- Encabezado Principal -->
+      <div class="flex flex-column sm:flex-row align-items-center sm:align-items-start gap-3 p-3 border-round contenedor-resumen">
+        <div class="flex-shrink-0">
           <img 
             v-if="herramienta.imagen" 
             :src="herramienta.imagen" 
-            @error="$event.target.src='https://via.placeholder.com/150x150/1e252d/ffffff?text=Error'"
-            class="border-round" 
-            style="width: 150px; height: 150px; object-fit: cover;" 
+            :alt="nombre"
+            class="shadow-2 border-round object-cover" 
+            style="width: 90px; height: 90px;" 
           />
-          <div v-else class="flex align-items-center justify-content-center border-round fondo-imagen-vacia" style="width: 150px; height: 150px;">
-              <i class="pi pi-image text-5xl icono-vacio"></i>
+          <div v-else class="flex align-items-center justify-content-center border-round fondo-imagen-vacia" style="width: 90px; height: 90px;">
+            <i class="pi pi-box text-4xl icono-vacio"></i>
           </div>
-          
-          <div class="mt-4">
-              <Tag class="text-sm font-bold px-3 py-2 uppercase tracking-wide" :severity="obtenerSeveridadStock(herramienta)" :value="obtenerTextoStock(herramienta)" />
+        </div>
+
+        <div class="flex flex-column gap-2 w-full text-center sm:text-left">
+          <div class="flex flex-wrap align-items-center justify-content-center sm:justify-content-start gap-2">
+            <Tag :value="codigo" severity="secondary" class="font-mono text-xs" />
+            <Tag :value="getEstadoStock.label" :severity="getEstadoStock.severity" />
+            <Tag v-if="herramienta.esDesechable" :value="t('detalle_herramientas.consumible')" severity="info" icon="pi pi-refresh" />
           </div>
+          <h3 class="m-0 text-xl font-bold label-blanco">{{ nombre }}</h3>
+          <p class="m-0 text-xs text-subtitulo">{{ herramienta.descripcion || t('detalle_herramientas.sin_descripcion') }}</p>
+        </div>
       </div>
 
-      <!-- Grid de Datos con las claves de tu JSON -->
-      <div class="grid formgrid">
-          <div class="col-12 md:col-6 mb-4">
-              <span class="label-gris block mb-1 text-sm">{{ t('detalle_herramientas.codigo') }}</span>
-              <span class="text-lg font-bold" style="color: #38bdf8;">{{ herramienta.codigo }}</span>
+      <!-- Datos Logísticos -->
+      <div class="grid text-xs m-0">
+        <div class="col-6 sm:col-3 mb-2 p-2">
+          <span class="block text-subtitulo font-semibold mb-1">{{ t('detalle_herramientas.categoria') }}</span>
+          <span class="label-blanco font-medium">{{ tipoCategoria }}</span>
+        </div>
+
+        <div class="col-6 sm:col-3 mb-2 p-2">
+          <span class="block text-subtitulo font-semibold mb-1">{{ t('detalle_herramientas.marca') }}</span>
+          <span class="label-blanco font-medium">{{ herramienta.marca || '-' }}</span>
+        </div>
+
+        <div class="col-6 sm:col-3 mb-2 p-2">
+          <span class="block text-subtitulo font-semibold mb-1">{{ t('detalle_herramientas.ubicacion') }}</span>
+          <span class="label-blanco font-medium">{{ herramienta.ubicacion || '-' }}</span>
+        </div>
+
+        <div class="col-6 sm:col-3 mb-2 p-2">
+          <span class="block text-subtitulo font-semibold mb-1">{{ t('detalle_herramientas.estado_logico') }}</span>
+          <span class="label-blanco font-medium">{{ herramienta.activo !== false ? 'Activo' : 'Inactivo' }}</span>
+        </div>
+      </div>
+
+      <!-- Niveles de Stock -->
+      <div class="p-3 border-round contenedor-resumen">
+        <h4 class="m-0 mb-2 text-xs uppercase font-bold text-subtitulo tracking-wider">{{ t('detalle_herramientas.seccion_stock') }}</h4>
+        <div class="grid text-center m-0">
+          <div class="col-4 border-right-1 surface-border p-2">
+            <span class="block text-xs text-subtitulo">{{ t('detalle_herramientas.stock_min') }}</span>
+            <span class="text-lg font-bold text-yellow-500">{{ stockMinimo }}</span>
           </div>
-          <div class="col-12 md:col-6 mb-4">
-              <span class="label-gris block mb-1 text-sm">{{ t('detalle_herramientas.nombre') }}</span>
-              <!-- Cambiamos text-white por texto-valor -->
-              <span class="text-lg font-bold texto-valor">{{ herramienta.nombre }}</span>
+          <div class="col-4 border-right-1 surface-border p-2">
+            <span class="block text-xs text-subtitulo">{{ t('detalle_herramientas.stock_fisico') }}</span>
+            <span class="text-xl font-black label-blanco">{{ stockFisico }}</span>
           </div>
-          
-          <div class="col-12 md:col-6 mb-4">
-              <span class="label-gris block mb-1 text-sm">{{ t('detalle_herramientas.tipo') }}</span>
-              <span class="text-lg font-bold texto-valor">{{ herramienta.tipo || t('detalle_herramientas.no_aplica') }}</span>
+          <div class="col-4 p-2">
+            <span class="block text-xs text-subtitulo">{{ t('detalle_herramientas.stock_max') }}</span>
+            <span class="text-lg font-bold text-green-500">{{ stockMaximo }}</span>
           </div>
-          <div class="col-12 md:col-6 mb-4">
-              <span class="label-gris block mb-1 text-sm">{{ t('detalle_herramientas.ubicacion') }}</span>
-              <span class="text-lg font-bold texto-valor">{{ herramienta.ubicacion || t('detalle_herramientas.no_aplica') }}</span>
-          </div>
-          
-          <div class="col-12 md:col-6 mb-4">
-              <span class="label-gris block mb-1 text-sm">{{ t('detalle_herramientas.marca') }}</span>
-              <span class="text-lg font-bold texto-valor">{{ herramienta.marca || t('detalle_herramientas.sin_marca') }}</span>
-          </div>
-          
-          <div class="col-12 md:col-6 mb-4">
-              <span class="label-gris block mb-1 text-sm">{{ t('detalle_herramientas.stock_niveles') }}</span>
-              <span class="text-lg font-bold texto-valor">
-                  {{ herramienta.cantidadDisponible }} / {{ herramienta.cantidadMinima }} / {{ herramienta.cantidadMaxima || 'N/A' }} {{ t('detalle_herramientas.unidades') }}
-              </span>
-          </div>
-          
-          <div class="col-12 mb-2">
-              <span class="label-gris block mb-2 text-sm">{{ t('detalle_herramientas.descripcion') }}</span>
-              <div class="caja-descripcion p-3 border-round text-sm">
-                  {{ herramienta.descripcion || t('detalle_herramientas.sin_descripcion') }}
-              </div>
-          </div>
+        </div>
       </div>
     </div>
-    
+
     <template #footer>
-      <!-- Reemplazamos el style en línea por la clase footer-separador -->
-      <div class="flex justify-content-end align-items-center gap-3 pt-3 mt-1 footer-separador">
-          <Button 
-            :label="t('detalle_herramientas.btn_cerrar')" 
-            icon="pi pi-times" 
-            text 
-            class="btn-texto-gris" 
-            @click="cerrar" 
-          />
-          <Button 
-            label="Añadir a Orden" 
-            icon="pi pi-plus" 
-            class="btn-agregar font-bold px-4 py-2" 
-            @click="agregarAOrden" 
-            autofocus 
-          />
+      <div class="flex justify-content-end gap-2 mt-2">
+        <Button 
+          :label="t('detalle_herramientas.btn_editar')" 
+          icon="pi pi-pencil" 
+          class="btn-nuevo text-xs" 
+          @click="emit('editar', herramienta); cerrar()" 
+        />
+        <Button 
+          :label="t('detalle_herramientas.btn_cerrar')" 
+          icon="pi pi-times" 
+          class="btn-cancelar text-xs" 
+          @click="cerrar" 
+        />
       </div>
     </template>
   </Dialog>
 </template>
 
-<style>
-
-/* ========================================================
-   TEMA OSCURO (Por defecto)
-   ======================================================== */
-.modal-oscuro-primeflex .label-gris {
-    color: #94a3b8 !important;
+<style scoped>
+/* ESTILOS TEMA OSCURO (Por defecto) */
+.contenedor-resumen {
+    background-color: #1a222d;
+    border: 1px solid #2d3748;
 }
 
-.modal-oscuro-primeflex .texto-valor {
-    color: #ffffff !important;
+.text-subtitulo {
+    color: #94a3b8;
 }
 
-.modal-oscuro-primeflex .caja-descripcion {
-    background-color: #2a323d !important;
-    border: 1px solid #3f4b5b !important;
-    color: #cbd5e1 !important;
+.label-blanco {
+    color: #f8fafc;
 }
 
-.modal-oscuro-primeflex .fondo-imagen-vacia {
-    background-color: #1a222b !important;
+.fondo-imagen-vacia {
+    background-color: #121820;
+    border: 1px dashed #4a5568;
 }
 
-.modal-oscuro-primeflex .icono-vacio {
-    color: #4a5568 !important;
+.icono-vacio {
+    color: #4a5568;
 }
 
-.modal-oscuro-primeflex .footer-separador {
-    border-top: 1px solid #2a323d !important;
+/* ESTILOS ADAPTATIVOS TEMA CLARO */
+:global(html.light-theme) .contenedor-resumen {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
 }
 
-.modal-oscuro-primeflex .btn-texto-gris {
-    color: #94a3b8 !important;
-}
-.modal-oscuro-primeflex .btn-texto-gris:hover {
-    color: #ffffff !important;
-    background: rgba(255, 255, 255, 0.05) !important;
+:global(html.light-theme) .text-subtitulo {
+    color: #64748b;
 }
 
-.modal-oscuro-primeflex .btn-agregar {
-    background-color: #22c55e !important;
-    color: #121820 !important;
-    border: none !important;
-    border-radius: 6px !important;
-}
-.modal-oscuro-primeflex .btn-agregar:hover {
-    background-color: #16a34a !important;
+:global(html.light-theme) .label-blanco {
+    color: #0f172a;
 }
 
-.modal-oscuro-primeflex .tracking-wide {
-    letter-spacing: 0.025em;
+:global(html.light-theme) .fondo-imagen-vacia {
+    background-color: #f1f5f9;
+    border: 1px dashed #cbd5e1;
 }
 
-/* ========================================================
-   TEMA CLARO (Sobreescrituras dinámicas)
-   ======================================================== */
-html.light-theme .modal-oscuro-primeflex .label-gris {
-    color: #64748b !important;
-}
-
-html.light-theme .modal-oscuro-primeflex .texto-valor {
-    color: #334155 !important; 
-}
-
-html.light-theme .modal-oscuro-primeflex .caja-descripcion {
-    background-color: #f8fafc !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #334155 !important;
-}
-
-html.light-theme .modal-oscuro-primeflex .fondo-imagen-vacia {
-    background-color: #f1f5f9 !important;
-}
-
-html.light-theme .modal-oscuro-primeflex .icono-vacio {
-    color: #94a3b8 !important;
-}
-
-html.light-theme .modal-oscuro-primeflex .footer-separador {
-    border-top: 1px solid #e2e8f0 !important;
-}
-
-html.light-theme .modal-oscuro-primeflex .btn-texto-gris {
-    color: #64748b !important;
-}
-html.light-theme .modal-oscuro-primeflex .btn-texto-gris:hover {
-    color: #0f172a !important;
-    background: rgba(0, 0, 0, 0.05) !important;
+:global(html.light-theme) .icono-vacio {
+    color: #94a3b8;
 }
 </style>

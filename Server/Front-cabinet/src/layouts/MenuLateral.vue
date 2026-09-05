@@ -6,6 +6,8 @@ import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
 import InputSwitch from 'primevue/inputswitch'; 
 import InputText from 'primevue/inputtext';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
 import { useToast } from 'primevue/usetoast';
 import axios from 'axios';
 
@@ -20,46 +22,147 @@ const router = useRouter();
 const { t, locale } = useI18n();
 const toast = useToast();
 
-// Estados para el Modal de Configuración y Preferencias
+// Estados para el Modal de Configuración
 const mostrarModalConfig = ref(false);
 const temaActual = ref(localStorage.getItem('theme') || 'dark');
 
 // Estado para la automatización de correos
 const correosActivos = ref(false);
 
-// Estados para los correos destinatarios opcionales
-const correoPendientes = ref('');
-const correoReporte = ref('');
-const correoStock = ref('');
+// Estados CRUD Destinatarios Permanentes (BD)
+const listaDestinatariosBD = ref([]);
+const nuevoCorreo = ref('');
+const nuevoNombre = ref('');
+const guardandoDestinatario = ref(false);
 
-// Estados para evitar doble clic en los envíos de correo
+// Estados de carga de botones
 const enviandoReporte = ref(false);
 const enviandoAlertaStock = ref(false);
 
-// Consultar el estado inicial del cron al montar el componente
-const cargarEstadoAutomatizacion = async () => {
+// Decodificar JWT del localStorage para obtener la sesión real
+const obtenerPayloadToken = () => {
+  const token = localStorage.getItem('token');
+  if (!token) return null;
   try {
-    const { data } = await axios.get('/api/configuracion/automatizacion');
-    correosActivos.value = data.activo;
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
   } catch (error) {
-    console.error('Error al cargar el estado de la automatización:', error);
+    console.error('Error al decodificar el token:', error);
+    return null;
   }
 };
 
-// Cambiar el estado del cron al presionar el switch (enviando correo destino)
+// Determinar permisos basados exclusivamente en el Token JWT
+const esAdmin = computed(() => {
+  const payload = obtenerPayloadToken();
+  return payload?.rol === 'ADMINISTRADOR';
+});
+
+// Cargar datos administrativos solo si es Admin
+const cargarDatosSensibles = async () => {
+  if (!esAdmin.value) return;
+
+  try {
+    const [resAuto, resDest] = await Promise.all([
+      axios.get('/api/configuracion/automatizacion'),
+      axios.get('/api/configuracion/destinatarios')
+    ]);
+    correosActivos.value = resAuto.data.activo;
+    listaDestinatariosBD.value = resDest.data;
+  } catch (error) {
+    console.error('Error al cargar datos de configuración:', error);
+  }
+};
+
+// Crear Destinatario
+const agregarDestinatario = async () => {
+  if (!nuevoCorreo.value || !nuevoCorreo.value.includes('@')) {
+    toast.add({ 
+      severity: 'warn', 
+      summary: t('configuracion_modal.atencion'), 
+      detail: t('configuracion_modal.destinatarios.msj_correo_invalido'), 
+      life: 3000 
+    });
+    return;
+  }
+  guardandoDestinatario.value = true;
+  try {
+    await axios.post('/api/configuracion/destinatarios', {
+      correo: nuevoCorreo.value,
+      nombre: nuevoNombre.value
+    });
+    toast.add({ 
+      severity: 'success', 
+      summary: t('configuracion_modal.exito'), 
+      detail: t('configuracion_modal.destinatarios.msj_guardado_exito'), 
+      life: 3000 
+    });
+    nuevoCorreo.value = '';
+    nuevoNombre.value = '';
+    const { data } = await axios.get('/api/configuracion/destinatarios');
+    listaDestinatariosBD.value = data;
+  } catch (error) {
+    toast.add({ 
+      severity: 'error', 
+      summary: 'Error', 
+      detail: error.response?.data?.error || t('configuracion_modal.destinatarios.msj_guardado_error'), 
+      life: 3000 
+    });
+  } finally {
+    guardandoDestinatario.value = false;
+  }
+};
+
+// Alternar activo/inactivo
+const toggleEstadoDestinatario = async (registro) => {
+  try {
+    await axios.put(`/api/configuracion/destinatarios/${registro.id}`, {
+      activo: !registro.activo
+    });
+    const { data } = await axios.get('/api/configuracion/destinatarios');
+    listaDestinatariosBD.value = data;
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado.', life: 3000 });
+  }
+};
+
+// Eliminar Destinatario
+const eliminarDestinatario = async (id) => {
+  try {
+    await axios.delete(`/api/configuracion/destinatarios/${id}`);
+    toast.add({ 
+      severity: 'info', 
+      summary: t('configuracion_modal.eliminado'), 
+      detail: t('configuracion_modal.destinatarios.msj_eliminado'), 
+      life: 3000 
+    });
+    const { data } = await axios.get('/api/configuracion/destinatarios');
+    listaDestinatariosBD.value = data;
+  } catch (error) {
+    toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar el registro.', life: 3000 });
+  }
+};
+
+// Toggle automatización
 const toggleAutomatizacion = async (nuevoValor) => {
   try {
     const { data } = await axios.post('/api/configuracion/automatizacion', { 
-      activo: nuevoValor,
-      correoDestino: correoPendientes.value
+      activo: nuevoValor
     });
     correosActivos.value = data.activo;
     
     if (data.activo) {
       toast.add({ 
         severity: 'info', 
-        summary: 'Automatización Activada', 
-        detail: `Alertas configuradas hacia: ${data.destinatario}`, 
+        summary: t('configuracion_modal.pendientes.titulo'), 
+        detail: data.mensaje || 'Automatización activada', 
         life: 4000 
       });
     }
@@ -69,22 +172,19 @@ const toggleAutomatizacion = async (nuevoValor) => {
   }
 };
 
-// Función para disparar el reporte semanal manualmente
+// Generar reporte semanal
 const generarReporteSemanal = async () => {
   enviandoReporte.value = true;
   try {
-    const { data } = await axios.post('/api/reportes/historial-semanal', {
-      correoDestino: correoReporte.value
-    });
+    const { data } = await axios.post('/api/reportes/historial-semanal');
 
     if (data.success) {
       toast.add({ 
         severity: 'success', 
-        summary: 'Reporte Enviado', 
-        detail: data.mensaje || `Reporte enviado con éxito a ${data.destinatario}. Registros: ${data.registros}`, 
+        summary: t('configuracion_modal.reporte_semanal.titulo'), 
+        detail: data.mensaje || 'Reporte enviado a los destinatarios activos.', 
         life: 4000 
       });
-      correoReporte.value = ''; // Limpiar input tras envío exitoso
     } else {
       toast.add({ 
         severity: 'error', 
@@ -97,7 +197,7 @@ const generarReporteSemanal = async () => {
     console.error('Error al solicitar el reporte semanal:', error);
     toast.add({ 
       severity: 'error', 
-      summary: 'Error del Servidor', 
+      summary: 'Error', 
       detail: 'Ocurrió un error en el servidor al enviar el correo.', 
       life: 4000 
     });
@@ -106,27 +206,24 @@ const generarReporteSemanal = async () => {
   }
 };
 
-// Función para disparar la alerta de stock manualmente
+// Enviar alerta de stock
 const enviarAlertaStock = async () => {
   enviandoAlertaStock.value = true;
   try {
-    const { data } = await axios.post('/api/reportes/alertas-stock', {
-      correoDestino: correoStock.value
-    });
+    const { data } = await axios.post('/api/reportes/alertas-stock');
 
     if (data.success) {
       if (data.registros) {
         toast.add({ 
           severity: 'warn', 
-          summary: 'Alerta Enviada', 
-          detail: `Se notificaron ${data.registros} herramientas a ${data.destinatario}.`, 
+          summary: t('configuracion_modal.stock_minimo.titulo'), 
+          detail: data.mensaje || `Se notificaron ${data.registros} herramientas.`, 
           life: 4000 
         });
-        correoStock.value = ''; // Limpiar input tras envío exitoso
       } else {
         toast.add({ 
           severity: 'info', 
-          summary: 'Inventario Sano', 
+          summary: t('configuracion_modal.stock_minimo.titulo'), 
           detail: data.mensaje || 'No hay herramientas en stock mínimo.', 
           life: 4000 
         });
@@ -143,7 +240,7 @@ const enviarAlertaStock = async () => {
     console.error('Error al solicitar la alerta de stock:', error);
     toast.add({ 
       severity: 'error', 
-      summary: 'Error del Servidor', 
+      summary: 'Error', 
       detail: 'Ocurrió un error al procesar la alerta de inventario.', 
       life: 4000 
     });
@@ -152,7 +249,7 @@ const enviarAlertaStock = async () => {
   }
 };
 
-// Aplicar y guardar el tema
+// Cambiar Tema
 const cambiarTema = (nuevoTema) => {
   temaActual.value = nuevoTema;
   localStorage.setItem('theme', nuevoTema);
@@ -171,18 +268,16 @@ const aplicarTemaDOM = (tema) => {
 
 onMounted(() => {
   aplicarTemaDOM(temaActual.value);
-  cargarEstadoAutomatizacion(); 
+  cargarDatosSensibles();
 });
 
-// Lógica de Idioma
+// Cambiar Idioma
 const cambiarIdioma = (nuevoIdioma) => {
   locale.value = nuevoIdioma;
   localStorage.setItem('idiomaPreferido', nuevoIdioma);
 };
 
-// =========================================================
-// LÓGICA DE CIERRE RESPONSIVO Y NAVEGACIÓN
-// =========================================================
+// Cierre Responsivo
 const cerrarMenuMovil = () => {
   if (window.innerWidth <= 992) {
     emit('toggle'); 
@@ -196,25 +291,10 @@ const manejarNavegacion = (ruta) => {
 };
 
 const cerrarSesion = () => {
+  localStorage.removeItem('token');
   localStorage.removeItem('usuarioActivo');
   router.push('/login');
   cerrarMenuMovil();
-};
-
-// =========================================================
-// LÓGICA DE ROLES
-// =========================================================
-const obtenerRolUsuario = () => {
-  try {
-    const usuarioStr = localStorage.getItem('usuarioActivo');
-    if (usuarioStr) {
-      const usuario = JSON.parse(usuarioStr);
-      return usuario.rol || 'OPERADOR';
-    }
-  } catch (e) {
-    console.error('Error al leer el usuario activo:', e);
-  }
-  return 'OPERADOR'; 
 };
 
 const menuCompleto = [
@@ -227,7 +307,8 @@ const menuCompleto = [
 ];
 
 const menuFiltrado = computed(() => {
-  const rolActual = obtenerRolUsuario();
+  const payload = obtenerPayloadToken();
+  const rolActual = payload?.rol || 'OPERADOR';
   return menuCompleto.filter(item => item.rolesPermitidos.includes(rolActual));
 });
 </script>
@@ -256,7 +337,7 @@ const menuFiltrado = computed(() => {
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">{{ t('menu.' + item.claveT) }}</span>
       </li>
       
-      <!-- Botón de Configuración que abre el Modal -->
+      <!-- Botón de Configuración -->
       <li class="nav-item mt-auto" @click.stop="mostrarModalConfig = true">
         <i class="pi pi-cog"></i>
         <span v-if="props.menuAbierto" class="ml-3 font-semibold">{{ t('menu.configuracion') }}</span>
@@ -274,14 +355,14 @@ const menuFiltrado = computed(() => {
     v-model:visible="mostrarModalConfig" 
     :header="t('configuracion_modal.titulo')" 
     :modal="true" 
-    :breakpoints="{ '1199px': '75vw', '575px': '95vw' }" 
-    :style="{ width: '450px' }" 
+    :breakpoints="{ '1199px': '85vw', '575px': '95vw' }" 
+    :style="{ width: '580px' }" 
     class="modal-configuracion"
     dismissableMask
   >
     <div class="flex flex-column gap-4 pt-2">
       
-      <!-- Selector de Idioma -->
+      <!-- Selector de Idioma (Disponible para TODOS los usuarios) -->
       <div class="field flex flex-column gap-2">
         <span class="text-color font-semibold">{{ t('configuracion_modal.idioma') }}</span>
         <div class="flex gap-2">
@@ -300,7 +381,7 @@ const menuFiltrado = computed(() => {
         </div>
       </div>
 
-      <!-- Selector de Tema -->
+      <!-- Selector de Tema (Disponible para TODOS los usuarios) -->
       <div class="field flex flex-column gap-2">
         <span class="text-color font-semibold">{{ t('configuracion_modal.tema') }}</span>
         <div class="flex gap-2">
@@ -321,45 +402,85 @@ const menuFiltrado = computed(() => {
         </div>
       </div>
 
-      <!-- Switch de Devoluciones Pendientes -->
-      <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
-        <span class="text-color font-semibold">Correos de Devoluciones Pendientes</span>
-        <div class="flex flex-column gap-2 p-3 surface-ground border-round">
-          <div class="flex align-items-center justify-content-between">
+      <!-- BLOQUE EXCLUSIVO PARA ADMINISTRADORES (Validado vía Token JWT) -->
+      <template v-if="esAdmin">
+
+        <!-- GESTIÓN DE DESTINATARIOS -->
+        <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
+          <span class="text-color font-semibold">{{ t('configuracion_modal.destinatarios.titulo') }}</span>
+          <span class="text-color-secondary text-xs">{{ t('configuracion_modal.destinatarios.subtitulo') }}</span>
+
+          <div class="flex gap-2 mt-1">
+            <InputText 
+              v-model="nuevoNombre" 
+              :placeholder="t('configuracion_modal.destinatarios.placeholder_nombre')" 
+              class="p-inputtext-sm w-4" 
+            />
+            <InputText 
+              v-model="nuevoCorreo" 
+              :placeholder="t('configuracion_modal.destinatarios.placeholder_correo')" 
+              class="p-inputtext-sm w-6" 
+            />
+            <Button 
+              icon="pi pi-plus" 
+              :loading="guardandoDestinatario"
+              @click="agregarDestinatario" 
+              class="p-button-sm p-button-success"
+            />
+          </div>
+
+          <DataTable :value="listaDestinatariosBD" class="p-datatable-sm mt-2 border-round surface-ground" responsiveLayout="scroll">
+            <Column field="nombre" :header="t('configuracion_modal.destinatarios.col_nombre')">
+              <template #body="slotProps">
+                {{ slotProps.data.nombre || '—' }}
+              </template>
+            </Column>
+            <Column field="correo" :header="t('configuracion_modal.destinatarios.col_correo')"></Column>
+            <Column :header="t('configuracion_modal.destinatarios.col_activo')" style="width: 70px; text-align: center;">
+              <template #body="slotProps">
+                <InputSwitch 
+                  :modelValue="slotProps.data.activo" 
+                  @change="toggleEstadoDestinatario(slotProps.data)" 
+                />
+              </template>
+            </Column>
+            <Column :header="t('configuracion_modal.destinatarios.col_acciones')" style="width: 60px; text-align: center;">
+              <template #body="slotProps">
+                <Button 
+                  icon="pi pi-trash" 
+                  class="p-button-danger p-button-text p-button-sm" 
+                  @click="eliminarDestinatario(slotProps.data.id)" 
+                />
+              </template>
+            </Column>
+          </DataTable>
+        </div>
+
+        <!-- NOTIFICACIONES DEVOLUCIONES PENDIENTES -->
+        <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
+          <span class="text-color font-semibold">{{ t('configuracion_modal.pendientes.titulo') }}</span>
+          <div class="flex align-items-center justify-content-between p-3 surface-ground border-round">
             <div>
-              <span class="text-color text-sm font-bold block">Envío automático (Prueba)</span>
-              <span class="text-color-secondary text-xs">Manda correo cada 1 minuto si hay pendientes</span>
+              <span class="text-color text-sm font-bold block">{{ t('configuracion_modal.pendientes.titulo') }}</span>
+              <span class="text-color-secondary text-xs">{{ t('configuracion_modal.pendientes.subtitulo_cron') }}</span>
             </div>
             <InputSwitch 
               v-model="correosActivos" 
               @change="toggleAutomatizacion(correosActivos)" 
             />
           </div>
-          <InputText 
-            v-model="correoPendientes" 
-            placeholder="ejemplo@correo.com (opcional)" 
-            class="w-full p-inputtext-sm mt-1" 
-          />
         </div>
-      </div>
 
-      <!-- Botón para Enviar Reporte Semanal -->
-      <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
-        <span class="text-color font-semibold">Reporte Semanal de Salidas</span>
-        <div class="flex flex-column gap-2 p-3 surface-ground border-round">
-          <div>
-            <span class="text-color text-sm font-bold block">Generar Historial</span>
-            <span class="text-color-secondary text-xs">Envía Excel con salidas de los últimos 7 días</span>
-          </div>
-          <div class="flex gap-2 w-full mt-1">
-            <InputText 
-              v-model="correoReporte" 
-              placeholder="ejemplo@correo.com (opcional)" 
-              class="w-full p-inputtext-sm" 
-            />
+        <!-- REPORTE SEMANAL -->
+        <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
+          <span class="text-color font-semibold">{{ t('configuracion_modal.reporte_semanal.titulo') }}</span>
+          <div class="flex align-items-center justify-content-between p-3 surface-ground border-round">
+            <div>
+              <span class="text-color-secondary text-xs">{{ t('configuracion_modal.reporte_semanal.subtitulo') }}</span>
+            </div>
             <Button 
               icon="pi pi-send" 
-              :label="enviandoReporte ? 'Enviando...' : 'Enviar'" 
+              :label="enviandoReporte ? t('configuracion_modal.reporte_semanal.btn_enviando') : t('configuracion_modal.reporte_semanal.btn_enviar')" 
               :disabled="enviandoReporte"
               @click="generarReporteSemanal" 
               class="p-button-sm p-button-primary"
@@ -367,25 +488,17 @@ const menuFiltrado = computed(() => {
             />
           </div>
         </div>
-      </div>
 
-      <!-- Botón para Enviar Alerta de Stock Mínimo -->
-      <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
-        <span class="text-color font-semibold">Alerta de Stock Mínimo</span>
-        <div class="flex flex-column gap-2 p-3 surface-ground border-round">
-          <div>
-            <span class="text-color text-sm font-bold block">Verificar Inventario</span>
-            <span class="text-color-secondary text-xs">Notifica herramientas con stock crítico</span>
-          </div>
-          <div class="flex gap-2 w-full mt-1">
-            <InputText 
-              v-model="correoStock" 
-              placeholder="ejemplo@correo.com (opcional)" 
-              class="w-full p-inputtext-sm" 
-            />
+        <!-- ALERTA STOCK MÍNIMO -->
+        <div class="field flex flex-column gap-2 border-top-1 surface-border pt-3">
+          <span class="text-color font-semibold">{{ t('configuracion_modal.stock_minimo.titulo') }}</span>
+          <div class="flex align-items-center justify-content-between p-3 surface-ground border-round">
+            <div>
+              <span class="text-color-secondary text-xs">{{ t('configuracion_modal.stock_minimo.subtitulo') }}</span>
+            </div>
             <Button 
               icon="pi pi-exclamation-triangle" 
-              :label="enviandoAlertaStock ? 'Enviando...' : 'Verificar'" 
+              :label="enviandoAlertaStock ? t('configuracion_modal.stock_minimo.btn_verificando') : t('configuracion_modal.stock_minimo.btn_verificar')" 
               :disabled="enviandoAlertaStock"
               @click="enviarAlertaStock" 
               class="p-button-sm p-button-warning"
@@ -393,7 +506,8 @@ const menuFiltrado = computed(() => {
             />
           </div>
         </div>
-      </div>
+
+      </template>
 
     </div>
 
@@ -406,9 +520,7 @@ const menuFiltrado = computed(() => {
 </template>
 
 <style scoped>
-/* =========================================================
-   ESTILOS ESCRITORIO
-   ========================================================= */
+/* ESTILOS ESCRITORIO */
 .sidebar {
   background-color: #063b69; 
   color: white;
@@ -471,9 +583,7 @@ const menuFiltrado = computed(() => {
 .nav-item i { min-width: 32px; text-align: left; font-size: 1.25rem; }
 .ml-3 { margin-left: 0.5rem; }
 
-/* =========================================================
-   ESTILO RESPONSIVO MÓVILES
-   ========================================================= */
+/* ESTILO RESPONSIVO MÓVILES */
 @media (max-width: 992px) {
   .sidebar {
     position: fixed;

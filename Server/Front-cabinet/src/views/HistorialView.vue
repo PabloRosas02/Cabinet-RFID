@@ -39,17 +39,22 @@ const mostrarModal = ref(false);
 const salidaSeleccionada = ref(null); 
 const menuExportar = ref(null);
 
-// CAMBIO: Se importa la nueva función del composable
 const { exportarHistorialSalidas } = useGestorArchivos();
 
 const cargarHistorial = async () => {
     cargando.value = true;
     try {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
-        // CAMBIO: Endpoint actualizado a /api/salidas/historial
-        const response = await axios.get('/api/salidas/historial', {
-            params: { usuarioId: usuarioSesion?.id, rol: usuarioSesion?.rol, numTrabajador: usuarioSesion?.numTrabajador }
-        });
+        
+        const params = {
+            usuarioId: usuarioSesion?.id,
+            usuario_id: usuarioSesion?.id,
+            rol: usuarioSesion?.rol,
+            numTrabajador: usuarioSesion?.numTrabajador,
+            num_trabajador: usuarioSesion?.numTrabajador
+        };
+
+        const response = await axios.get('/api/salidas/historial', { params });
         historial.value = response.data;
     } catch (error) {
         console.error("Error al cargar historial:", error);
@@ -76,8 +81,10 @@ const historialFiltrado = computed(() => {
     inicioSemana.setHours(0, 0, 0, 0);
 
     return datos.filter(p => {
-        // CAMBIO: fechaPedido -> fechaSalida
-        const fecha = new Date(p.fechaSalida);
+        const fechaBase = p.created_at || p.fechaSalida;
+        if (!fechaBase) return false;
+
+        const fecha = new Date(fechaBase);
         switch (filtroTiempo.value) {
             case 'Hoy': return fecha.getDate() === hoy.getDate() && fecha.getMonth() === hoy.getMonth() && fecha.getFullYear() === hoy.getFullYear();
             case 'Esta Semana': return fecha >= inicioSemana;
@@ -93,9 +100,6 @@ const abrirDetalles = (salida) => {
     mostrarModal.value = true;
 };
 
-// =====================================================================
-// Opciones del Menú de Exportación
-// =====================================================================
 const opcionesExportar = computed(() => [
     {
         label: t('view_historial.exportar_csv'),
@@ -116,36 +120,27 @@ const toggleExportar = (event) => {
 const realizarExportacion = (formato) => {
     try {
         exportarHistorialSalidas(historialFiltrado.value, filtroTiempo.value, formato);
-        
-        toast.add({ 
-            severity: 'success', 
-            summary: t('view_historial.toast_exito_titulo'), 
-            detail: t('view_historial.toast_exito_detalle'), 
-            life: 3000 
-        });
+        toast.add({ severity: 'success', summary: t('view_historial.toast_exito_titulo'), detail: t('view_historial.toast_exito_detalle'), life: 3000 });
     } catch (error) {
-        toast.add({ 
-            severity: 'warn', 
-            summary: t('view_historial.toast_error_titulo'), 
-            detail: error.message, 
-            life: 3000 
-        });
+        toast.add({ severity: 'warn', summary: t('view_historial.toast_error_titulo'), detail: error.message, life: 3000 });
     }
 };
 </script>
 
 <template>
-  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4">
+  <!-- Contenedor principal con max-w-full y overflow-hidden para evitar que la tarjeta blanca se desborde -->
+  <div class="panel-principal p-3 md:p-4 border-round-xl shadow-1 mt-4 max-w-full overflow-hidden">
     <Toast />
 
     <div class="flex justify-content-between align-items-center mb-4">
         <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_historial.titulo') }}</h2>
     </div>
 
-    <div class="flex flex-column xl:flex-row justify-content-between mb-4 gap-3">
+    <!-- Contenedor flex con flex-wrap para que los filtros bajen de línea si la pantalla es pequeña -->
+    <div class="flex flex-column xl:flex-row flex-wrap justify-content-between mb-4 gap-3 w-full">
         
         <!-- Grupo de Botones (Izquierda) -->
-        <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
+        <div class="flex flex-column sm:flex-row flex-wrap gap-2 w-full xl:w-auto">
             <Button 
                 type="button" 
                 :label="t('view_historial.btn_exportar')" 
@@ -163,7 +158,7 @@ const realizarExportacion = (formato) => {
         </div>
 
         <!-- Grupo de Búsqueda y Filtros (Derecha) -->
-        <div class="flex flex-column sm:flex-row gap-3 w-full xl:w-auto">
+        <div class="flex flex-column sm:flex-row flex-wrap gap-3 w-full xl:w-auto">
             <IconField iconPosition="left" class="w-full xl:w-30rem">
                 <InputIcon class="pi pi-search" />
                 <InputText 
@@ -193,6 +188,7 @@ const realizarExportacion = (formato) => {
         </div>
     </div>
 
+    <!-- El componente hijo recibe los datos filtrados -->
     <TablaHistorial :historial="historialFiltrado" :cargando="cargando" :filtros="filtros" @doble-click="abrirDetalles" />
 
     <ModalDetallesSalida 
@@ -204,9 +200,6 @@ const realizarExportacion = (formato) => {
 </template>
 
 <style scoped>
-/* =========================================================
-   BOTONES DE FILTRO (Pendientes / Devueltos)
-   ========================================================= */
 :deep(.p-button-danger.p-button-outlined) { color: #f87171 !important; border-color: rgba(239, 68, 68, 0.5) !important; background-color: transparent !important; }
 :deep(.p-button-danger.p-button-outlined:hover) { background-color: rgba(239, 68, 68, 0.1) !important; }
 :deep(.p-button-danger:not(.p-button-outlined)) { background-color: rgba(239, 68, 68, 0.2) !important; color: #f87171 !important; border: 1px solid #f87171 !important; }

@@ -19,6 +19,28 @@ const props = defineProps({
 const emit = defineEmits(['doble-click']);
 
 // =========================================================
+// NORMALIZACIÓN DE DATOS (Backend snake_case -> Frontend camelCase)
+// =========================================================
+const historialNormalizado = computed(() => {
+    return props.historial.map(pedido => ({
+        ...pedido,
+        numeroOrden: pedido.numero_orden || pedido.numeroOrden,
+        numeroMaquina: pedido.numero_maquina || pedido.numeroMaquina,
+        prestadorNombre: pedido.almacenista_salida || pedido.prestadorNombre,
+        receptorNombre: pedido.almacenista_entrada || pedido.receptorNombre,
+        trabajadorNumero: pedido.empleado_numero || pedido.trabajadorNumero,
+        trabajadorNombre: pedido.empleado_nombre || pedido.trabajadorNombre,
+        fechaSalida: pedido.created_at || pedido.fechaSalida,
+        fechaDevolucion: pedido.fecha_devolucion || pedido.fechaDevolucion,
+        herramientas: (pedido.herramientas || []).map(h => ({
+            ...h,
+            cantidadPrestada: h.pivot?.cantidad ?? h.cantidadPrestada ?? 0,
+            cantidadRegresada: h.pivot?.cantidad_devuelta ?? h.cantidadRegresada ?? 0
+        }))
+    }));
+});
+
+// =========================================================
 // LÓGICA RESPONSIVA DINÁMICA
 // =========================================================
 const esMovil = ref(window.innerWidth <= 992);
@@ -86,9 +108,10 @@ const verDetalles = (data) => {
 </script>
 
 <template>
-    <div class="contenedor-historial cursor-pointer">
+    <div class="contenedor-historial cursor-pointer block max-w-full overflow-x-auto">
+        
         <TablaGenerica
-            :datos="historial"
+            :datos="historialNormalizado"
             :columnas="columnasHistorial"
             :cargando="cargando"
             :filtros="filtros"

@@ -13,10 +13,43 @@
   "configuracion_modal": {
     "titulo": "Configuración del Sistema",
     "idioma": "Idioma",
-    "tema": "Tema de Diseño",
+    "tema": "Tema",
     "tema_oscuro": "Oscuro",
     "tema_claro": "Claro",
-    "btn_cerrar": "Cerrar"
+    "btn_cerrar": "Cerrar",
+    "atencion": "Atención",
+    "exito": "Éxito",
+    "eliminado": "Eliminado",
+    "destinatarios": {
+      "titulo": "Destinatarios Permanentes (Base de Datos)",
+      "subtitulo": "Los correos activos en esta lista recibirán automáticamente las notificaciones y reportes.",
+      "placeholder_nombre": "Nombre (ej: Almacén)",
+      "placeholder_correo": "correo{at}ejemplo.com",
+      "col_nombre": "Nombre",
+      "col_correo": "Correo",
+      "col_activo": "Activo",
+      "col_acciones": "Acciones",
+      "msj_correo_invalido": "Ingresa un correo electrónico válido.",
+      "msj_guardado_exito": "Correo registrado exitosamente.",
+      "msj_guardado_error": "El correo ya existe o es inválido.",
+      "msj_eliminado": "Destinatario removido."
+    },
+    "pendientes": {
+      "titulo": "Correos de Devoluciones Pendientes",
+      "subtitulo_cron": "Manda correo automáticamente si hay pendientes"
+    },
+    "reporte_semanal": {
+      "titulo": "Reporte Semanal de Salidas",
+      "subtitulo": "Envía Excel con salidas de los últimos 7 días a los destinatarios activos",
+      "btn_enviar": "Enviar Reporte",
+      "btn_enviando": "Enviando..."
+    },
+    "stock_minimo": {
+      "titulo": "Alerta de Stock Mínimo",
+      "subtitulo": "Notifica herramientas con stock crítico a los destinatarios activos",
+      "btn_verificar": "Verificar Stock",
+      "btn_verificando": "Verificando..."
+    }
   },
   "modal_devolucion": {
     "titulo": "Revisión de Devolución",
@@ -33,18 +66,19 @@
   },
   "tabla_devoluciones": {
     "folio_salida": "Folio",
-    "no_empleado": "No. Empleado",
-    "nombre_trabajador": "Nombre del Trabajador",
-    "fecha_salida": "Fecha de Salida",
-    "estado": "Estado",
-    "accion": "Acción",
-    "buscar_placeholder": "Buscar por folio o empleado...",
-    "mensaje_vacio": "No hay devoluciones pendientes en este momento.",
-    "estado_pendiente": "Pendiente",
-    "btn_devolver": "Devolver",
     "num_orden": "Orden",
     "num_maquina": "Máquina",
-    "motivo": "Motivo"
+    "no_empleado": "No. Empleado",
+    "nombre_trabajador": "Nombre",
+    "motivo": "Motivo",
+    "fecha_salida": "Fecha",
+    "estado": "Estado",
+    "accion": "Acción",
+    "buscar_placeholder": "Buscar...",
+    "mensaje_vacio": "No hay registros",
+    "btn_devolver": "Devolver",
+    "estado_pendiente": "Pendiente",
+    "estado_parcial": "Parcial"
   },
   "view_devoluciones": {
     "titulo": "Devolución de Herramientas",
@@ -55,22 +89,21 @@
   },
   "detalle_herramientas": {
     "titulo": "Detalles de la Herramienta",
-    "estado_critico": "CRÍTICO",
-    "estado_alerta": "ALERTA",
-    "estado_normal": "NORMAL",
-    "codigo": "Código",
-    "nombre": "Nombre",
-    "tipo": "Tipo / Categoría",
+    "estado_optimo": "Stock Óptimo",
+    "estado_alerta": "Stock Crítico",
+    "estado_agotado": "Agotado / Bajo Stock",
+    "consumible": "Consumible",
+    "sin_descripcion": "Sin descripción adicional.",
+    "categoria": "Categoría",
+    "marca": "Proveedor / Marca",
     "ubicacion": "Ubicación Física",
-    "marca": "Marca / Proveedor",
-    "stock_vs_minimo": "Stock Actual vs Mínimo",
-    "unidades": "unidades",
-    "descripcion": "Descripción y Notas",
-    "sin_descripcion": "Sin descripción o notas adicionales para esta herramienta.",
-    "no_aplica": "N/A",
-    "sin_marca": "S/M",
-    "btn_cerrar": "Cerrar",
-    "stock_niveles": "Niveles de Stock (Físico / Mín / Máx)"
+    "estado_logico": "Estado Logístico",
+    "seccion_stock": "Nivel de Stock",
+    "stock_min": "Mínimo",
+    "stock_fisico": "Disponible",
+    "stock_max": "Máximo",
+    "btn_editar": "Editar Herramienta",
+    "btn_cerrar": "Cerrar"
   },
   "formulario_herramientas": {
     "titulo_editar": "Editar Herramienta",
@@ -93,7 +126,8 @@
     "stock_fisico": "Stock Físico",
     "btn_cancelar": "Cancelar",
     "btn_guardar": "Guardar",
-    "stock_maximo": "Stock Máximo"
+    "stock_maximo": "Stock Máximo",
+    "es_desechable": "¿Es consumible / desechable?"
   },
   "tabla_herramientas": {
     "codigo": "Código",
@@ -103,18 +137,21 @@
     "stock_min": "Stock Mín.",
     "stock_max": "Stock Máx.",
     "stock_fisico": "Stock Físico",
-    "mensaje_vacio": "No se encontraron herramientas con los filtros actuales."
+    "mensaje_vacio": "No se encontraron herramientas con los filtros actuales.",
+    "btn_ver_detalles": "Ver detalles",
+    "desechable": "Consumible"
   },
   "view_inventario": {
     "titulo": "Control de Inventario",
+    "btn_nueva": "Nueva Herramienta",
     "btn_exportar": "Exportar Inventario",
-    "exportar_csv": "Exportar a CSV",
-    "exportar_excel": "Exportar a Excel (.xlsx)",
+    "exportar_csv": "Exportar CSV",
+    "exportar_excel": "Exportar Excel",
     "btn_solo_alertas": "Solo Alertas",
-    "btn_mostrando_todo": "Mostrando Todo",
+    "btn_mostrando_todo": "Ver Todos",
     "btn_actualizar": "Actualizar Inventario",
-    "btn_bitacora": "Bitácora de Auditoría",
-    "ph_buscar": "Buscar código, nombre..."
+    "btn_bitacora": "Bitácora",
+    "ph_buscar": "Buscar por código, nombre..."
   },
   "view_movimientos": {
     "titulo": "Administración y Movimientos",
@@ -226,7 +263,19 @@
     "btn_cerrar": "Cerrar Detalles",
     "accion_creacion": "CREACIÓN",
     "accion_modificacion": "MODIFICACIÓN",
-    "accion_eliminacion": "ELIMINACIÓN"
+    "accion_eliminacion": "ELIMINACIÓN",
+    "registro_motivo": "Registro del motivo"
+  },
+  "bitacora_detalles": {
+    "stock_maximo": "Stock Máximo",
+    "stock_minimo": "Stock Mínimo",
+    "stock_fisico": "Stock Físico",
+    "motivo_baja": "Motivo de baja",
+    "desechable": "Consumible",
+    "desechable_si": "Sí",
+    "desechable_no": "No",
+    "registro_inicial": "Registro inicial de la herramienta",
+    "importacion_masiva": "Registro mediante Importación Masiva"
   },
   "tabla_bitacora": {
     "fecha_hora": "Fecha / Hora",
@@ -289,7 +338,11 @@
     "btn_cerrar": "Cerrar",
     "btn_anadir": "Añadir al Pedido",
     "estado_agotado": "Agotado",
-    "modal_stock": "Stock (Act / Mín / Máx)"
+    "modal_stock": "Stock (Act / Mín / Máx)",
+    "modal_titulo_detalles": "Detalles de la Herramienta",
+    "modal_desechable": "¿Es Desechable?",
+    "tag_desechable_si": "SÍ (CONSUMIBLE)",
+    "tag_desechable_no": "NO (REUTILIZABLE)"
   },
   "detalle_pedido": {
     "titulo": "Detalle de la Salida",
@@ -367,7 +420,8 @@
     "ph_descripcion": "Especificaciones adicionales...",
     "btn_registrar": "Registrar Producto",
     "btn_limpiar": "Limpiar",
-    "label_stock_maximo": "Stock Máximo"
+    "label_stock_maximo": "Stock Máximo",
+    "label_es_desechable": "¿Es Consumible?"
   },
   "view_nuevo_producto": {
     "titulo": "Registrar Nuevo Producto",
@@ -492,7 +546,9 @@
     "estado_devuelto": "DEVUELTO",
     "accion_creacion": "CREACIÓN",
     "accion_modificacion": "MODIFICACIÓN",
-    "accion_eliminacion": "ELIMINACIÓN"
+    "accion_eliminacion": "ELIMINACIÓN",
+    "cantidad_maxima": "Cantidad Máxima",
+    "es_desechable": "¿Es Consumible?"
   },
   "filtros": {
     "hoy": "Hoy",

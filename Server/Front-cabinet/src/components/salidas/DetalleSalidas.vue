@@ -1,507 +1,622 @@
 <script setup>
-import { ref, computed, watch} from 'vue';
+import { ref, computed } from 'vue';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import Tag from 'primevue/tag';
 import AutoComplete from 'primevue/autocomplete';
 import InputText from 'primevue/inputtext';
-import Select from 'primevue/select'; 
+import Select from 'primevue/select';
 import { useI18n } from 'vue-i18n';
+import axios from 'axios';
+import ModalDetalleHerramienta from '@/components/ModalDetalleHerramienta.vue';
 
 const props = defineProps({
-    pedido: { 
-        type: Array, 
-        required: true 
+    pedido: {
+        type: Array,
+        required: true
     },
-    trabajador: { 
-        type: Object, 
-        required: true 
+    trabajador: {
+        type: Object,
+        required: true
     },
-    listaUsuarios: { 
-        type: Array, 
-        default: () => [] 
-    } 
+    administradores: {
+        type: Array,
+        default: () => []
+    }
 });
 
-const emit = defineEmits(['quitar', 'registrar']);
-const { t } = useI18n(); 
+const emit = defineEmits(['quitar', 'registrar', 'update:trabajador', 'update:pedido']);
+const { t } = useI18n();
 
+// =====================================================================
+// MOTIVOS UNIFICADOS (Valores en Español coincidiendo con las opciones)
+// =====================================================================
 const opcionesMotivo = computed(() => [
-    { label: t('detalle_pedido.motivos.fin_vida'), value: 'End of life' },
-    { label: t('detalle_pedido.motivos.dano_operador'), value: 'Operator damage' },
-    { label: t('detalle_pedido.motivos.extravio'), value: 'Lost' },
-    { label: t('detalle_pedido.motivos.set_up'), value: 'Set up' },
-    { label: t('detalle_pedido.motivos.mala_calidad'), value: 'Poor tool quality' },
-    { label: t('detalle_pedido.motivos.otro'), value: 'Other' }
+    { label: t('detalle_pedido.motivos.fin_vida', 'End of life'), value: 'end_of_life' },
+    { label: t('detalle_pedido.motivos.dano_operador', 'Operator damage'), value: 'operator_damage' },
+    { label: t('detalle_pedido.motivos.extravio', 'Lost'), value: 'lost' },
+    { label: t('detalle_pedido.motivos.set_up', 'Set up'), value: 'set_up' },
+    { label: t('detalle_pedido.motivos.mala_calidad', 'Poor tool quality'), value: 'poor_quality' },
+    { label: t('detalle_pedido.motivos.otro', 'Other'), value: 'other' }
 ]);
 
-// Variables para controlar el Select y el Input libre
-const motivoSeleccionado = ref(props.trabajador.motivo || '');
-const motivoOtro = ref(props.trabajador.motivoOtro || '');
-
-watch(() => props.trabajador, (nuevoTrabajador) => {
-        if (!nuevoTrabajador.motivo) {
-            motivoSeleccionado.value = '';
-            motivoOtro.value = '';
-        }
-    },
-    { deep: true }
-);
-
-// Función directa para asignar el motivo sin romper el objeto reactivo original
-const manejarCambioMotivo = (e) => {
-    const valor = e.value;
-    if (valor !== 'Other') {
-        props.trabajador.motivo = valor;
-        props.trabajador.motivoOtro = null; // Limpiamos el texto libre si selecciona una opción normal
-        motivoOtro.value = '';
-    } else {
-        props.trabajador.motivo = 'Other';
-        props.trabajador.motivoOtro = motivoOtro.value;
-    }
+const actualizarTrabajador = (clave, valor) => {
+    emit('update:trabajador', { ...props.trabajador, [clave]: valor });
 };
 
-// Función para capturar cuando escribe en la opción "Other"
-const manejarMotivoOtro = (e) => {
-    const texto = e.target.value;
-    motivoOtro.value = texto;
-    props.trabajador.motivoOtro = texto;
+const actualizarCantidad = (idItem, nuevaCantidad) => {
+    const item = props.pedido.find(i => i.id === idItem);
+    if (!item) return;
+    
+    const cantidadValidada = Math.max(1, Math.min(item.cantidadDisponible, nuevaCantidad));
+    const nuevoPedido = props.pedido.map(i =>
+        i.id === idItem ? { ...i, cantidadLlevada: cantidadValidada } : i
+    );
+    emit('update:pedido', nuevoPedido);
 };
+
+// Evaluador flexible para detectar "Otro" independientemente de si viene como 'Otro', 'otro' o 'Other'
+const esMotivoOtro = computed(() => {
+    if (!props.trabajador.motivo) return false;
+    const m = String(props.trabajador.motivo).toLowerCase();
+    return m === 'otro' || m === 'other';
+});
+
+// Evaluador flexible para detectar "Daño por operador"
+const esDanoOperador = computed(() => {
+    if (!props.trabajador.motivo) return false;
+    const m = String(props.trabajador.motivo).toLowerCase();
+    return m === 'operator_damage' || m.includes('daño') || m.includes('dano') || m === 'operator damage';
+});
 
 // =====================================================================
-// LÓGICA DE BÚSQUEDA Y VALIDACIÓN DE TRABAJADOR
+// BÚSQUEDA Y VALIDACIÓN DE TRABAJADOR
 // =====================================================================
 const resultadosSugeridos = ref([]);
+const cargandoBusqueda = ref(false);
+const usuarioConfirmado = ref(null);
+let timeoutBusqueda = null;
 
 const buscarUsuario = (event) => {
-    if (!props.listaUsuarios) return;
-
-    const query = event.query.toLowerCase();
+    const query = event.query.toLowerCase().trim();
+    if (!query) {
+        resultadosSugeridos.value = [];
+        return;
+    }
     
-    resultadosSugeridos.value = props.listaUsuarios.filter((u) => 
-        u.numTrabajador?.toString().includes(query) || 
-        u.nombre?.toLowerCase().includes(query)
-    );
+    cargandoBusqueda.value = true;
+    clearTimeout(timeoutBusqueda);
+
+    timeoutBusqueda = setTimeout(async () => {
+        try {
+            const response = await axios.get(`/api/usuarios/buscar?q=${query}`);
+            let datosCrudos = response.data;
+            if (response.data && response.data.data) {
+                datosCrudos = response.data.data;
+            } else if (response.data && response.data.usuarios) {
+                datosCrudos = response.data.usuarios;
+            } else if (Array.isArray(response.data)) {
+                datosCrudos = response.data;
+            }
+            
+            resultadosSugeridos.value = datosCrudos.map((u) => ({
+                numTrabajador: u.numTrabajador || u.numero_empleado || u.id || u.numero,
+                nombre: u.nombre || u.name || u.nombreCompleto
+            }));
+        } catch (error) {
+            console.error("Error al buscar usuario:", error);
+            resultadosSugeridos.value = [];
+        } finally {
+            cargandoBusqueda.value = false;
+        }
+    }, 400);
 };
 
 const seleccionarUsuario = (event) => {
     const usuario = event.value;
     if (usuario && typeof usuario === 'object') {
-        props.trabajador.numero = usuario.numTrabajador;
-        props.trabajador.nombre = usuario.nombre;
+        emit('update:trabajador', {
+            ...props.trabajador,
+            numero: usuario.numTrabajador,
+            nombre: usuario.nombre
+        });
+        usuarioConfirmado.value = usuario;
     }
 };
 
-const trabajadorValido = computed(() => {
-    if (!props.trabajador.numero || !props.trabajador.nombre || !props.trabajador.orden || !props.trabajador.maquina || !props.trabajador.motivo || !props.listaUsuarios) return false;
-    
-    const numIngresado = props.trabajador.numero.toString().trim();
-    const nomIngresado = props.trabajador.nombre.toString().trim().toLowerCase();
-
-    return props.listaUsuarios.some(u => 
-        u.numTrabajador?.toString() === numIngresado && 
-        u.nombre?.toString().toLowerCase() === nomIngresado
-    );
+const trabajadorConfirmado = computed(() => {
+    const tr = props.trabajador;
+    return usuarioConfirmado.value &&
+           tr.numero && tr.nombre &&
+           usuarioConfirmado.value.numTrabajador.toString() === tr.numero.toString().trim() &&
+           usuarioConfirmado.value.nombre.toLowerCase() === tr.nombre.toString().trim().toLowerCase();
 });
 
+const camposCompletos = computed(() => {
+    const tr = props.trabajador;
+    if (!tr.orden || !tr.maquina || !tr.motivo) return false;
+    if (esMotivoOtro.value && (!tr.motivoOtro || tr.motivoOtro.trim() === '')) return false;
+    return true;
+});
+
+const trabajadorValido = computed(() => trabajadorConfirmado.value && camposCompletos.value);
+
 // =====================================================================
-// LÓGICA DEL MODAL DE DETALLES Y STOCK
+// AUTORIZACIÓN POR DAÑOS
+// =====================================================================
+const mostrarModalAuth = ref(false);
+const adminSeleccionado = ref(null);
+const codigoAdmin = ref('');
+const hashValidacion = ref(null);
+const enviandoCodigo = ref(false);
+const codigoEnviado = ref(false);
+const verificandoCodigo = ref(false);
+const errorAuth = ref('');
+
+const manejarRegistro = () => {
+    if (esDanoOperador.value) {
+        mostrarModalAuth.value = true;
+    } else {
+        emit('registrar');
+    }
+};
+
+const solicitarCodigoAutorizacion = async () => {
+    if (!adminSeleccionado.value) return;
+    enviandoCodigo.value = true;
+    errorAuth.value = '';
+    try {
+        const respuesta = await axios.post('/api/salidas/solicitar-codigo-dano', {
+            administradorId: adminSeleccionado.value,
+            trabajadorNombre: props.trabajador.nombre,
+            herramientaNombre: props.pedido.map(item => item.nombre).join(', ')
+        });
+        hashValidacion.value = respuesta.data.hashValidacion;
+        codigoEnviado.value = true;
+        codigoAdmin.value = '';
+    } catch (error) {
+        errorAuth.value = error.response?.data?.error || 'Error al solicitar el código.';
+    } finally {
+        enviandoCodigo.value = false;
+    }
+};
+
+// Emisión corregida al confirmar código PIN
+const confirmarAutorizacion = async () => {
+    errorAuth.value = '';
+    verificandoCodigo.value = true;
+    try {
+        await axios.post('/api/salidas/verificar-codigo-dano', {
+            administradorId: adminSeleccionado.value,
+            codigoAdmin: codigoAdmin.value,
+            hashValidacion: hashValidacion.value
+        });
+
+        // Aseguramos que la propiedad coincida con lo esperado por el padre (codigo)
+        emit('registrar', {
+            adminId: adminSeleccionado.value,
+            codigo: codigoAdmin.value,
+            hashValidacion: hashValidacion.value
+        });
+        limpiarModalAuth();
+    } catch (error) {
+        errorAuth.value = error.response?.data?.error || 'Código incorrecto.';
+        codigoAdmin.value = '';
+    } finally {
+        verificandoCodigo.value = false;
+    }
+};
+
+const limpiarModalAuth = () => {
+    mostrarModalAuth.value = false;
+    adminSeleccionado.value = null;
+    codigoAdmin.value = '';
+    hashValidacion.value = null;
+    codigoEnviado.value = false;
+    verificandoCodigo.value = false;
+    errorAuth.value = '';
+};
+
+// =====================================================================
+// MODAL DE DETALLES Y STOCK
 // =====================================================================
 const mostrarDetalles = ref(false);
 const herramientaActual = ref(null);
 
 const verDetalles = (item) => {
-    herramientActual.value = item; 
+    herramientaActual.value = item;
     mostrarDetalles.value = true;
-};
-
-const obtenerSeveridadStock = (h) => {
-    if (!h) return 'success';
-    if (h.cantidadDisponible <= 0) return 'danger';
-    if (h.cantidadDisponible < h.cantidadMinima) return 'danger';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'warning';
-    return 'success';
-};
-
-const obtenerTextoStock = (h) => {
-    if (!h) return '';
-    if (h.cantidadDisponible <= 0) return t('detalle_pedido.estado_agotado');
-    if (h.cantidadDisponible < h.cantidadMinima) return t('detalle_pedido.estado_critico');
-    if (h.cantidadDisponible === h.cantidadMinima) return t('detalle_pedido.estado_alerta');
-    return t('detalle_pedido.estado_normal');
 };
 </script>
 
 <template>
-    <div class="panel-principal flex flex-column h-full p-3 md:p-4 border-round-xl shadow-1">
-        <h3 class="m-0 mb-4 text-xl md:text-2xl font-bold text-white">
-            {{ t('detalle_pedido.titulo') }}
+    <div 
+        class="panel-principal flex flex-column p-4 border-round-xl shadow-2 overflow-hidden transition-all transition-duration-300"
+        :class="{ 'h-full': pedido.length > 0 }"
+    >
+        <h3 class="m-0 mb-4 text-2xl font-bold text-color tracking-tight">
+            {{ t('detalle_pedido.titulo', 'Detalle de la Salida') }}
         </h3>
 
         <!-- Formulario del Trabajador -->
-        <div class="formulario-trabajador mb-4">
-            
-            <!-- Búsqueda por Número -->
-            <div class="field mb-3">
-                <label for="buscarNumEmpleado" class="label-blanco">{{ t('detalle_pedido.label_num_empleado') }}</label>
-                <AutoComplete 
+        <div 
+            class="formulario-trabajador flex flex-column gap-3 transition-all transition-duration-200"
+            :class="[pedido.length === 0 ? 'mb-3' : 'mb-4']"
+        >
+            <!-- 1. Número de Empleado -->
+            <div class="field m-0">
+                <label for="buscarNumEmpleado" class="text-color font-semibold block mb-2">{{ t('detalle_pedido.label_num_empleado', 'No. de Empleado (Buscar o Escribir)') }}</label>
+                <AutoComplete
                     inputId="buscarNumEmpleado"
-                    v-model="trabajador.numero" 
-                    :suggestions="resultadosSugeridos" 
-                    @complete="buscarUsuario" 
+                    :modelValue="trabajador.numero"
+                    @update:modelValue="(val) => actualizarTrabajador('numero', typeof val === 'object' ? val?.numTrabajador : val)"
+                    :suggestions="resultadosSugeridos"
+                    @complete="buscarUsuario"
                     @item-select="seleccionarUsuario"
                     field="numTrabajador"
-                    :placeholder="t('detalle_pedido.ph_num_empleado')" 
-                    class="w-full"
-                    inputClass="w-full input-oscuro"
-                    panelClass="panel-autocomplete-oscuro"
+                    :placeholder="t('detalle_pedido.ph_num_empleado', 'Ej. 1045...')"
+                    class="w-full input-oscuro"
+                    panelClass="panel-autocomplete-overlay"
                     :forceSelection="false"
+                    :loading="cargandoBusqueda"
+                    appendTo="body"
                 >
                     <template #option="slotProps">
-                        <div class="flex flex-column">
-                            <span class="font-bold text-blue-400">{{ slotProps.option.numTrabajador }}</span>
-                            <span class="text-sm text-white">{{ slotProps.option.nombre }}</span>
+                        <div class="flex flex-column py-1">
+                            <span class="font-bold text-primary text-base">{{ slotProps.option.numTrabajador }}</span>
+                            <span class="text-sm text-color-secondary">{{ slotProps.option.nombre }}</span>
                         </div>
                     </template>
                 </AutoComplete>
             </div>
-            
-            <!-- Búsqueda por Nombre -->
-            <div class="field mb-3">
-                <label for="buscarNomEmpleado" class="label-blanco">{{ t('detalle_pedido.label_nom_empleado') }}</label>
-                <AutoComplete 
+
+            <!-- 2. Nombre del Trabajador -->
+            <div class="field m-0">
+                <label for="buscarNomEmpleado" class="text-color font-semibold block mb-2">{{ t('detalle_pedido.label_nom_empleado', 'Nombre del Trabajador') }}</label>
+                <AutoComplete
                     inputId="buscarNomEmpleado"
-                    v-model="trabajador.nombre" 
-                    :suggestions="resultadosSugeridos" 
-                    @complete="buscarUsuario" 
+                    :modelValue="trabajador.nombre"
+                    @update:modelValue="(val) => actualizarTrabajador('nombre', typeof val === 'object' ? val?.nombre : val)"
+                    :suggestions="resultadosSugeridos"
+                    @complete="buscarUsuario"
                     @item-select="seleccionarUsuario"
                     field="nombre"
-                    :placeholder="t('detalle_pedido.ph_nom_empleado')" 
-                    class="w-full"
-                    inputClass="w-full input-oscuro"
-                    panelClass="panel-autocomplete-oscuro"
+                    :placeholder="t('detalle_pedido.ph_nom_empleado', 'Ej. Eduardo Cruz...')"
+                    class="w-full input-oscuro"
+                    panelClass="panel-autocomplete-overlay"
                     :forceSelection="false"
+                    :loading="cargandoBusqueda"
+                    appendTo="body"
                 >
                     <template #option="slotProps">
-                        <div class="flex flex-column">
-                            <span class="font-bold text-white">{{ slotProps.option.nombre }}</span>
-                            <span class="text-sm text-blue-400">{{ slotProps.option.numTrabajador }}</span>
+                        <div class="flex flex-column py-1">
+                            <span class="font-bold text-color text-base">{{ slotProps.option.nombre }}</span>
+                            <span class="text-sm text-primary">{{ slotProps.option.numTrabajador }}</span>
                         </div>
                     </template>
                 </AutoComplete>
             </div>
 
-            <!-- Orden de Trabajo -->
-            <div class="field mb-3">
-                <label for="ordenTrabajo" class="label-blanco">{{ t('detalle_pedido.label_orden') }}</label>
-                <InputText 
+            <!-- 3. Num. de Orden -->
+            <div class="field m-0">
+                <label for="ordenTrabajo" class="text-color font-semibold block mb-2">{{ t('detalle_pedido.label_orden', 'Num. de Orden') }}</label>
+                <InputText
                     id="ordenTrabajo"
-                    v-model="trabajador.orden" 
-                    :placeholder="t('detalle_pedido.ph_num_orden')" 
-                    class="w-full input-oscuro" 
+                    :modelValue="trabajador.orden"
+                    @update:modelValue="(val) => actualizarTrabajador('orden', val)"
+                    :placeholder="t('detalle_pedido.ph_num_orden', 'e.j., OT-1024...')"
+                    class="w-full input-oscuro"
                 />
             </div>
 
-            <!-- Máquina / Equipo -->
-            <div class="field mb-3">
-                <label for="maquinaTrabajo" class="label-blanco">{{ t('detalle_pedido.label_maquina') }}</label>
-                <InputText 
-                    id="label_maquinaTrabajo"
-                    v-model="trabajador.maquina" 
-                    :placeholder="t('detalle_pedido.ph_maquina')" 
-                    class="w-full input-oscuro" 
+            <!-- 4. Máquina / Equipo -->
+            <div class="field m-0">
+                <label for="maquinaTrabajo" class="text-color font-semibold block mb-2">{{ t('detalle_pedido.label_maquina', 'Máquina / Equipo') }}</label>
+                <InputText
+                    id="maquinaTrabajo"
+                    :modelValue="trabajador.maquina"
+                    @update:modelValue="(val) => actualizarTrabajador('maquina', val)"
+                    :placeholder="t('detalle_pedido.ph_maquina', 'e.j., CNC-02...')"
+                    class="w-full input-oscuro"
                 />
             </div>
             
-            <!-- Motivo de Salida  -->
-            <div class="field mb-3">
-                <label for="motivoSalida" class="text-700 font-semibold block mb-2">{{ t('detalle_pedido.label_motivo') }}</label>
-                
-                <Select 
-                    id="motivoSalida"
-                    v-model="motivoSeleccionado" 
+            <!-- 5. Motivo de Salida -->
+            <div class="field m-0">
+                <label for="motivoSalida" class="text-color font-semibold block mb-2">{{ t('detalle_pedido.label_motivo', 'Motivo de salida') }}</label>
+                <Select
+                    inputId="motivoSalida"
+                    :modelValue="trabajador.motivo"
                     :options="opcionesMotivo"
                     optionLabel="label"
                     optionValue="value"
-                    :placeholder="t('detalle_pedido.ph_motivo_select')" 
-                    class="w-full select-borde-verde" 
-                    @change="manejarCambioMotivo"
+                    :placeholder="t('detalle_pedido.ph_motivo_select', 'Selecciona una razón')"
+                    class="w-full input-oscuro"
+                    panelClass="panel-autocomplete-overlay"
+                    appendTo="body"
+                    @update:modelValue="(val) => {
+                        const m = String(val).toLowerCase();
+                        const esOtroVal = m === 'otro' || m === 'other';
+                        emit('update:trabajador', {
+                            ...props.trabajador,
+                            motivo: val,
+                            motivoOtro: esOtroVal ? props.trabajador.motivoOtro : ''
+                        });
+                    }"
                 />
-
-                <!-- Input extra que solo aparece si eligen "Other" -->
-                <InputText 
-                    v-if="motivoSeleccionado === 'Other'"
-                    :value="motivoOtro"
-                    @input="manejarMotivoOtro"
-                    :placeholder="t('detalle_pedido.ph_motivo_escribe')" 
-                    class="w-full mt-2 input-borde-verde" 
+                <InputText
+                    v-if="esMotivoOtro"
+                    :modelValue="trabajador.motivoOtro"
+                    @update:modelValue="(val) => actualizarTrabajador('motivoOtro', val)"
+                    :placeholder="t('detalle_pedido.ph_motivo_escribe', 'Escribe la razón...')"
+                    class="w-full input-oscuro mt-2"
                     autocomplete="off"
                 />
             </div>
-
         </div>
 
-        <!-- Lista de Herramientas Seleccionadas -->
-        <h4 class="text-300 text-lg mt-4 border-top-1 border-gray-600 pt-3">
-            {{ t('detalle_pedido.titulo_herramientas') }}
+        <!-- Lista de Herramientas -->
+        <h4 class="text-color text-lg font-bold border-top-1 surface-border pt-3 mb-3">
+            {{ t('detalle_pedido.titulo_herramientas', 'Herramientas a entregar:') }}
         </h4>
         
-        <div v-if="pedido.length === 0" class="mensaje-vacio">
-            {{ t('detalle_pedido.mensaje_vacio') }}
+        <div v-if="pedido.length === 0" class="mensaje-vacio text-500 text-base italic mb-3">
+            {{ t('detalle_pedido.mensaje_vacio', 'Aún no has agregado herramientas.') }}
         </div>
 
-        <ul v-else class="list-none p-0 m-0">
-            <li v-for="item in pedido" :key="item.id" class="caja-herramienta mb-3 flex flex-column sm:flex-row align-items-start sm:align-items-center justify-content-between p-3 border-round gap-3 sm:gap-0">
-
-                <!-- Información de la Herramienta (Izquierda) -->
-                <div class="flex flex-column w-full sm:w-auto">
-                    <span class="text-sm label-gris mb-1">{{ item.codigo }}</span>
-                    <span class="text-lg sm:text-base font-bold texto-valor">{{ item.nombre }}</span>
-                </div>
-
-                <!-- Controles y Acciones (Derecha) -->
-                <div class="flex align-items-center justify-content-between sm:justify-content-end w-full sm:w-auto gap-3">
-                    
-                    <!-- Botón Ver Detalles -->
-                    <Button 
-                        icon="pi pi-eye" 
-                        class="p-button-rounded p-button-text p-button-sm text-blue-400 p-0 w-2rem h-2rem flex-shrink-0" 
-                        @click="verDetalles(item)" 
-                        :aria-label="t('detalle_pedido.aria_ver_detalles')" 
-                    />
-                    
-                    <!-- Control de Cantidad (Tipo Pastilla) -->
-                    <div class="caja-cantidad flex align-items-center border-round px-3 py-2 gap-2">
-                        <span class="text-sm label-gris font-medium">{{ t('detalle_pedido.etiqueta_cant') }}</span>
-                        <input 
-                            type="number" 
-                            v-model.number="item.cantidadLlevada" 
-                            min="1" 
-                            :max="item.cantidadDisponible" 
-                            class="input-cantidad text-center font-bold border-round" 
-                            :aria-label="t('detalle_pedido.aria_cantidad')"
-                        />
-                        <span class="text-sm label-gris font-medium">/ {{ item.cantidadDisponible }}</span>
+        <ul v-else class="list-none p-0 m-0 flex flex-column gap-3 overflow-y-auto">
+            <li 
+                v-for="item in pedido" 
+                :key="item.id" 
+                class="tarjeta-herramienta flex flex-column p-3 border-round-xl transition-all transition-duration-200 gap-3 shadow-1"
+            >
+                <div class="flex align-items-center justify-content-between gap-2">
+                    <div class="flex flex-column min-w-0">
+                        <span class="badge-codigo text-xs font-mono font-bold">{{ item.codigo }}</span>
+                        <span class="text-base font-bold text-color line-height-2 mt-1">{{ item.nombre }}</span>
                     </div>
                     
-                    <!-- Botón Quitar -->
-                    <Button 
-                        icon="pi pi-trash" 
-                        class="p-button-rounded p-button-text p-button-sm text-red-400 p-0 w-2rem h-2rem flex-shrink-0" 
-                        @click="emit('quitar', item.id)" 
-                        :aria-label="t('detalle_pedido.aria_quitar')" 
+                    <Button
+                        icon="pi pi-eye"
+                        class="p-button-rounded p-button-text p-button-info p-0 w-2rem h-2rem flex-shrink-0"
+                        @click="verDetalles(item)"
+                        :aria-label="t('detalle_pedido.aria_ver_detalles', 'Ver detalles')"
+                    />
+                </div>
+
+                <div class="flex align-items-center justify-content-between border-top-1 surface-border pt-2">
+                    <div class="flex align-items-center gap-3">
+                        <div class="control-stepper flex align-items-center border-round-lg overflow-hidden border-1 surface-border">
+                            <button 
+                                type="button" 
+                                class="btn-stepper flex align-items-center justify-content-center"
+                                :disabled="item.cantidadLlevada <= 1"
+                                @click="actualizarCantidad(item.id, item.cantidadLlevada - 1)"
+                            >
+                                <i class="pi pi-minus text-sm"></i>
+                            </button>
+                            
+                            <input
+                                :id="'cantidad_' + item.id"
+                                type="number"
+                                :value="item.cantidadLlevada"
+                                @input="(e) => actualizarCantidad(item.id, Number(e.target.value))"
+                                min="1"
+                                :max="item.cantidadDisponible"
+                                class="input-stepper text-center font-bold text-base text-color border-none"
+                            />
+
+                            <button 
+                                type="button" 
+                                class="btn-stepper flex align-items-center justify-content-center"
+                                :disabled="item.cantidadLlevada >= item.cantidadDisponible"
+                                @click="actualizarCantidad(item.id, item.cantidadLlevada + 1)"
+                            >
+                                <i class="pi pi-plus text-sm"></i>
+                            </button>
+                        </div>
+
+                        <span class="text-sm text-color-secondary font-medium">
+                            / {{ item.cantidadDisponible }} disp.
+                        </span>
+                    </div>
+                    
+                    <Button
+                        icon="pi pi-trash"
+                        class="p-button-rounded p-button-text p-button-danger p-0 w-2rem h-2rem flex-shrink-0"
+                        @click="emit('quitar', item.id)"
+                        :aria-label="t('detalle_pedido.aria_quitar', 'Quitar')"
                     />
                 </div>
             </li>
         </ul>
 
-        <!-- Botón de Registro y Validaciones -->
-        <div class="mt-4">
-            <div v-if="(trabajador.numero || trabajador.nombre) && !trabajadorValido" class="text-red-400 text-sm mb-3 flex align-items-center font-semibold">
-                <i class="pi pi-exclamation-triangle mr-2"></i> {{ t('detalle_pedido.error_trabajador') }}
+        <!-- Botón de Registro -->
+        <div :class="[pedido.length === 0 ? 'mt-2' : 'mt-auto pt-4']">
+            <div v-if="(trabajador.numero || trabajador.nombre) && !trabajadorConfirmado" class="text-red-400 text-xs mb-2 flex align-items-center font-semibold">
+                <i class="pi pi-exclamation-triangle mr-2"></i> {{ t('detalle_pedido.error_trabajador', 'Empleado no seleccionado de la lista') }}
             </div>
             
-            <Button 
-                :label="t('detalle_pedido.btn_registrar')" 
-                icon="pi pi-check" 
-                class="w-full boton-registrar" 
-                @click="emit('registrar')" 
-                :disabled="pedido.length === 0 || !trabajadorValido"
+            <div v-else-if="trabajadorConfirmado && !camposCompletos" class="text-orange-400 text-xs mb-2 flex align-items-center font-semibold">
+                <i class="pi pi-info-circle mr-2"></i> Completa Orden, Máquina y Motivo.
+            </div>
+            
+            <Button
+                :label="t('detalle_pedido.btn_registrar', 'Registrar Salida')"
+                icon="pi pi-check"
+                class="w-full p-button-success p-button-lg shadow-2"
+                :disabled="!trabajadorValido || pedido.length === 0"
+                @click="manejarRegistro"
             />
         </div>
 
-        <!-- Modal Detalles de Herramienta -->
-        <Dialog 
+        <!-- Componente Modal de Detalles Reutilizable -->
+        <ModalDetalleHerramienta 
             v-model:visible="mostrarDetalles" 
-            :style="{width: '700px'}" 
-            :breakpoints="{ '1199px': '75vw', '768px': '90vw', '575px': '95vw' }"
-            :header="t('detalle_pedido.modal_titulo')" 
-            :modal="true" 
-            dismissableMask 
-            class="modal-oscuro"
-        >
-            <div v-if="herramientaActual" class="p-2 md:p-4">
-                <div class="flex flex-column align-items-center mb-5">
-                    <img 
-                        v-if="herramientaActual.imagen" 
-                        :src="herramientaActual.imagen" 
-                        @error="$event.target.src='https://via.placeholder.com/250x150/1e252d/ffffff?text=Error'" 
-                        class="shadow-3 border-round" 
-                        style="max-width: 100%; max-height: 300px; object-fit: contain;" 
-                    />
-                    <div v-else class="flex align-items-center justify-content-center surface-200 border-round shadow-1" style="width: 100%; max-width: 200px; height: 200px;">
-                        <i class="pi pi-image text-7xl text-400"></i>
-                    </div>
-                    <div class="mt-4">
-                        <Tag class="text-lg md:text-xl px-4 py-2" :severity="obtenerSeveridadStock(herramientaActual)" :value="obtenerTextoStock(herramientaActual)" />
+            :herramienta="herramientaActual" 
+            :ocultarBotonAgregar="true"
+        />
+
+        <!-- Modal Autorización por Daños -->
+        <Dialog v-model:visible="mostrarModalAuth" modal header="Autorización Requerida" :style="{ width: '90vw', maxWidth: '420px' }" @hide="limpiarModalAuth">
+            <div class="flex flex-column gap-3 pt-2">
+                <p class="m-0 text-color-secondary text-sm">El motivo requiere código PIN enviado al correo del administrador.</p>
+                <div class="field mb-0">
+                    <label for="adminSelect" class="font-semibold block mb-2 text-sm">Administrador</label>
+                    <div class="flex gap-2">
+                        <Select inputId="adminSelect" v-model="adminSeleccionado" :options="administradores" optionLabel="nombre" optionValue="id" placeholder="Elegir..." class="w-full" :disabled="enviandoCodigo || verificandoCodigo" />
+                        <Button :icon="codigoEnviado ? 'pi pi-refresh' : 'pi pi-send'" class="p-button-primary flex-shrink-0" :loading="enviandoCodigo" :disabled="!adminSeleccionado || enviandoCodigo || verificandoCodigo" @click="solicitarCodigoAutorizacion" />
                     </div>
                 </div>
-
-                <div class="grid">
-                    <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.col_codigo') }}</span>
-                        <span class="text-xl font-bold" style="color: #38bdf8;">{{ herramientaActual.codigo }}</span>
-                    </div>
-                    <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.col_nombre') }}</span>
-                        <span class="text-xl font-bold text-white">{{ herramientaActual.nombre }}</span>
-                    </div>
-                    <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_tipo') }}</span>
-                        <span class="text-lg text-white">{{ herramientaActual.tipo || t('detalle_pedido.no_aplica') }}</span>
-                    </div>
-                    <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_ubicacion') }}</span>
-                        <span class="text-lg text-white">{{ herramientaActual.ubicacion || t('detalle_pedido.no_aplica') }}</span>
-                    </div>
-                    <div class="col-12 md:col-6 mb-3">
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_marca') }}</span>
-                        <span class="text-lg text-white">{{ herramientaActual.marca || t('detalle_pedido.no_aplica') }}</span>
-                    </div>
-                    
-                    <div class="col-12 md:col-6 mb-3">
-                        <!-- Pequeño ajuste aquí: de '/ Máx' a '/ Max' -->
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_stock_vs') }} / Max</span>
-                        <span class="text-lg font-bold text-white">
-                            {{ herramientaActual.cantidadDisponible }} / {{ herramientaActual.cantidadMinima }} / <span class="text-green-400">{{ herramientaActual.cantidadMaxima || 'N/A' }}</span> {{ t('detalle_pedido.modal_unidades') }}
-                        </span>
-                    </div>
-                    
-                    <div class="col-12 mb-3">
-                        <span class="text-500 block mb-1">{{ t('detalle_pedido.modal_descripcion') }}</span>
-                        <div class="surface-100 p-3 border-round text-base md:text-lg line-height-3 text-300">
-                            {{ herramientaActual.descripcion || t('detalle_pedido.modal_sin_descripcion') }}
-                        </div>
-                    </div>
+                <div v-if="codigoEnviado && !errorAuth" class="text-green-400 text-xs flex align-items-center font-medium"><i class="pi pi-check-circle mr-1"></i> Código enviado.</div>
+                <div v-if="errorAuth" class="text-red-400 text-xs flex align-items-center font-medium"><i class="pi pi-times-circle mr-1"></i> {{ errorAuth }}</div>
+                <div class="field mb-0">
+                    <label for="adminPin" class="font-semibold block mb-2 text-sm">Código PIN</label>
+                    <InputText id="adminPin" v-model="codigoAdmin" type="password" maxlength="6" placeholder="PIN de 6 dígitos" class="w-full" autocomplete="off" :disabled="!codigoEnviado || verificandoCodigo" />
                 </div>
             </div>
-            
             <template #footer>
-                <div class="flex justify-content-end mt-2 md:mt-3">
-                    <Button 
-                        :label="t('detalle_pedido.btn_cerrar')" 
-                        icon="pi pi-times" 
-                        class="btn-cancelar font-bold w-full sm:w-auto" 
-                        @click="mostrarDetalles = false" 
-                        autofocus 
-                    />
+                <div class="flex justify-content-end gap-2">
+                    <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="limpiarModalAuth" />
+                    <Button label="Autorizar" icon="pi pi-check" class="p-button-success" :loading="verificandoCodigo" :disabled="!codigoAdmin || codigoAdmin.length < 6 || !hashValidacion || verificandoCodigo" @click="confirmarAutorizacion" />
                 </div>
             </template>
         </Dialog>
     </div>
 </template>
 
-<style>
-.panel-autocomplete-oscuro {
-    background-color: #1e252d !important;
-    border: 1px solid #4a5568 !important;
-    color: #ffffff !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important;
+<style scoped>
+/* =======================================================
+   HOMOLOGACIÓN EXACTA DE AUTOCOMPLETE Y SELECT
+   ======================================================= */
+
+/* 1. Contenedor de AutoComplete */
+:deep(.p-autocomplete.input-oscuro) {
+    display: flex;
+    width: 100%;
+    border-radius: var(--content-border-radius, 6px) !important;
+    overflow: hidden;
 }
 
-/* Reglas para AutoComplete */
-.panel-autocomplete-oscuro .p-autocomplete-list {
+/* 2. Input interno del AutoComplete */
+:deep(.p-autocomplete.input-oscuro .p-autocomplete-input) {
+    width: 100% !important;
     background-color: transparent !important;
-    padding: 0 !important;
-}
-.panel-autocomplete-oscuro .p-autocomplete-option {
-    color: #cbd5e1 !important;
-    background-color: transparent !important;
-    padding: 0.75rem 1rem !important;
-}
-.panel-autocomplete-oscuro .p-autocomplete-option:hover,
-.panel-autocomplete-oscuro .p-autocomplete-option.p-focus {
-    background-color: #36464d !important;
-    color: #ffffff !important;
+    border: none !important;
+    border-radius: inherit !important;
+    color: inherit !important;
+    box-shadow: none !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 1rem !important;
 }
 
-/* Reglas para Select (Motivo de Salida) */
-.panel-autocomplete-oscuro .p-select-list {
-    background-color: transparent !important;
-    padding: 0 !important;
-}
-.panel-autocomplete-oscuro .p-select-option {
-    color: #cbd5e1 !important;
-    background-color: transparent !important;
-    padding: 0.75rem 1rem !important;
-}
-.panel-autocomplete-oscuro .p-select-option:hover,
-.panel-autocomplete-oscuro .p-select-option.p-focus,
-.panel-autocomplete-oscuro .p-select-option[data-p-highlight="true"] {
-    background-color: #36464d !important;
-    color: #ffffff !important;
+/* 3. Ajuste para Select */
+:deep(.p-select.input-oscuro) {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    border-radius: var(--content-border-radius, 6px) !important;
 }
 
-/* ========================================================
-   ESTILOS LISTA DE HERRAMIENTAS (TEMA OSCURO - POR DEFECTO)
-   ======================================================== */
-.caja-herramienta {
-    background-color: transparent !important;
-    border: 1px solid #4a5568 !important; /* Borde gris oscuro */
+/* =======================================================
+   ESTILOS GENERALES DEL COMPONENTE
+   ======================================================= */
+.panel-principal {
+    background-color: var(--surface-card);
+    border: 1px solid var(--surface-border);
 }
 
-.label-gris {
-    color: #94a3b8 !important;
+.tarjeta-herramienta {
+    background-color: var(--surface-section);
+    border: 1px solid var(--surface-border);
 }
 
-.texto-valor {
-    color: #ffffff !important;
+.tarjeta-herramienta:hover {
+    border-color: var(--primary-color) !important;
 }
 
-.caja-cantidad {
-    background-color: transparent !important;
-    border: 1px solid #4a5568 !important; /* Borde de la pastilla */
+.badge-codigo {
+    color: var(--primary-color);
+    letter-spacing: 0.5px;
 }
 
-.input-cantidad {
-    background-color: #121820 !important; /* Fondo del input muy oscuro */
-    color: #ffffff !important;
-    border: 1px solid #3f4b5b !important;
-    width: 45px;
-    height: 30px;
+/* Stepper */
+.control-stepper {
+    background-color: var(--surface-ground);
+}
+
+.btn-stepper {
+    border: none;
+    background: transparent;
+    color: var(--text-color);
+    width: 2.5rem;
+    height: 2.2rem;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.btn-stepper:hover:not(:disabled) {
+    background-color: var(--surface-hover);
+}
+
+.btn-stepper:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.input-stepper {
+    width: 2.5rem;
+    background: transparent;
     outline: none;
-    -moz-appearance: textfield; /* Ocultar flechas en Firefox */
+    padding: 0;
 }
 
-/* Ocultar flechas nativas en Chrome/Safari/Edge */
-.input-cantidad::-webkit-outer-spin-button,
-.input-cantidad::-webkit-inner-spin-button {
-    -webkit-appearance: none; 
-    margin: 0;
+.input-stepper::-webkit-inner-spin-button, 
+.input-stepper::-webkit-outer-spin-button { 
+  -webkit-appearance: none; 
+  margin: 0; 
 }
 
-.input-cantidad:focus {
-    border-color: #38bdf8 !important;
+.input-stepper[type=number] {
+  appearance: textfield;      
+  -moz-appearance: textfield;  
+}
+</style>
+
+<style>
+/* 1. MODO OSCURO (Por defecto) */
+.panel-autocomplete-overlay {
+    background-color: #121820 !important;
+    border: 1px solid #4a5568 !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+    z-index: 9999 !important;
 }
 
-/* ========================================================
-   TEMA CLARO (Sobreescrituras dinámicas)
-   ======================================================== */
-html.light-theme .caja-herramienta {
-    background-color: #f8fafc !important;
-    border: 1px solid #cbd5e1 !important;
+.panel-autocomplete-overlay .p-autocomplete-option,
+.panel-autocomplete-overlay .p-select-option {
+    color: #ffffff !important;
+    background-color: #121820 !important;
 }
 
-html.light-theme .label-gris {
-    color: #64748b !important;
+.panel-autocomplete-overlay .p-autocomplete-option:hover,
+.panel-autocomplete-overlay .p-select-option:hover {
+    background-color: #1f2937 !important;
 }
 
-html.light-theme .texto-valor {
-    color: #334155 !important; 
-}
-
-html.light-theme .caja-cantidad {
-    background-color: transparent !important;
-    border: 1px solid #cbd5e1 !important;
-}
-
-html.light-theme .input-cantidad {
+/* 2. MODO CLARO (Activado por html.light-theme) */
+html.light-theme .panel-autocomplete-overlay {
     background-color: #ffffff !important;
-    color: #334155 !important;
     border: 1px solid #cbd5e1 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
 }
 
-html.light-theme .input-cantidad:focus {
-    border-color: #0ea5e9 !important;
+html.light-theme .panel-autocomplete-overlay .p-autocomplete-option,
+html.light-theme .panel-autocomplete-overlay .p-select-option {
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+}
+
+html.light-theme .panel-autocomplete-overlay .p-autocomplete-option:hover,
+html.light-theme .panel-autocomplete-overlay .p-select-option:hover {
+    background-color: #f1f5f9 !important;
 }
 </style>
