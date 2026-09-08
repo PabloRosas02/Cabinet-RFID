@@ -55,14 +55,13 @@ const agregarHerramienta = () => {
     <Dialog 
         v-model:visible="mostrarModal" 
         :style="{ width: '38rem' }" 
-        :header="t('catalogo_herramientas.modal_titulo_detalles') || 'Detalles de la Herramienta'" 
+        :header="t('catalogo_herramientas.modal_titulo_detalles')" 
         :modal="true"
         dismissableMask
         class="modal-herramienta"
     >
         <div v-if="herramienta" class="pt-2 pb-1 px-1 md:px-2">
             <div class="flex flex-column align-items-center mb-5">
-                <!-- Visor único integrado -->
                 <VisorImagen 
                     :src="herramienta.imagen || herramienta.image"
                     :alt="herramienta.nombre || 'Herramienta'"
@@ -73,7 +72,7 @@ const agregarHerramienta = () => {
                                 
                 <Tag 
                     :severity="obtenerSeveridadStock(herramienta)" 
-                    :value="obtenerTextoStock(herramienta) || 'NORMAL'"
+                    :value="obtenerTextoStock(herramienta)"
                     class="px-3 py-1 text-xs uppercase font-bold shadow-1"
                 />
             </div>
@@ -114,14 +113,13 @@ const agregarHerramienta = () => {
                     </span>
                 </div>
 
-                <!-- CAMPO: Desechable (Con soporte i18n) -->
                 <div class="col-12 md:col-6 mb-4">
-                    <span class="label-gris block mb-1 text-sm">{{ t('catalogo_herramientas.modal_desechable') || '¿Es Desechable?' }}</span>
+                    <span class="label-gris block mb-1 text-sm">{{ t('catalogo_herramientas.modal_desechable') }}</span>
                     <Tag 
                         :severity="herramienta.esDesechable ? 'warning' : 'info'" 
                         :value="herramienta.esDesechable 
-                            ? (t('catalogo_herramientas.tag_desechable_si') || 'SÍ (CONSUMIBLE)') 
-                            : (t('catalogo_herramientas.tag_desechable_no') || 'NO (REUTILIZABLE)')"
+                            ? t('catalogo_herramientas.tag_desechable_si') 
+                            : t('catalogo_herramientas.tag_desechable_no')"
                         class="px-2 py-1 text-xs font-bold"
                     />
                 </div>
@@ -135,15 +133,15 @@ const agregarHerramienta = () => {
                             {{ herramienta.cantidadMaxima ?? herramienta.maxStock }}
                         </template>
                         <template v-else>52</template>
-                        {{ t('catalogo_herramientas.modal_unidades') || ' unidades' }}
+                        {{ t('catalogo_herramientas.modal_unidades') }}
                     </span>
                 </div>
             </div>
 
             <div class="w-full">
-                <span class="label-gris block mb-2 text-sm">{{ t('catalogo_herramientas.modal_descripcion') || 'Descripción y Notas' }}</span>
+                <span class="label-gris block mb-2 text-sm">{{ t('catalogo_herramientas.modal_descripcion') }}</span>
                 <div class="caja-descripcion p-3 text-sm">
-                    {{ herramienta.descripcion || herramienta.description || t('catalogo_herramientas.modal_sin_descripcion') || 'Sin descripción disponible.' }}
+                    {{ herramienta.descripcion || herramienta.description || t('catalogo_herramientas.modal_sin_descripcion') }}
                 </div>
             </div>
         </div>
@@ -151,7 +149,7 @@ const agregarHerramienta = () => {
         <template #footer>
             <div class="flex justify-content-end align-items-center gap-3 w-full">
                 <Button 
-                    :label="t('catalogo_herramientas.btn_cerrar') || 'Cerrar'" 
+                    :label="t('catalogo_herramientas.btn_cerrar')" 
                     icon="pi pi-times" 
                     text 
                     class="btn-texto-gris" 
@@ -159,7 +157,7 @@ const agregarHerramienta = () => {
                 />
                 <Button 
                     v-if="!ocultarBotonAgregar"
-                    :label="t('catalogo_herramientas.btn_anadir') || 'Añadir al Pedido'" 
+                    :label="t('catalogo_herramientas.btn_anadir')" 
                     icon="pi pi-plus" 
                     class="btn-agregar px-4 py-2" 
                     @click="agregarHerramienta" 
@@ -171,7 +169,6 @@ const agregarHerramienta = () => {
 </template>
 
 <style>
-/* Estilos globales del Modal */
 .modal-herramienta .p-dialog-header,
 .modal-herramienta .p-dialog-content,
 .modal-herramienta .p-dialog-footer {
@@ -195,7 +192,6 @@ const agregarHerramienta = () => {
     color: #94a3b8 !important;
 }
 
-/* Tema Claro */
 html.light-theme .modal-herramienta .p-dialog-header,
 html.light-theme .modal-herramienta .p-dialog-content,
 html.light-theme .modal-herramienta .p-dialog-footer {
@@ -218,7 +214,6 @@ html.light-theme .modal-herramienta .icono-vacio {
     color: #64748b !important;
 }
 
-/* Botón Añadir */
 .modal-herramienta .btn-agregar {
     background-color: #34d399 !important; 
     color: #064e3b !important;

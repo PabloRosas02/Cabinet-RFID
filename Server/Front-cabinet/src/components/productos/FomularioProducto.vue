@@ -3,7 +3,7 @@ import { ref } from 'vue';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import InputNumber from 'primevue/inputnumber';
-import Checkbox from 'primevue/checkbox';
+import Dropdown from 'primevue/dropdown'; // Cambiar a 'primevue/select' si utilizas PrimeVue v4
 import Button from 'primevue/button';
 import { useToast } from 'primevue/usetoast'; 
 import { useI18n } from 'vue-i18n';
@@ -21,10 +21,16 @@ const emit = defineEmits(['guardar', 'error', 'limpiar-mensajes']);
 const toast = useToast(); 
 const { t } = useI18n(); 
 
+// Opciones para el selector de tipo de producto
+const opcionesTipoUso = [
+    { label: 'Reutilizable', value: false },
+    { label: 'Consumible', value: true }
+];
+
 const formularioBasico = {
     codigo: '', nombre: '', tipo: '', ubicacion: '',
     marca: '', descripcion: '', cantidadMinima: 1, cantidadMaxima: 1,
-    cantidadDisponible: 1, esDesechable: false, imagen: null
+    cantidadDisponible: 1, esDesechable: false, imagen: null // Default: false (Reutilizable)
 };
 
 const herramienta = ref({ ...formularioBasico });
@@ -199,14 +205,18 @@ defineExpose({ limpiar });
                         />
                     </div>
 
-                    <!-- Es Desechable -->
-                    <div class="col-12 md:col-4 mb-3 flex flex-column justify-content-end pb-1">
-                        <div class="flex align-items-center gap-2 border-1 surface-border p-2 border-round background-card h-full min-h-2rem">
-                            <Checkbox id="esDesechable" v-model="herramienta.esDesechable" :binary="true" />
-                            <label for="esDesechable" class="font-bold text-color cursor-pointer text-sm mb-0">
-                                {{ t('formulario_producto.label_es_desechable', 'Es Desechable') }}
-                            </label>
-                        </div>
+                    <!-- Tipo de Uso (Reutilizable / Consumible) -->
+                    <div class="col-12 md:col-4 mb-3 flex flex-column gap-2">
+                        <label for="tipoUso" class="font-bold text-color">Tipo de Uso</label>
+                        <Dropdown 
+                            id="tipoUso" 
+                            v-model="herramienta.esDesechable" 
+                            :options="opcionesTipoUso" 
+                            optionLabel="label" 
+                            optionValue="value" 
+                            placeholder="Selecciona el tipo" 
+                            class="w-full"
+                        />
                     </div>
 
                 </div>

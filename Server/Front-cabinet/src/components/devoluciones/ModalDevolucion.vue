@@ -24,7 +24,9 @@ watch(() => props.pedido, (nuevoPedido) => {
             ...nuevoPedido,
             herramientas: (nuevoPedido.herramientas || []).map(h => ({
                 ...h,
-                cantidadARegresar: h.cantidadPrestada - (h.cantidadRegresada || 0)
+                esDesechable: h.esDesechable ?? h.es_desechable ?? false,
+                // Si es desechable, no se debe devolver nada (cantidad 0)
+                cantidadARegresar: h.esDesechable ? 0 : Math.max(0, h.cantidadPrestada - (h.cantidadRegresada || 0))
             }))
         };
     }
@@ -41,7 +43,7 @@ const confirmarDevolucion = () => {
     if (!pedidoLocal.value) return;
 
     const herramientasDevueltas = pedidoLocal.value.herramientas
-        .filter(item => item.cantidadARegresar > 0)
+        .filter(item => !item.esDesechable && item.cantidadARegresar > 0)
         .map(item => ({
             detalleId: item.detalleId,
             cantidad: item.cantidadARegresar
@@ -87,21 +89,32 @@ const confirmarDevolucion = () => {
                 <li v-for="item in pedidoLocal.herramientas" :key="item.detalleId" class="flex flex-column sm:flex-row justify-content-between align-items-start sm:align-items-center p-3 mb-2 border-round surface-card border-1 surface-border gap-3 text-color">
                     <div class="flex-1 min-w-0 pr-0 sm:pr-3 w-full">
                         <span class="font-bold block text-lg white-space-nowrap overflow-hidden text-overflow-ellipsis">{{ item.nombre }}</span>
+                        
+                        <!-- Texto informativo diferenciado -->
                         <span class="text-sm text-500 block mt-1">
-                            {{ t('modal_devolucion.prestadas') }} <b>{{ item.cantidadPrestada }}</b> 
-                            <span v-if="item.cantidadRegresada > 0" class="text-green-400"> ({{ t('modal_devolucion.ya_devueltas') }} {{ item.cantidadRegresada }})</span> 
+                            <template v-if="!item.esDesechable">
+                                {{ t('modal_devolucion.prestadas') }} <b>{{ item.cantidadPrestada }}</b> 
+                                <span v-if="item.cantidadRegresada > 0" class="text-green-400"> ({{ t('modal_devolucion.ya_devueltas') }} {{ item.cantidadRegresada }})</span> 
+                            </template>
+                            <template v-else>
+                                Entregadas: <b>{{ item.cantidadPrestada }}</b> 
+                                <span class="text-blue-400 font-medium"> (Consumible / No devuelto)</span>
+                            </template>
+
                             <br class="block sm:hidden" />
                             <span class="hidden sm:inline"> | </span>
                             {{ t('modal_devolucion.codigo') }} {{ item.codigo }}
                         </span>
                     </div>
                     
+                    <!-- Campo de entrada de devolución -->
                     <div class="flex-shrink-0 flex flex-column align-items-start sm:align-items-end w-full sm:w-auto">
                         <label class="text-xs text-400 mb-1">{{ t('modal_devolucion.cantidad_devolver') }}</label>
                         <InputNumber 
                             v-model="item.cantidadARegresar" 
                             :min="0" 
-                            :max="item.cantidadPrestada - (item.cantidadRegresada || 0)" 
+                            :max="item.esDesechable ? 0 : item.cantidadPrestada - (item.cantidadRegresada || 0)" 
+                            :disabled="item.esDesechable"
                             showButtons 
                             class="input-devolucion"
                             inputClass="text-center"

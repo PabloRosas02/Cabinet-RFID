@@ -21,23 +21,34 @@ const trabajador = ref({
 });
 
 const inventario = ref([]);
+const listaCategorias = ref([]);
 const pedidoActual = ref([]);
 const cargando = ref(false);
 const listaAdministradores = ref([]);
 
-// Variables para la paginación y búsqueda por servidor
 const totalRegistros = ref(0);
 const paginaActual = ref(1);
 const limitePorPagina = ref(10);
 const terminoBusqueda = ref('');
+const camposActuales = ref(['codigo', 'nombre']);
+const categoriaActual = ref(null);
 
-const cargarInventario = async (page = 1, search = '') => {
+const cargarInventario = async (page = 1, search = '', campos = ['codigo', 'nombre'], categoriaId = null) => {
     cargando.value = true;
     try {
         paginaActual.value = page;
         terminoBusqueda.value = search;
+        camposActuales.value = campos;
+        categoriaActual.value = categoriaId;
 
-        const response = await axios.get(`/api/herramientas?page=${page}&limit=${limitePorPagina.value}&search=${search}`);
+        const camposQuery = Array.isArray(campos) ? campos.join(',') : campos;
+
+        let url = `/api/herramientas?page=${page}&limit=${limitePorPagina.value}&search=${encodeURIComponent(search)}&categories=${camposQuery}`;
+        if (categoriaId) {
+            url += `&categoriaId=${categoriaId}`;
+        }
+
+        const response = await axios.get(url);
         
         inventario.value = [...response.data.data];
         totalRegistros.value = response.data.meta.total;
@@ -51,21 +62,21 @@ const cargarInventario = async (page = 1, search = '') => {
 
 const cargarAdministradores = async () => {
     try {
-        // Ajusta esta ruta según la estructura de tu backend en Express
         const response = await axios.get('/api/usuarios/administradores');
-        
-        // Maneja la respuesta dependiendo de cómo envíes el JSON desde Express
         listaAdministradores.value = response.data.data || response.data || [];
     } catch (error) {
         console.error("Error al cargar la lista de administradores:", error);
     }
 };
 
-// Intercepta el evento de cambio de página
 const manejarPaginacion = (evento) => {
     const nuevaPagina = Math.floor(evento.first / evento.rows) + 1;
     limitePorPagina.value = evento.rows;
-    cargarInventario(nuevaPagina, terminoBusqueda.value);
+    cargarInventario(nuevaPagina, terminoBusqueda.value, camposActuales.value, categoriaActual.value);
+};
+
+const manejarFiltro = ({ search, campos, categoriaId }) => {
+    cargarInventario(1, search, campos, categoriaId);
 };
 
 onMounted(() => {
@@ -73,7 +84,6 @@ onMounted(() => {
     cargarAdministradores();
 });
 
-// Lógica del Carrito
 const manejarAgregar = (herramienta) => {
     const itemExistente = pedidoActual.value.find(h => h.id === herramienta.id);
     
@@ -98,7 +108,6 @@ const manejarQuitar = (id) => {
     pedidoActual.value = pedidoActual.value.filter(h => h.id !== id);
 };
 
-// Registro de Pedido (Ahora recibe authData si el componente hijo lo emite)
 const procesarPedido = async (authData = null) => {
     try {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
@@ -121,7 +130,6 @@ const procesarPedido = async (authData = null) => {
             }))
         };
 
-        // Captura los datos emitidos por el modal de autorización por daños
         if (authData && authData.adminId && authData.codigo) {
             payload.autorizacion = {
                 adminId: authData.adminId,
@@ -140,7 +148,7 @@ const procesarPedido = async (authData = null) => {
             life: 3000 
         });
         
-        await cargarInventario(paginaActual.value, terminoBusqueda.value);
+        await cargarInventario(paginaActual.value, terminoBusqueda.value, camposActuales.value, categoriaActual.value);
         
         trabajador.value = { numero: '', nombre: '', orden: '', maquina: '', motivo: '', motivoOtro: '' };
         pedidoActual.value = [];
@@ -168,11 +176,12 @@ const procesarPedido = async (authData = null) => {
       <div class="w-full lg:w-7 xl:w-8">
           <CatalogoHerramientas 
             :inventario="inventario" 
+            :categorias="listaCategorias"
             :totalRegistros="totalRegistros"
             :cargando="cargando"
             @agregar="manejarAgregar" 
             @page="manejarPaginacion"
-            @filter="(texto) => cargarInventario(1, texto)"
+            @filter="manejarFiltro"
             />
       </div>
 

@@ -17,13 +17,11 @@ const pedidoSeleccionado = ref(null);
 const procesandoDevolucion = ref(false);
 const mensajeFeedback = ref({ visible: false, texto: '', tipo: 'success' });
 
-// Cargar pedidos
 const cargarPedidosPendientes = async () => {
     cargando.value = true;
     try {
         const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
 
-        // Añadimos los parámetros para que el backend filtre según el rol
         const response = await axios.get('/api/salidas/pendientes', {
             params: {
                 usuarioId: usuarioSesion?.id,
@@ -47,19 +45,15 @@ const revisarDevolucion = (pedido) => {
     mostrarModal.value = true;
 };
 
-// =========================================================================
-// FUNCIÓN ACTUALIZADA: Recibe la nueva estructura del ModalDevolucion
-// =========================================================================
 const confirmarDevolucion = async (datosEmitidos) => {
     procesandoDevolucion.value = true;
     try {
-        const usuarioSesion = JSON.parse(localStorage.getItem('usuario')) || JSON.parse(localStorage.getItem('usuarioActivo'));
+        const usuarioSesion = JSON.parse(localStorage.getItem('usuarioActivo')) || JSON.parse(localStorage.getItem('usuario'));
 
         if (!usuarioSesion || !usuarioSesion.id) {
             throw new Error(t('view_devoluciones.error_sesion'));
         }
 
-        // Armamos el payload final combinando el ID del usuario y el array que mandó el modal
         const payloadFinal = {
             receptorId: usuarioSesion.id, 
             herramientasDevueltas: datosEmitidos.payload.herramientasDevueltas
@@ -69,7 +63,6 @@ const confirmarDevolucion = async (datosEmitidos) => {
             throw new Error(t('view_devoluciones.error_herramienta_invalida'));
         }
 
-        // Hacemos el PUT usando el salidaId proporcionado por el modal
         await axios.put(`/api/salidas/${datosEmitidos.salidaId}/devolver`, payloadFinal);
         
         mensajeFeedback.value = { visible: true, texto: t('view_devoluciones.exito_devolucion'), tipo: 'success' };
@@ -100,7 +93,6 @@ const confirmarDevolucion = async (datosEmitidos) => {
         <h2 class="text-xl md:text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_devoluciones.titulo') }}</h2>
     </div>
 
-    <!-- Mensaje de éxito/error -->
     <Message v-if="mensajeFeedback.visible" :severity="mensajeFeedback.tipo" class="mb-4" :closable="false">
         {{ mensajeFeedback.texto }}
     </Message>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'; 
+import { ref, computed, watch, onMounted } from 'vue'; 
 import { useRouter } from 'vue-router'; 
 import { useI18n } from 'vue-i18n'; 
 
@@ -15,6 +15,7 @@ import InputIcon from 'primevue/inputicon';
 import Toast from 'primevue/toast';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
+import Chip from 'primevue/chip';
 
 // Composables & Components
 import { useHerramientas } from '@/composables/useHerramientas';
@@ -27,11 +28,48 @@ const { t } = useI18n();
 const toast = useToast();
 
 const { 
-    herramientas, cargando, totalRegistros, paginaActual, mostrarModal, herramientaActual, esEdicion, 
+    herramientas, cargando, totalRegistros, paginaActual, mostrarModal, herramientaActual, 
     prepararEdicion, guardarHerramienta, eliminarHerramienta, cargarHerramientas
 } = useHerramientas();
 
 const herramientaSeleccionada = ref<any | null>(null);
+
+// Estados de Búsqueda y Filtros
+const busquedaTexto = ref('');
+const sortFieldActual = ref('id');
+const sortOrderActual = ref('ASC');
+
+const categoriasDisponibles = computed(() => [
+    { key: 'codigo', label: t('view_inventario.categorias.codigo') },
+    { key: 'nombre', label: t('view_inventario.categorias.nombre') },
+    { key: 'tipo', label: t('view_inventario.categorias.tipo') },
+    { key: 'ubicacion', label: t('view_inventario.categorias.ubicacion') }
+]);
+
+const categoriasSeleccionadas = ref(['codigo', 'nombre', 'tipo', 'ubicacion']);
+
+const toggleCategoria = (key: string) => {
+    const idx = categoriasSeleccionadas.value.indexOf(key);
+    if (idx > -1) {
+        if (categoriasSeleccionadas.value.length > 1) {
+            categoriasSeleccionadas.value.splice(idx, 1);
+        }
+    } else {
+        categoriasSeleccionadas.value.push(key);
+    }
+};
+
+const placeholderDinamico = computed(() => {
+    if (categoriasSeleccionadas.value.length === categoriasDisponibles.value.length) {
+        return t('view_inventario.ph_buscar');
+    }
+    const nombres = categoriasDisponibles.value
+        .filter(c => categoriasSeleccionadas.value.includes(c.key))
+        .map(c => c.label.toLowerCase())
+        .join(', ');
+    return `${t('view_inventario.buscar_en')} ${nombres}...`;
+});
+
 const filtros = ref({
     global: { value: null, matchMode: FilterMatchMode.CONTAINS }
 });
@@ -59,6 +97,26 @@ const esValidoParaBaja = computed(() => {
     return true;
 });
 
+const solicitarCarga = () => {
+    cargarHerramientas({
+        page: paginaActual.value, 
+        limit: 10,
+        search: busquedaTexto.value,
+        categories: categoriasSeleccionadas.value.join(','),
+        sortField: sortFieldActual.value,
+        sortOrder: sortOrderActual.value
+    });
+};
+
+let timeoutBusqueda: any = null;
+watch([busquedaTexto, categoriasSeleccionadas], () => {
+    clearTimeout(timeoutBusqueda);
+    timeoutBusqueda = setTimeout(() => {
+        paginaActual.value = 1;
+        solicitarCarga();
+    }, 300);
+}, { deep: true });
+
 const manejarSeleccion = (seleccion: any) => {
     herramientaSeleccionada.value = seleccion;
 };
@@ -68,8 +126,18 @@ const abrirDetalles = (herramienta: any) => {
     mostrarModalDetalles.value = true;
 };
 
-const cambiarPagina = ({ page, limit }: { page: number, limit: number }) => {
-    cargarHerramientas({ page, limit });
+const cambiarPagina = (evento: { page: number }) => {
+    paginaActual.value = evento.page;
+    solicitarCarga();
+};
+
+const manejarOrden = (event: any) => {
+    if (!event.sortField) return;
+
+    sortFieldActual.value = event.sortField;
+    sortOrderActual.value = event.sortOrder === 1 ? 'ASC' : 'DESC';
+
+    solicitarCarga();
 };
 
 const prepararEdicionSeleccionada = () => {
@@ -118,6 +186,7 @@ const procesarBaja = async () => {
         
         herramientaSeleccionada.value = null; 
         mostrarModalBaja.value = false;
+        solicitarCarga();
     }
 };
 
@@ -138,7 +207,7 @@ const volverAInventario = () => {
 };
 
 onMounted(() => {
-    cargarHerramientas({ page: 1, limit: 10 });
+    solicitarCarga();
 });
 </script>
 
@@ -148,67 +217,84 @@ onMounted(() => {
     <Toast />
 
     <div class="flex justify-content-between align-items-center mb-4">
-      <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_movimientos.titulo') }}</h2>
+      <h2 class="text-2xl font-bold m-0 titulo-vista">{{ t('view_movimientos.titulo') }}</h2>
     </div>
 
-    <!-- Barra de Herramientas -->
-    <div class="flex flex-column xl:flex-row justify-content-between gap-3 mb-4 p-3 toolbar-oscuro border-round">
+    <!-- Barra de Herramientas y Búsqueda -->
+    <div class="flex flex-column gap-3 mb-4 p-3 toolbar-oscuro border-round">
 
-      <div class="flex flex-column sm:flex-row gap-2 w-full xl:w-auto">
-        <Button 
-            icon="pi pi-arrow-left" 
-            :label="t('view_movimientos.btn_volver')" 
-            class="btn-volver w-full sm:w-auto" 
-            outlined 
-            @click="volverAInventario" 
-        />
+      <div class="flex flex-wrap gap-2 w-full justify-content-between align-items-center">
+        <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+            <Button 
+                icon="pi pi-arrow-left" 
+                :label="t('view_movimientos.btn_volver')" 
+                class="btn-volver w-full sm:w-auto" 
+                outlined 
+                @click="volverAInventario" 
+            />
 
-        <Button 
-            :label="t('view_movimientos.btn_editar')" 
-            icon="pi pi-pencil" 
-            severity="info" 
-            class="font-bold btn-editar w-full sm:w-auto" 
-            :disabled="!herramientaSeleccionada" 
-            @click="prepararEdicionSeleccionada" 
-        />
-        
-        <Button 
-            :label="t('view_movimientos.btn_eliminar')" 
-            icon="pi pi-trash" 
-            severity="danger" 
-            class="font-bold btn-eliminar w-full sm:w-auto" 
-            :disabled="!herramientaSeleccionada" 
-            @click="confirmarBaja" 
-        />
+            <Button 
+                :label="t('view_movimientos.btn_editar')" 
+                icon="pi pi-pencil" 
+                severity="info" 
+                class="font-bold btn-editar w-full sm:w-auto" 
+                :disabled="!herramientaSeleccionada" 
+                @click="prepararEdicionSeleccionada" 
+            />
+            
+            <Button 
+                :label="t('view_movimientos.btn_eliminar')" 
+                icon="pi pi-trash" 
+                severity="danger" 
+                class="font-bold btn-eliminar w-full sm:w-auto" 
+                :disabled="!herramientaSeleccionada" 
+                @click="confirmarBaja" 
+            />
+        </div>
       </div>
-      
-      <div class="w-full xl:w-25rem">
+
+      <!-- Buscador y Chips de Filtro -->
+      <div class="w-full mt-2">
+        <div class="flex flex-wrap align-items-center gap-2 mb-2">
+            <span class="text-sm font-bold text-400 mr-2">{{ t('view_inventario.buscar_en') }}</span>
+            <Chip 
+                v-for="cat in categoriasDisponibles" 
+                :key="cat.key"
+                :label="cat.label"
+                :class="['chip-categoria cursor-pointer', { 'active': categoriasSeleccionadas.includes(cat.key) }]"
+                @click="toggleCategoria(cat.key)"
+            />
+        </div>
+
         <IconField iconPosition="left" class="w-full">
           <InputIcon class="pi pi-search" />
           <InputText 
             id="buscador-movimientos" 
             name="buscador-movimientos" 
             :aria-label="t('view_movimientos.ph_buscar')"
-            v-model="filtros['global'].value" 
-            :placeholder="t('view_movimientos.ph_buscar')" 
-            class="input-oscuro w-full" 
+            v-model="busquedaTexto" 
+            :placeholder="placeholderDinamico" 
+            class="input-oscuro w-full input-buscador-grande" 
             autocomplete="off" 
           />
         </IconField>
       </div>
     </div>
 
-    <!-- Tabla Genérica con Paginación Servidor -->
+    <!-- Tabla Genérica con Paginación y Orden Servidor -->
     <TablaHerramientas
       :herramientas="herramientas"
       :cargando="cargando"
       :totalRecords="totalRegistros"
       :paginaActual="paginaActual"
       :filtros="filtros"
+      :filasPorPagina="10"
       llaveMemoria="vista_movimientos"
       @seleccion="manejarSeleccion"
       @doble-click="abrirDetalles"
       @cambio-pagina="cambiarPagina"
+      @ordenar="manejarOrden"
+      @toggle-categoria="toggleCategoria"
     />
 
     <!-- Modal Formulario de Edición -->
@@ -278,6 +364,31 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.titulo-vista { color: #5ab1ce; }
+
+.input-buscador-grande {
+    font-size: 1.05rem;
+    padding: 0.75rem 1rem 0.75rem 2.5rem !important;
+}
+
+.chip-categoria {
+    background-color: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.chip-categoria:hover {
+    border-color: #5ab1ce;
+    color: #e2e8f0;
+}
+.chip-categoria.active {
+    background-color: #0284c7;
+    color: #ffffff;
+    border-color: #38bdf8;
+    font-weight: 600;
+}
+
 :deep(.btn-editar) {
     background-color: #0ea5e9 !important;
     border: none !important;

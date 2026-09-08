@@ -18,14 +18,12 @@ const obtenerUsuarioIdValido = async (req) => {
         const posibleId = parseInt(tokenData.id || (typeof tokenData !== 'object' ? tokenData : null), 10);
         const posibleNumTrabajador = parseInt(tokenData.numTrabajador, 10);
 
-        // BÚSQUEDA 1: Por número de trabajador explícito
         if (!isNaN(posibleNumTrabajador)) {
             usuarioReal = await prisma.usuario.findFirst({
                 where: { numTrabajador: posibleNumTrabajador }
             });
         }
 
-        // BÚSQUEDA 2: Si no funcionó, buscamos por ID o por numTrabajador en el campo 'id'
         if (!usuarioReal && !isNaN(posibleId)) {
             usuarioReal = await prisma.usuario.findFirst({
                 where: {
@@ -37,7 +35,6 @@ const obtenerUsuarioIdValido = async (req) => {
             });
         }
 
-        // Devolvemos el ID de la base de datos real para evitar errores de Foreign Key
         if (usuarioReal) return usuarioReal.id;
 
         console.error(`Token recibido pero no se encontró usuario con número/id: ${posibleId}`);
@@ -49,34 +46,62 @@ const obtenerUsuarioIdValido = async (req) => {
 };
 
 // =====================================================================
-// 1. GET /api/herramientas -> Obtener herramientas (CON PAGINACIÓN, BÚSQUEDA Y ORDENAMIENTO)
+// 1. GET /api/herramientas -> Obtener herramientas (PAGINACIÓN, ALERTAS Y BÚSQUEDA)
 // =====================================================================
 router.get('/', verificarToken, async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const search = req.query.search || '';
-        
+        const categoriesParam = req.query.categories || req.query.categorias || '';
         const sortField = req.query.sortField || 'id';
         const sortOrder = req.query.sortOrder === 'DESC' ? 'desc' : 'asc';
+        const soloAlertasParam = req.query.soloAlertas === 'true' || req.query.soloAlertas === true;
 
         const skip = (page - 1) * limit;
 
-        let filtrosConsulta = { estado: { not: 'DADA_DE_BAJA' } };
+        let dondeCondiciones = [
+            { estado: { not: 'DADA_DE_BAJA' } }
+        ];
+
+        // Filtro de Solo Alertas a nivel de Base de Datos
+        if (soloAlertasParam) {
+            dondeCondiciones.push({
+                cantidadDisponible: { lte: prisma.herramienta.fields.cantidadMinima }
+            });
+        }
 
         if (search && search.trim() !== '') {
             const searchClean = search.trim();
+            const categoriasSeleccionadas = categoriesParam 
+                ? categoriesParam.split(',').map(c => c.trim().toLowerCase())
+                : [];
 
-            filtrosConsulta.OR = [
-                { codigo: { contains: searchClean, mode: 'insensitive' } },
-                { nombre: { contains: searchClean, mode: 'insensitive' } },
-                { marca: { contains: searchClean, mode: 'insensitive' } },
-                { ubicacion: { contains: searchClean, mode: 'insensitive' } },
-                { tipo: { contains: searchClean, mode: 'insensitive' } }
-            ];
+            const orConditions = [];
+
+            if (categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes('codigo')) {
+                orConditions.push({ codigo: { contains: searchClean, mode: 'insensitive' } });
+            }
+            if (categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes('nombre')) {
+                orConditions.push({ nombre: { contains: searchClean, mode: 'insensitive' } });
+            }
+            if (categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes('marca')) {
+                orConditions.push({ marca: { contains: searchClean, mode: 'insensitive' } });
+            }
+            if (categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes('ubicacion')) {
+                orConditions.push({ ubicacion: { contains: searchClean, mode: 'insensitive' } });
+            }
+            if (categoriasSeleccionadas.length === 0 || categoriasSeleccionadas.includes('tipo')) {
+                orConditions.push({ tipo: { contains: searchClean, mode: 'insensitive' } });
+            }
+
+            if (orConditions.length > 0) {
+                dondeCondiciones.push({ OR: orConditions });
+            }
         }
 
-        // Construir objeto de orden dinámico para Prisma
+        const filtrosConsulta = { AND: dondeCondiciones };
+
         const orderBy = {};
         orderBy[sortField] = sortOrder;
 
@@ -101,14 +126,12 @@ router.get('/', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 1.5 GET /api/herramientas/bitacora -> Historial (CON PAGINACIÓN Y FILTROS)
+// 1.5 GET /api/herramientas/bitacora -> Historial
 // =====================================================================
 router.get('/bitacora', verificarToken, async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        
-        // 1. Normalizar parámetros recibidos desde el Frontend (soporta 'busqueda' o 'search')
         const search = req.query.busqueda || req.query.search || '';
         const accion = req.query.accion;
         const tiempo = req.query.tiempo;
@@ -116,27 +139,22 @@ router.get('/bitacora', verificarToken, async (req, res) => {
 
         let dondeCondiciones = [];
 
-        // 2. Filtro de búsqueda por texto 
         if (search) {
-            // Normalizamos el texto ingresado
             const searchTrimmed = search.trim();
-
             dondeCondiciones.push({
                 OR: [
-                    { herramienta: { nombre: { contains: searchTrimmed } } },
-                    { herramienta: { codigo: { contains: searchTrimmed } } },
-                    { usuario: { nombre: { contains: searchTrimmed } } },
-                    { detalle: { contains: searchTrimmed } }
+                    { herramienta: { nombre: { contains: searchTrimmed, mode: 'insensitive' } } },
+                    { herramienta: { codigo: { contains: searchTrimmed, mode: 'insensitive' } } },
+                    { usuario: { nombre: { contains: searchTrimmed, mode: 'insensitive' } } },
+                    { detalle: { contains: searchTrimmed, mode: 'insensitive' } }
                 ]
             });
         }
 
-        // 3. Filtro por tipo de acción (CREACION, MODIFICACION, ELIMINACION)
         if (accion && accion !== 'Todas') {
             dondeCondiciones.push({ accion: accion });
         }
 
-        // 4. Filtro por rango de tiempo
         if (tiempo && tiempo !== 'Todos') {
             const ahora = new Date();
             let fechaInicio;
@@ -160,7 +178,6 @@ router.get('/bitacora', verificarToken, async (req, res) => {
 
         const filtrosConsulta = dondeCondiciones.length > 0 ? { AND: dondeCondiciones } : {};
 
-        // 5. Ejecución sincrónica de conteo total e historial paginado
         const [total, historial] = await prisma.$transaction([
             prisma.historialHerramienta.count({ where: filtrosConsulta }),
             prisma.historialHerramienta.findMany({
@@ -177,12 +194,7 @@ router.get('/bitacora', verificarToken, async (req, res) => {
 
         res.json({ 
             data: historial, 
-            meta: { 
-                total, 
-                page, 
-                limit, 
-                totalPages: Math.ceil(total / limit) 
-            } 
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) } 
         });
     } catch (error) {
         console.error("Error al obtener bitácora de herramientas:", error);
@@ -416,7 +428,7 @@ router.put('/:id', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 4. DELETE /api/herramientas/:id -> Baja lógica con motivo y desglose
+// 4. DELETE /api/herramientas/:id -> Baja lógica
 // =====================================================================
 router.delete('/:id', verificarToken, async (req, res) => {
     try {
@@ -459,9 +471,7 @@ router.delete('/:id', verificarToken, async (req, res) => {
         const salidaPendiente = await prisma.detalleSalida.findFirst({
             where: {
                 herramientaId: herramientaId,
-                salida: {
-                    estado: 'PENDIENTE'
-                }
+                salida: { estado: 'PENDIENTE' }
             }
         });
 

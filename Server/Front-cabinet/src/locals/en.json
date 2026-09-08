@@ -78,7 +78,10 @@
     "mensaje_vacio": "No records found",
     "btn_devolver": "Return",
     "estado_pendiente": "Pending",
-    "estado_parcial": "Partial"
+    "estado_parcial": "Partial",
+    "buscar_en_label": "Search in",
+    "solicitante": "Applicant",
+    "ph_buscar_todos": "Search by ID, order, machine, applicant, or reason..."
   },
   "view_devoluciones": {
     "titulo": "Tool Returns",
@@ -142,16 +145,23 @@
     "desechable": "Consumable"
   },
   "view_inventario": {
-    "titulo": "Inventory Control",
-    "btn_nueva": "New Tool",
-    "btn_exportar": "Export Inventory",
-    "exportar_csv": "Export CSV",
-    "exportar_excel": "Export Excel",
-    "btn_solo_alertas": "Alerts Only",
-    "btn_mostrando_todo": "Show All",
-    "btn_actualizar": "Update Inventory",
-    "btn_bitacora": "Audit Log",
-    "ph_buscar": "Search code, name..."
+  "titulo": "Inventory Control",
+  "btn_nueva": "New Tool",
+  "btn_exportar": "Export Inventory",
+  "exportar_csv": "Export CSV",
+  "exportar_excel": "Export Excel",
+  "btn_solo_alertas": "Alerts Only",
+  "btn_mostrando_todo": "Show All",
+  "btn_actualizar": "Update Inventory",
+  "btn_bitacora": "Audit Log",
+  "buscar_en": "Search in:",
+  "ph_buscar": "Search code, name...",
+  "categorias": {
+      "codigo": "Code",
+      "nombre": "Name",
+      "tipo": "Type",
+      "ubicacion": "Location"
+    }
   },
   "view_movimientos": {
     "titulo": "Administration and Movements",
@@ -230,18 +240,26 @@
   },
   "view_historial": {
     "titulo": "History and Reports",
+    "buscar_en": "Search in",
+    "ph_buscar_todos": "Search by employee, ID, machine or provider...",
     "btn_exportar": "Export History",
-    "exportar_csv": "Export to CSV",
-    "exportar_excel": "Export to Excel (.xlsx)",
     "btn_pendientes": "Pending",
     "btn_devueltos": "Returned",
-    "ph_buscar": "Search by employee or lender...",
-    "ph_filtro_tiempo": "Filter by period",
-    "tiempo_todos": "All",
+    "tiempo_todos": "All Time",
     "tiempo_hoy": "Today",
     "tiempo_semana": "This Week",
     "tiempo_mes": "This Month",
     "tiempo_anio": "This Year",
+    "categorias": {
+        "folio": "Folio",
+        "orden": "Order",
+        "maquina": "Machine",
+        "presto": "Issued By",
+        "recibio": "Received By",
+        "solicito": "Requested By",
+        "herramientas": "Tools",
+        "no_empleado": "Employee No."
+    },
     "toast_exito_titulo": "Successful Export",
     "toast_exito_detalle": "The file has been generated successfully.",
     "toast_error_titulo": "No data"
@@ -452,9 +470,17 @@
   },
   "view_usuarios": {
     "titulo": "User Management",
-    "buscar_aria": "Search employee",
-    "buscar_placeholder": "Search employee by number or name...",
+    "buscar_en": "Search in",
     "btn_nuevo": "New Employee",
+    "ph_buscar_todos": "Search employee by ID, name, email...",
+    "categorias": {
+        "num_empleado": "Employee ID",
+        "nombre": "Name",
+        "correo": "Email",
+        "telefono": "Phone",
+        "departamento": "Department",
+        "rol": "Role"
+    },
     "modal_titulo_editar": "Edit Employee",
     "modal_titulo_nuevo": "New Employee",
     "label_num_empleado": "Employee Number *",

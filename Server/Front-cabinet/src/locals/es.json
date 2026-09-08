@@ -78,7 +78,10 @@
     "mensaje_vacio": "No hay registros",
     "btn_devolver": "Devolver",
     "estado_pendiente": "Pendiente",
-    "estado_parcial": "Parcial"
+    "estado_parcial": "Parcial",
+    "buscar_en_label": "Buscar en",
+    "solicitante": "Solicitante",
+    "ph_buscar_todos": "Buscar por folio, orden, máquina, solicitante o motivo..."
   },
   "view_devoluciones": {
     "titulo": "Devolución de Herramientas",
@@ -142,16 +145,23 @@
     "desechable": "Consumible"
   },
   "view_inventario": {
-    "titulo": "Control de Inventario",
-    "btn_nueva": "Nueva Herramienta",
-    "btn_exportar": "Exportar Inventario",
-    "exportar_csv": "Exportar CSV",
-    "exportar_excel": "Exportar Excel",
-    "btn_solo_alertas": "Solo Alertas",
-    "btn_mostrando_todo": "Ver Todos",
-    "btn_actualizar": "Actualizar Inventario",
-    "btn_bitacora": "Bitácora",
-    "ph_buscar": "Buscar por código, nombre..."
+  "titulo": "Control de Inventario",
+  "btn_nueva": "Nueva Herramienta",
+  "btn_exportar": "Exportar Inventario",
+  "exportar_csv": "Export CSV",
+  "exportar_excel": "Exportar Excel",
+  "btn_solo_alertas": "Solo Alertas",
+  "btn_mostrando_todo": "Ver Todos",
+  "btn_actualizar": "Actualizar Inventario",
+  "btn_bitacora": "Bitácora",
+  "buscar_en": "Buscar en:",
+  "ph_buscar": "Buscar por código, nombre...",
+  "categorias": {
+      "codigo": "Código",
+      "nombre": "Nombre",
+      "tipo": "Tipo",
+      "ubicacion": "Ubicación"
+    }
   },
   "view_movimientos": {
     "titulo": "Administración y Movimientos",
@@ -230,18 +240,26 @@
   },
   "view_historial": {
     "titulo": "Historial y Reportes",
+    "buscar_en": "Buscar en",
+    "ph_buscar_todos": "Buscar por empleado, folio, máquina o prestador...",
     "btn_exportar": "Exportar Historial",
-    "exportar_csv": "Exportar a CSV",
-    "exportar_excel": "Exportar a Excel (.xlsx)",
     "btn_pendientes": "Pendientes",
     "btn_devueltos": "Devueltos",
-    "ph_buscar": "Buscar por empleado o prestador...",
-    "ph_filtro_tiempo": "Filtrar por período",
     "tiempo_todos": "Todos",
     "tiempo_hoy": "Hoy",
     "tiempo_semana": "Esta Semana",
     "tiempo_mes": "Este Mes",
     "tiempo_anio": "Este Año",
+    "categorias": {
+        "folio": "Folio",
+        "orden": "Orden",
+        "maquina": "Máquina",
+        "presto": "Prestó",
+        "recibio": "Recibió",
+        "solicito": "Solicitó (Empleado)",
+        "herramientas": "Herramientas",
+        "no_empleado": "No. Empleado"
+    },
     "toast_exito_titulo": "Exportación Exitosa",
     "toast_exito_detalle": "El archivo se ha generado correctamente.",
     "toast_error_titulo": "Sin datos"
@@ -452,9 +470,17 @@
   },
   "view_usuarios": {
     "titulo": "Administración de Usuarios",
-    "buscar_aria": "Buscar empleado",
-    "buscar_placeholder": "Buscar empleado por número o nombre...",
+    "buscar_en": "Buscar en",
     "btn_nuevo": "Nuevo Empleado",
+    "ph_buscar_todos": "Buscar empleado por número, nombre, correo...",
+    "categorias": {
+        "num_empleado": "No. Empleado",
+        "nombre": "Nombre",
+        "correo": "Correo",
+        "telefono": "Teléfono",
+        "departamento": "Departamento",
+        "rol": "Rol"
+    },
     "modal_titulo_editar": "Editar Empleado",
     "modal_titulo_nuevo": "Nuevo Empleado",
     "label_num_empleado": "Número de Empleado *",

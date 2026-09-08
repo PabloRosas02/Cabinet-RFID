@@ -13,6 +13,8 @@ const props = defineProps({
     cargando: { type: Boolean, default: false },
     filtros: { type: Object, required: true },
     mensajeVacio: { type: String, default: null }, 
+    globalFilterFields: { type: Array, default: () => [] },
+    llaveMemoria: { type: String, default: 'historial_salidas' },
     iconoVacio: { type: String, default: 'pi-book' } 
 });
 
@@ -22,22 +24,39 @@ const emit = defineEmits(['doble-click']);
 // NORMALIZACIÓN DE DATOS (Backend snake_case -> Frontend camelCase)
 // =========================================================
 const historialNormalizado = computed(() => {
-    return props.historial.map(pedido => ({
-        ...pedido,
-        numeroOrden: pedido.numero_orden || pedido.numeroOrden,
-        numeroMaquina: pedido.numero_maquina || pedido.numeroMaquina,
-        prestadorNombre: pedido.almacenista_salida || pedido.prestadorNombre,
-        receptorNombre: pedido.almacenista_entrada || pedido.receptorNombre,
-        trabajadorNumero: pedido.empleado_numero || pedido.trabajadorNumero,
-        trabajadorNombre: pedido.empleado_nombre || pedido.trabajadorNombre,
-        fechaSalida: pedido.created_at || pedido.fechaSalida,
-        fechaDevolucion: pedido.fecha_devolucion || pedido.fechaDevolucion,
-        herramientas: (pedido.herramientas || []).map(h => ({
+    return props.historial.map(pedido => {
+        const herramientas = (pedido.herramientas || []).map(h => ({
             ...h,
             cantidadPrestada: h.pivot?.cantidad ?? h.cantidadPrestada ?? 0,
-            cantidadRegresada: h.pivot?.cantidad_devuelta ?? h.cantidadRegresada ?? 0
-        }))
-    }));
+            cantidadRegresada: h.pivot?.cantidad_devuelta ?? h.cantidadRegresada ?? 0,
+            esDesechable: h.esDesechable ?? h.es_desechable ?? false
+        }));
+
+        const esSoloConsumible = herramientas.length > 0 && herramientas.every(h => h.esDesechable);
+
+        return {
+            ...pedido,
+            numeroOrden: pedido.numeroOrden || pedido.numero_orden,
+            numeroMaquina: pedido.numeroMaquina || pedido.numero_maquina,
+            
+            // Prestó 
+            prestadorNumero: pedido.prestadorNumero,
+            prestadorNombre: pedido.prestadorNombre,
+            
+            // Recibió 
+            receptorNumero: pedido.receptorNumero,
+            receptorNombre: pedido.receptorNombre,
+            
+            // Solicitó
+            trabajadorNumero: pedido.trabajadorNumero,
+            trabajadorNombre: pedido.trabajadorNombre,
+
+            fechaSalida: pedido.fechaSalida || pedido.created_at,
+            fechaDevolucion: pedido.fechaDevolucion || pedido.fecha_devolucion,
+            herramientas,
+            esSoloConsumible
+        };
+    });
 });
 
 // =========================================================
@@ -56,10 +75,11 @@ onUnmounted(() => window.removeEventListener('resize', actualizarVista));
 // FUNCIONES DE AYUDA (Para limpiar el template)
 // =====================================================
 const obtenerNombreReceptor = (data) => {
+    if (data.esSoloConsumible) return 'N/A';
     if (!data.receptorNombre || data.receptorNombre === 'Pendiente / En curso') {
         return t('tabla_historial.pendiente_curso');
     }
-    return data.receptorNombre;
+    return data.receptorNumero ? `${data.receptorNumero} - ${data.receptorNombre}` : data.receptorNombre;
 };
 
 const esFechaPendiente = (data) => {
@@ -68,13 +88,19 @@ const esFechaPendiente = (data) => {
 };
 
 const obtenerFechaDevolucion = (data) => {
+    if (data.esSoloConsumible) return 'N/A';
     if (esFechaPendiente(data)) return t('tabla_historial.pendiente_fecha');
     return formatearFecha(data.fechaDevolucion, locale.value);
 };
 
-const obtenerSeveridadEstado = (estado) => estado === 'DEVUELTO' ? 'success' : 'danger';
-const obtenerTextoEstado = (estado) => estado === 'DEVUELTO' ? t('tabla_historial.estado_devuelto') : t('tabla_historial.estado_pendiente');
-
+const obtenerSeveridadEstado = (estado) => {
+    if (estado === 'CONSUMIDO') return 'info';
+    return estado === 'DEVUELTO' ? 'success' : 'danger';
+};
+const obtenerTextoEstado = (estado) => {
+    if (estado === 'CONSUMIDO') return 'CONSUMIDO';
+    return estado === 'DEVUELTO' ? t('tabla_historial.estado_devuelto') : t('tabla_historial.estado_pendiente');
+};
 // =====================================================
 // DEFINICIÓN DINÁMICA DE COLUMNAS
 // =====================================================
@@ -84,13 +110,12 @@ const columnasHistorial = computed(() => {
         { field: 'numeroOrden', header: t('tabla_historial.num_orden'), width: esMovil.value ? undefined : '10%', minWidth: '120px' },
         { field: 'numeroMaquina', header: t('tabla_historial.num_maquina'), width: esMovil.value ? undefined : '10%', minWidth: '120px' },
         
-        { field: 'prestadorNombre', header: t('tabla_historial.presto'), width: esMovil.value ? undefined : '12%', minWidth: '160px' },
+        { header: t('tabla_historial.presto'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'presto' },
         { header: t('tabla_historial.recibio'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'recibio' },
         { header: t('tabla_historial.solicito'), width: esMovil.value ? undefined : '14%', minWidth: '200px', slotName: 'solicito' },
         
         { header: t('tabla_historial.fecha_salida'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'fechaSalida' },
         { header: t('tabla_historial.fecha_devolucion'), width: esMovil.value ? undefined : '12%', minWidth: '160px', slotName: 'fechaDevolucion' },
-        
         { header: t('tabla_historial.herramientas'), width: esMovil.value ? undefined : '16%', minWidth: '250px', slotName: 'herramientas' },
         { field: 'estado', header: t('tabla_historial.estado'), width: esMovil.value ? undefined : '8%', minWidth: '120px', slotName: 'estado' }
     ];
@@ -115,8 +140,8 @@ const verDetalles = (data) => {
             :columnas="columnasHistorial"
             :cargando="cargando"
             :filtros="filtros"
-            :globalFilterFields="['trabajadorNombre', 'trabajadorNumero', 'prestadorNombre', 'receptorNombre', 'numeroOrden', 'numeroMaquina']"
-            llaveMemoria="historial_salidas"
+            :globalFilterFields="globalFilterFields"
+            :llaveMemoria="llaveMemoria" 
             dataKey="id"
             :mensajeVacio="mensajeVacio || t('tabla_historial.mensaje_vacio')"
             :iconoVacio="iconoVacio"
@@ -124,6 +149,13 @@ const verDetalles = (data) => {
         >
             <template #folio="{ data }">
                 <span class="font-bold text-400">#{{ data.id }}</span>
+            </template>
+
+            <!-- Slot Prestó -->
+            <template #presto="{ data }">
+                <span v-if="data.prestadorNombre">
+                    {{ data.prestadorNumero ? `${data.prestadorNumero} - ${data.prestadorNombre}` : data.prestadorNombre }}
+                </span>
             </template>
 
             <!-- Receptor simplificado -->

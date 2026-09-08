@@ -81,7 +81,6 @@ router.post('/', verificarToken, async (req, res) => {
             ? motivoOtro.trim() 
             : null;
 
-        // Arreglo para almacenar alertas pendientes de envío post-transacción
         const alertasAEnviar = [];
 
         await prisma.$transaction(async (tx) => {
@@ -106,7 +105,6 @@ router.post('/', verificarToken, async (req, res) => {
                         cantidadRegresada: h.cantidadPrestada
                     });
 
-                    // Descontar del inventario disponible y total
                     herramientaActualizada = await tx.herramienta.update({
                         where: { id: h.id },
                         data: { 
@@ -122,14 +120,12 @@ router.post('/', verificarToken, async (req, res) => {
                         cantidadRegresada: 0
                     });
 
-                    // Solo descontar del inventario disponible mientras está prestada
                     herramientaActualizada = await tx.herramienta.update({
                         where: { id: h.id },
                         data: { cantidadDisponible: { decrement: h.cantidadPrestada } }
                     });
                 }
 
-                // Evaluar si cayó en stock mínimo o menor (evaluando la cantidad disponible resultante)
                 if (herramientaActualizada.cantidadDisponible <= herramientaActualizada.cantidadMinima) {
                     alertasAEnviar.push({
                         codigo: herramientaActualizada.codigo,
@@ -159,7 +155,6 @@ router.post('/', verificarToken, async (req, res) => {
             });
         });
 
-        // Enviar correos de alerta fuera de la transacción de base de datos
         for (const alerta of alertasAEnviar) {
             try {
                 await enviarAlertaHerramientaBaja(alerta);
@@ -176,7 +171,7 @@ router.post('/', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 2. GET /api/salidas/pendientes -> Ver salidas activas (Excluye DEVUELTO y CONSUMIDO)
+// 2. GET /api/salidas/pendientes -> Ver salidas activas
 // =====================================================================
 router.get('/pendientes', verificarToken, async (req, res) => {
     try {
@@ -214,8 +209,15 @@ router.get('/pendientes', verificarToken, async (req, res) => {
             numeroMaquina: salida.numeroMaquina,
             motivo: salida.motivo,             
             motivoOtro: salida.motivoOtro,    
+            
+            // Prestó
+            prestadorNumero: salida.prestador ? (salida.prestador.numTrabajador || salida.prestador.numero) : null,
             prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
+            
+            // Recibió
+            receptorNumero: salida.receptor ? (salida.receptor.numTrabajador || salida.receptor.numero) : null,
             receptorNombre: salida.receptor ? salida.receptor.nombre : null,
+
             fechaSalida: salida.fechaSalida,    
             fechaDevolucion: salida.fechaDevolucion,
             estado: salida.estado,
@@ -238,7 +240,7 @@ router.get('/pendientes', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 3. PUT /api/salidas/:id/devolver -> Devolución (Maneja estado final DEVUELTO o CONSUMIDO)
+// 3. PUT /api/salidas/:id/devolver -> Devolución
 // =====================================================================
 router.put('/:id/devolver', verificarToken, async (req, res) => {
     const salidaId = parseInt(req.params.id, 10);
@@ -347,7 +349,7 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 4. GET /api/salidas/historial -> Traer historial para reportes 
+// 4. GET /api/salidas/historial -> Traer historial filtrado
 // =====================================================================
 router.get('/historial', verificarToken, async (req, res) => {
     try {
@@ -355,12 +357,48 @@ router.get('/historial', verificarToken, async (req, res) => {
         const rol = usuario?.rol;
         const numTrabajador = usuario?.numTrabajador;
 
+        const { busqueda, tipoFiltro } = req.query;
+
         let filtrosConsulta = {};
 
         if (rol === 'OPERADOR' && numTrabajador) {
-            filtrosConsulta = {
-                trabajadorNumero: numTrabajador.toString() 
-            };
+            filtrosConsulta.trabajadorNumero = numTrabajador.toString();
+        }
+
+        if (busqueda && busqueda.trim() !== '') {
+            const termino = busqueda.trim();
+            const filtroNormalizado = tipoFiltro ? tipoFiltro.toLowerCase() : 'todos';
+
+            switch (filtroNormalizado) {
+                case 'orden':
+                    filtrosConsulta.numeroOrden = { contains: termino, mode: 'insensitive' };
+                    break;
+                case 'folio':
+                    const folioId = parseInt(termino, 10);
+                    if (!isNaN(folioId)) {
+                        filtrosConsulta.id = folioId;
+                    }
+                    break;
+                case 'maquina':
+                    filtrosConsulta.numeroMaquina = { contains: termino, mode: 'insensitive' };
+                    break;
+                case 'trabajador':
+                    filtrosConsulta.OR = [
+                        { trabajadorNumero: { contains: termino, mode: 'insensitive' } },
+                        { trabajadorNombre: { contains: termino, mode: 'insensitive' } }
+                    ];
+                    break;
+                default:
+                    const idBusqueda = parseInt(termino, 10);
+                    filtrosConsulta.OR = [
+                        { numeroOrden: { contains: termino, mode: 'insensitive' } },
+                        { numeroMaquina: { contains: termino, mode: 'insensitive' } },
+                        { trabajadorNumero: { contains: termino, mode: 'insensitive' } },
+                        { trabajadorNombre: { contains: termino, mode: 'insensitive' } },
+                        ...(!isNaN(idBusqueda) ? [{ id: idBusqueda }] : [])
+                    ];
+                    break;
+            }
         }
 
         const salidas = await prisma.salida.findMany({
@@ -388,8 +426,15 @@ router.get('/historial', verificarToken, async (req, res) => {
             numeroMaquina: salida.numeroMaquina, 
             motivo: salida.motivo,             
             motivoOtro: salida.motivoOtro,     
+            
+            // Prestó
+            prestadorNumero: salida.prestador ? (salida.prestador.numTrabajador || salida.prestador.numero) : null,
             prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
+            
+            // Recibió
+            receptorNumero: salida.receptor ? (salida.receptor.numTrabajador || salida.receptor.numero) : null,
             receptorNombre: salida.receptor ? salida.receptor.nombre : 'Pendiente / En curso',
+
             fechaSalida: salida.fechaSalida,    
             fechaDevolucion: salida.fechaDevolucion,
             estado: salida.estado,
@@ -400,6 +445,7 @@ router.get('/historial', verificarToken, async (req, res) => {
                 cantidadRegresada: detalle.cantidadRegresada,
                 esDesechable: detalle.herramienta?.esDesechable || false,
                 historialDevoluciones: detalle.devoluciones.map(dev => ({
+                    receptorNumero: dev.receptor ? (dev.receptor.numTrabajador || dev.receptor.numero) : null,
                     receptorNombre: dev.receptor?.nombre || 'Desconocido',
                     cantidad: dev.cantidadDevuelta,
                     fecha: dev.fechaDevolucion
@@ -415,7 +461,7 @@ router.get('/historial', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 5. POST /api/salidas/solicitar-codigo-dano -> Enviar código al Admin
+// 5. POST /api/salidas/solicitar-codigo-dano
 // =====================================================================
 router.post('/solicitar-codigo-dano', verificarToken, async (req, res) => {
     try {
@@ -465,7 +511,7 @@ router.post('/solicitar-codigo-dano', verificarToken, async (req, res) => {
 });
 
 // =====================================================================
-// 6. POST /api/salidas/verificar-codigo-dano -> Validar el PIN ingresado
+// 6. POST /api/salidas/verificar-codigo-dano
 // =====================================================================
 router.post('/verificar-codigo-dano', verificarToken, async (req, res) => {
     try {

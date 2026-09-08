@@ -14,6 +14,9 @@ const props = defineProps({
         type: Object,
         required: true
     },
+    camposBusqueda: { 
+        type: Array, 
+        default: () => ['numTrabajador', 'nombre', 'correo', 'telefono', 'depart', 'rol'] },
     rolLogueado: {
         type: String,
         required: true
@@ -57,7 +60,7 @@ const columnasUsuarios = computed(() => {
         :datos="usuarios"
         :columnas="columnasUsuarios"
         :filtros="filtros"
-        :globalFilterFields="['nombre', 'numTrabajador', 'depart', 'correo', 'telefono', 'tarjetaRfid']"
+        :globalFilterFields="camposBusqueda"
         llaveMemoria="usuarios_sistema"
         dataKey="id"
         iconoVacio="pi-users"

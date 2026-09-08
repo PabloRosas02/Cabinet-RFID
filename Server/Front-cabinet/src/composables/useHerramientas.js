@@ -17,13 +17,22 @@ export function useHerramientas() {
     const herramientaActual = ref({});
     const esEdicion = ref(false);
 
-    // CARGAR HERRAMIENTAS (Soporta paginación y búsqueda backend)
+    // CARGAR HERRAMIENTAS
     const cargarHerramientas = async (params = {}) => {
         cargando.value = true;
         try {
-            const respuesta = await HerramientasService.obtenerTodas(params);
+            const categoriasNormalizadas = Array.isArray(params.categories || params.categorias)
+                ? (params.categories || params.categorias).join(',')
+                : (params.categories || params.categorias || '');
+
+            const consultaParams = {
+                ...params,
+                categories: categoriasNormalizadas,
+                soloAlertas: params.soloAlertas !== undefined ? params.soloAlertas : undefined
+            };
+
+            const respuesta = await HerramientasService.obtenerTodas(consultaParams);
             
-            // Extraer la carga util sin importar si el service retorna res o res.data
             const payload = respuesta?.data?.data !== undefined ? respuesta.data : respuesta;
             
             if (payload && Array.isArray(payload.data)) {
@@ -72,7 +81,6 @@ export function useHerramientas() {
                 });
             }
 
-            // Recargar la lista actual
             await cargarHerramientas({ page: paginaActual.value });
             return respuesta;
         } catch (error) {
@@ -123,7 +131,7 @@ export function useHerramientas() {
         mostrarModal.value = true;
     };
 
-    // PROCESAR FOTOGRAFÍA 
+    // PROCESAR FOTOGRAFÍA
     const procesarImagen = async (evento) => {
         const archivo = evento.target?.files?.[0] || evento;
         if (!archivo || !(archivo instanceof File)) return;
@@ -170,7 +178,6 @@ export function useHerramientas() {
             toast.removeAllGroups();
             toast.add({ severity: 'success', summary: '¡Éxito!', detail: mensajeExito, life: 3000 });
 
-            // Recargamos el listado para reflejar los cambios exactos del backend
             await cargarHerramientas({ page: paginaActual.value });
 
             return herramientaGuardada;

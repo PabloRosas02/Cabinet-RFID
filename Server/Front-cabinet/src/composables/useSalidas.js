@@ -39,10 +39,10 @@ export function useSalidas() {
         }
     };
 
-    const cargarHistorial = async () => {
+    const cargarHistorial = async (busqueda = '', tipoFiltro = '') => {
         cargando.value = true;
         try {
-            historialSalidas.value = await SalidasService.obtenerHistorial();
+            historialSalidas.value = await SalidasService.obtenerHistorial(busqueda, tipoFiltro);
         } catch (error) {
             console.error("Error al cargar historial:", error);
             toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el historial.', life: 4000 });
@@ -106,7 +106,6 @@ export function useSalidas() {
             toast.removeAllGroups();
             toast.add({ severity: 'success', summary: '¡Éxito!', detail: 'Salida registrada correctamente.', life: 3000 });
             
-            // Recarga ambas listas para reflejar tanto préstamos pendientes como salidas consumidas
             await Promise.all([
                 cargarPendientes(),
                 cargarHistorial()
@@ -154,7 +153,7 @@ export function useSalidas() {
 
         } catch (error) {
             console.error("Error al solicitar código:", error);
-            const mensajeError = error.response?.data?.error || error.message || "Error al solicitar autorización.";
+            const mensajeError = error.message || "Error al solicitar autorización.";
             toast.add({ severity: 'error', summary: 'Error', detail: mensajeError, life: 5000 });
             throw error;
         }

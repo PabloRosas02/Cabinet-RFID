@@ -1,9 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
 import Button from 'primevue/button';
 import IconField from 'primevue/iconfield';
 import InputIcon from 'primevue/inputicon';
+import Chip from 'primevue/chip';
 import { FilterMatchMode } from '@primevue/core/api';
 import { useI18n } from 'vue-i18n'; 
 import TablaGenerica from '@/components/TablaGenerica.vue';
@@ -14,6 +16,10 @@ const props = defineProps({
         type: Array,
         required: true,
         default: () => [] 
+    },
+    categorias: {
+        type: Array,
+        default: () => []
     },
     totalRegistros: {
         type: Number,
@@ -27,20 +33,60 @@ const props = defineProps({
 
 const emit = defineEmits(['agregar', 'page', 'filter']);
 const { t } = useI18n(); 
+
 const terminoLocal = ref('');
+const categoriaSeleccionada = ref(null);
 let searchTimer = null;
 
-// =========================================================
-// LÓGICA RESPONSIVA DINÁMICA (Con Debounce)
-// =========================================================
+// Categorías/Campos de Búsqueda disponibles para el catálogo
+const camposDisponibles = [
+    { key: 'codigo', label: 'Código' },
+    { key: 'nombre', label: 'Nombre' }
+];
+
+// Por defecto se buscan ambos campos
+const camposSeleccionados = ref(['codigo', 'nombre']);
+
+const toggleCampo = (key) => {
+    const index = camposSeleccionados.value.indexOf(key);
+    if (index > -1) {
+        if (camposSeleccionados.value.length > 1) {
+            camposSeleccionados.value.splice(index, 1);
+        }
+    } else {
+        camposSeleccionados.value.push(key);
+    }
+    emitirFiltros();
+};
+
+const placeholderDinamico = computed(() => {
+    if (camposSeleccionados.value.length === camposDisponibles.length) {
+        return 'Buscar por código o nombre...';
+    }
+    const campoActivo = camposDisponibles.find(c => camposSeleccionados.value.includes(c.key));
+    return `Buscar por ${campoActivo ? campoActivo.label.toLowerCase() : ''}...`;
+});
+
 const esMovil = ref(window.innerWidth <= 992);
 let resizeTimer;
+
+const emitirFiltros = () => {
+    emit('filter', {
+        search: terminoLocal.value,
+        campos: camposSeleccionados.value,
+        categoriaId: categoriaSeleccionada.value
+    });
+};
 
 const onBuscar = () => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => {
-        emit('filter', terminoLocal.value);
+        emitirFiltros();
     }, 150); 
+};
+
+const onChangeCategoria = () => {
+    emitirFiltros();
 };
 
 const actualizarVista = () => {
@@ -57,9 +103,6 @@ onUnmounted(() => {
     clearTimeout(searchTimer); 
 });
 
-// =====================================================
-// DEFINICIÓN DINÁMICA DE COLUMNAS
-// =====================================================
 const columnasCatalogo = computed(() => [
     { field: 'codigo', header: t('catalogo_herramientas.col_codigo'), width: esMovil.value ? undefined : '20%', minWidth: '120px' },
     { field: 'nombre', header: t('catalogo_herramientas.col_nombre'), width: esMovil.value ? undefined : '40%', minWidth: '200px' },
@@ -90,32 +133,48 @@ const manejarPaginacion = (evento) => {
 
 const manejarFiltro = (evento) => {
     const textoBusqueda = evento.filters?.global?.value || '';
-    emit('filter', textoBusqueda);
+    terminoLocal.value = textoBusqueda;
+    emitirFiltros();
 };
 </script>
 
 <template>
     <div class="panel-inventario p-4 border-round-xl shadow-2 surface-card h-full flex flex-column">
-        <!-- Título estilizado en azul primario -->
         <h3 class="titulo-catalogo text-2xl font-bold m-0 mb-4">
             {{ t('catalogo_herramientas.titulo') }}
         </h3>
         
-        <!-- Buscador con fondo oscuro integrado -->
-        <div class="buscador-container mb-4">
-            <IconField iconPosition="left" class="w-full">
-                <InputIcon class="pi pi-search text-500" />
-                <InputText 
-                    id="buscadorHerramientas"
-                    name="buscadorHerramientas"
-                    :aria-label="t('catalogo_herramientas.aria_buscar')"
-                    v-model="terminoLocal" 
-                    @input="onBuscar"
-                    :placeholder="t('catalogo_herramientas.ph_buscar')" 
-                    class="w-full input-oscuro" 
-                    autocomplete="off"
+        <!-- Toolbar con Chips y Buscador idéntica a Historial -->
+        <div class="flex flex-column gap-3 mb-4 p-3 toolbar-oscuro border-round">
+            
+            <!-- Chips de Filtro -->
+            <div class="flex flex-wrap align-items-center gap-2">
+                <span class="text-sm font-bold text-400 mr-2">Buscar en:</span>
+                <Chip 
+                    v-for="campo in camposDisponibles" 
+                    :key="campo.key"
+                    :label="campo.label"
+                    :class="['chip-categoria cursor-pointer', { 'active': camposSeleccionados.includes(campo.key) }]"
+                    @click="toggleCampo(campo.key)"
                 />
-            </IconField>
+            </div>
+
+            <!-- Buscador e Input de Categorías -->
+            <div class="flex flex-column sm:flex-row gap-3 w-full">
+                <IconField iconPosition="left" class="w-full">
+                    <InputIcon class="pi pi-search" />
+                    <InputText 
+                        id="buscadorHerramientas"
+                        name="buscadorHerramientas"
+                        :aria-label="t('catalogo_herramientas.aria_buscar')"
+                        v-model="terminoLocal" 
+                        @input="onBuscar"
+                        :placeholder="placeholderDinamico" 
+                        class="input-oscuro w-full" 
+                        autocomplete="off"
+                    />
+                </IconField>
+            </div>
         </div>
         
         <TablaGenerica
@@ -157,7 +216,6 @@ const manejarFiltro = (evento) => {
             </template>
         </TablaGenerica>
 
-        <!-- Modal de Detalles Reutilizable -->
         <ModalDetalleHerramienta 
             v-model:visible="mostrarDetalles"
             :herramienta="herramientaActual"
@@ -168,19 +226,36 @@ const manejarFiltro = (evento) => {
 </template>
 
 <style scoped>
-/* =======================================================
-   ESTILOS ADAPTATIVOS DEL CATÁLOGO
-   ======================================================= */
-
-/* Título en Modo Oscuro (Por defecto) */
 .titulo-catalogo {
-    color: #5ab1ce !important; /* Azul celeste */
+    color: #5ab1ce !important;
     letter-spacing: -0.02em;
     font-weight: 700;
 }
 
-/* Título en Modo Claro */
 :global(html.light-theme) .titulo-catalogo {
-    color: #063b69 !important; /* Azul marino corporativo */
+    color: #063b69 !important;
+}
+
+.toolbar-oscuro {
+    background-color: var(--surface-ground);
+    border: 1px solid var(--surface-border);
+}
+
+.chip-categoria {
+    background-color: #1e293b;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+.chip-categoria:hover {
+    border-color: #5ab1ce;
+    color: #e2e8f0;
+}
+.chip-categoria.active {
+    background-color: #0284c7;
+    color: #ffffff;
+    border-color: #38bdf8;
+    font-weight: 600;
 }
 </style>

@@ -45,14 +45,14 @@ const props = defineProps({
     }
 });
 
-const emit = defineEmits(['seleccion', 'doble-click', 'cambio-pagina', 'ordenar']);
+const emit = defineEmits(['seleccion', 'doble-click', 'cambio-pagina', 'ordenar', 'toggle-categoria']);
 
 const columnas = computed(() => [
     { field: 'codigo', header: t('tabla_herramientas.codigo'), sortable: true, width: '12%', minWidth: '110px' },
     { field: 'nombre', header: t('tabla_herramientas.nombre'), sortable: true, width: '22%', minWidth: '180px' },
     { field: 'tipo', header: t('tabla_herramientas.tipo'), sortable: true, width: '13%', minWidth: '120px' },
     { field: 'ubicacion', header: t('tabla_herramientas.ubicacion'), sortable: true, width: '13%', minWidth: '120px' },
-    { field: 'esDesechable', header: t('tabla_herramientas.desechable', 'Desechable'), sortable: true, width: '10%', minWidth: '100px', slotName: 'desechable' },
+    { field: 'esDesechable', header: t('tabla_herramientas.desechable'), sortable: true, width: '10%', minWidth: '100px', slotName: 'desechable' },
     { field: 'cantidadMinima', header: t('tabla_herramientas.stock_min'), sortable: true, width: '10%', minWidth: '100px' },
     { field: 'cantidadMaxima', header: t('tabla_herramientas.stock_max'), sortable: true, width: '10%', minWidth: '100px' },
     { field: 'cantidadDisponible', header: t('tabla_herramientas.stock_fisico'), sortable: true, width: '10%', minWidth: '110px', slotName: 'stock' },
@@ -69,58 +69,56 @@ const getEstadoStock = (herramienta) => {
 const manejarCambioPagina = (event) => {
     const nuevaPagina = (event.page !== undefined) ? event.page + 1 : event.pagina;
     const limit = event.rows || props.filasPorPagina;
-    
     emit('cambio-pagina', { page: nuevaPagina, limit });
 };
 </script>
 
 <template>
-    <TablaGenerica 
-        :datos="herramientas"
-        :columnas="columnas"
-        :cargando="cargando"
-        :lazy="true"
-        :totalRecords="totalRecords"
-        :rows="filasPorPagina"
-        :first="(paginaActual - 1) * filasPorPagina"
-        :filtros="filtros"
-        :globalFilterFields="['codigo', 'nombre', 'tipo', 'ubicacion']" 
-        :llaveMemoria="llaveMemoria"
-        :seleccionable="true"
-        :mensajeVacio="mensajeVacio || t('tabla_herramientas.mensaje_vacio')"
-        :iconoVacio="iconoVacio"
-        @page="manejarCambioPagina"
-        @cambio-pagina="manejarCambioPagina"
-        @seleccion="emit('seleccion', $event)"
-        @sort="emit('ordenar', $event)"
-        @doble-click="emit('doble-click', $event)"
-    >
-        <template #desechable="{ data }">
-            <div class="text-center">
-                <i 
-                    v-if="data.esDesechable || data.es_desechable" 
-                    class="pi pi-check font-bold text-green-400 text-lg"
-                ></i>
-                <span v-else class="text-gray-500">-</span>
-            </div>
-        </template>
+    <div class="tabla-contenedor-interactivo">
+        <TablaGenerica 
+            :datos="herramientas"
+            :columnas="columnas"
+            :cargando="cargando"
+            :lazy="true"
+            :totalRecords="totalRecords"
+            :rows="filasPorPagina"
+            :first="(paginaActual - 1) * filasPorPagina"
+            :filtros="filtros"
+            :globalFilterFields="['codigo', 'nombre', 'tipo', 'ubicacion']" 
+            :llaveMemoria="llaveMemoria"
+            :seleccionable="true"
+            :mensajeVacio="mensajeVacio || t('tabla_herramientas.mensaje_vacio')"
+            :iconoVacio="iconoVacio"
+            @page="manejarCambioPagina"
+            @cambio-pagina="manejarCambioPagina"
+            @seleccion="emit('seleccion', $event)"
+            @sort="emit('ordenar', $event)"
+            @doble-click="emit('doble-click', $event)"
+        >
+            <template #desechable="{ data }">
+                <div class="text-center">
+                    <i v-if="data.esDesechable || data.es_desechable" class="pi pi-check font-bold text-green-400 text-lg"></i>
+                    <span v-else class="text-gray-500">-</span>
+                </div>
+            </template>
 
-        <template #stock="{ data }">
-            <span :class="['badge-stock', getEstadoStock(data)]">
-                {{ data.cantidadDisponible }}
-            </span>
-        </template>
+            <template #stock="{ data }">
+                <span :class="['badge-stock', getEstadoStock(data)]">
+                    {{ data.cantidadDisponible }}
+                </span>
+            </template>
 
-        <template #acciones="{ data }">
-            <Button 
-                icon="pi pi-eye" 
-                class="p-button-rounded p-button-text p-button-info btn-ver"
-                :title="t('tabla_herramientas.btn_ver_detalles')"
-                :aria-label="t('tabla_herramientas.btn_ver_detalles')"
-                @click.stop="emit('doble-click', data)" 
-            />
-        </template>
-    </TablaGenerica>
+            <template #acciones="{ data }">
+                <Button 
+                    icon="pi pi-eye" 
+                    class="p-button-rounded p-button-text p-button-info btn-ver"
+                    :title="t('tabla_herramientas.btn_ver_detalles')"
+                    :aria-label="t('tabla_herramientas.btn_ver_detalles')"
+                    @click.stop="emit('doble-click', data)" 
+                />
+            </template>
+        </TablaGenerica>
+    </div>
 </template>
 
 <style scoped>
