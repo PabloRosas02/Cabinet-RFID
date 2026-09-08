@@ -36,7 +36,11 @@ axios.interceptors.response.use(
         return response;
     },
     (error) => {
-        if (error.response && error.response.status === 401) {
+        const status = error.response?.status;
+        const mensajeError = error.response?.data?.error;
+        
+        // Evalúa 401 o 403 (en caso de expiración o token inválido)
+        if (status === 401 || (status === 403 && mensajeError?.includes('expirado'))) {
             localStorage.removeItem('token');
             localStorage.removeItem('usuarioActivo');
             localStorage.removeItem('usuario');

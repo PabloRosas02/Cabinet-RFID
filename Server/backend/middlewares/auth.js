@@ -47,18 +47,18 @@ export const verificarToken = (req, res, next) => {
 
   try {
     // 2. Validar el token
-    const decodedPayload = validateToken(token);
+    const decodedPayload = validateToken(token);[cite: 17]
 
     // Adjuntamos el payload a la request
-    req.user = decodedPayload;
-    next();
+    req.user = decodedPayload;[cite: 17]
+    next();[cite: 17]
   } catch (error) {
     // Manejo limpio de expiración o alteración
-    const message = error.name === 'TokenExpiredError'
-      ? 'El token ha expirado.'
-      : 'Token inválido o manipulado.';
+    const message = error.name === 'TokenExpiredError'[cite: 17]
+      ? 'El token ha expirado.'[cite: 17]
+      : 'Token inválido o manipulado.';[cite: 17]
 
-    return res.status(403).json({ error: message });
+    return res.status(401).json({ error: message });
   }
 };
 
