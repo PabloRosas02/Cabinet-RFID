@@ -38,25 +38,26 @@ export const validateToken = (token) => {
 };
 
 export const verificarToken = (req, res, next) => {
+
+  try {
     // 1. Obtener el token
     const token = extractTokenFromHeader(req);
 
-  if (!token) {
-    return res.status(401).json({ error: 'Acceso denegado. Se requiere iniciar sesión.' });
-  }
-
-  try {
+    if (!token) {
+      return res.status(401).json({ error: 'Acceso denegado. Se requiere iniciar sesión.' });
+    }
     // 2. Validar el token
-    const decodedPayload = validateToken(token);[cite: 17]
+    const decodedPayload = validateToken(token);
 
     // Adjuntamos el payload a la request
-    req.user = decodedPayload;[cite: 17]
-    next();[cite: 17]
-  } catch (error) {
+    req.user = decodedPayload;
+    next();
+
+  }catch (error) {
     // Manejo limpio de expiración o alteración
-    const message = error.name === 'TokenExpiredError'[cite: 17]
-      ? 'El token ha expirado.'[cite: 17]
-      : 'Token inválido o manipulado.';[cite: 17]
+    const message = error.name === 'TokenExpiredError'
+      ? 'El token ha expirado.'
+      : 'Token inválido o manipulado.';
 
     return res.status(401).json({ error: message });
   }

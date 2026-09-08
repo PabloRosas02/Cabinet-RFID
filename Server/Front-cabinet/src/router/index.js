@@ -70,7 +70,6 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from) => {
-  // 1. Buscamos el GAFETE (Token) y los datos del usuario
   const token = localStorage.getItem('token');
   const usuarioStr = localStorage.getItem('usuarioActivo');
   
@@ -92,23 +91,22 @@ router.beforeEach((to, from) => {
     return obtenerRutaPorDefecto(rolUsuario);
   }
 
-  // REGLA 2: Si la ruta es privada
+  // REGLA 2: Si la ruta es privada y NO hay sesión en storage, forzar login
   if (requiereAutenticacion) {
-    // Si NO hay token o NO hay datos de usuario
     if (!token || !usuario) {
-      // Limpiamos por si quedó basura en el storage
       localStorage.removeItem('token');
       localStorage.removeItem('usuarioActivo');
+      localStorage.removeItem('usuario');
       return '/login';
     }
 
-    // REGLA 3: Verificamos el rol para la UX
+    // REGLA 3: Verificación de roles de usuario
     if (rolesRequeridos && !rolesRequeridos.includes(rolUsuario)) {
       return obtenerRutaPorDefecto(rolUsuario);
     }
   }
 
-  // REGLA 4: Si es una ruta rara y no está logueado
+  // REGLA 4: Captura general para rutas públicas no autenticadas
   if (to.path !== '/login' && to.path !== '/' && !token && !requiereAutenticacion) {
     return '/login';
   }

@@ -30,17 +30,24 @@ axios.interceptors.request.use(
     }
 );
 
-// Interceptor de Respuestas: Controla tokens expirados o inválidos (401)
+// Interceptor de Respuestas: Controla tokens expirados o inválidos
 axios.interceptors.response.use(
     (response) => {
         return response;
     },
     (error) => {
         const status = error.response?.status;
-        const mensajeError = error.response?.data?.error;
-        
-        // Evalúa 401 o 403 (en caso de expiración o token inválido)
-        if (status === 401 || (status === 403 && mensajeError?.includes('expirado'))) {
+        const data = error.response?.data;
+        const mensajeError = typeof data?.error === 'string' ? data.error.toLowerCase() : '';
+
+        // Detecta 401, 403 por token o respuestas donde el mensaje explícitamente indique expiración/token
+        const esErrorSesion = 
+            status === 401 || 
+            status === 403 || 
+            mensajeError.includes('token') || 
+            mensajeError.includes('expirado');
+
+        if (esErrorSesion) {
             localStorage.removeItem('token');
             localStorage.removeItem('usuarioActivo');
             localStorage.removeItem('usuario');
