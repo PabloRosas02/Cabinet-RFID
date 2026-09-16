@@ -1,22 +1,30 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 import { enviarNotificacionPendientes } from '../services/emailService.js';
-import { obtenerEstadoGlobal } from './configRoutes.js'; // Importamos el estado del switch
 
+const prisma = new PrismaClient();
 const router = Router();
 
 router.get('/pendientes', async (req, res) => {
     try {
-        // 1. Verificamos si el switch está activado por el usuario
-        if (!obtenerEstadoGlobal()) {
-            console.log('⏸️ Cron ejecutado, pero la automatización está DESACTIVADA por el usuario.');
+        // 1. Proteger el endpoint contra ejecuciones no autorizadas
+        const authHeader = req.headers.authorization;
+        if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+            return res.status(401).json({ error: 'No autorizado' });
+        }
+
+        // 2. Consultar la configuración desde la Base de Datos (en lugar de memoria)
+        const config = await prisma.configuracion.findFirst({ where: { clave: 'AUTOMATIZACION_ALERTAS' } });
+        const automatizacionActiva = config ? config.valor === 'true' : true;
+
+        if (!automatizacionActiva) {
+            console.log('⏸️ Cron omitido: Automatización desactivada en BD.');
             return res.status(200).json({ success: true, message: 'Automatización desactivada' });
         }
 
         console.log('⏰ Ejecutando revisión de pendientes (Vercel Cron)...');
 
-        // 2. Buscamos las salidas pendientes en Prisma
+        // 3. Buscar salidas pendientes
         const salidasPendientes = await prisma.salida.findMany({
             where: { estado: 'PENDIENTE' },
             include: {
@@ -44,8 +52,9 @@ router.get('/pendientes', async (req, res) => {
             }))
         );
 
-        // 3. Enviamos el correo
+        // 4. Enviar notificación
         await enviarNotificacionPendientes(process.env.ADMIN_EMAIL, listaFormateada);
+        
         return res.status(200).json({ success: true, enviados: listaFormateada.length });
     } catch (error) {
         console.error('Error en cron de Vercel:', error);

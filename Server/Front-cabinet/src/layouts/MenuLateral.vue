@@ -1,10 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import Dialog from 'primevue/dialog';
 import Button from 'primevue/button';
-import InputSwitch from 'primevue/inputswitch'; 
+import ToggleSwitch from 'primevue/toggleswitch'; 
 import InputText from 'primevue/inputtext';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
@@ -39,6 +39,16 @@ const guardandoDestinatario = ref(false);
 const enviandoReporte = ref(false);
 const enviandoAlertaStock = ref(false);
 
+// Helper para adjuntar el token JWT a cada petición Axios
+const obtenerHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  };
+};
+
 // Decodificar JWT del localStorage para obtener la sesión real
 const obtenerPayloadToken = () => {
   const token = localStorage.getItem('token');
@@ -71,15 +81,26 @@ const cargarDatosSensibles = async () => {
 
   try {
     const [resAuto, resDest] = await Promise.all([
-      axios.get('/api/configuracion/automatizacion'),
-      axios.get('/api/configuracion/destinatarios')
+      axios.get('/api/configuracion/automatizacion', obtenerHeaders()),
+      axios.get('/api/configuracion/destinatarios', obtenerHeaders())
     ]);
+    
     correosActivos.value = resAuto.data.activo;
-    listaDestinatariosBD.value = resDest.data;
+    
+    // Normalizar la respuesta por si el backend devuelve un objeto envolvente o un array directo
+    const dataDestinatarios = Array.isArray(resDest.data) ? resDest.data : (resDest.data?.data || resDest.data?.destinatarios || []);
+    listaDestinatariosBD.value = dataDestinatarios;
   } catch (error) {
     console.error('Error al cargar datos de configuración:', error);
   }
 };
+
+// Observador para actualizar la lista de correos cada vez que se abre el modal
+watch(mostrarModalConfig, (nuevoEstado) => {
+  if (nuevoEstado) {
+    cargarDatosSensibles();
+  }
+});
 
 // Crear Destinatario
 const agregarDestinatario = async () => {
@@ -94,10 +115,11 @@ const agregarDestinatario = async () => {
   }
   guardandoDestinatario.value = true;
   try {
-    await axios.post('/api/configuracion/destinatarios', {
-      correo: nuevoCorreo.value,
-      nombre: nuevoNombre.value
-    });
+    await axios.post(
+      '/api/configuracion/destinatarios', 
+      { correo: nuevoCorreo.value, nombre: nuevoNombre.value },
+      obtenerHeaders()
+    );
     toast.add({ 
       severity: 'success', 
       summary: t('configuracion_modal.exito'), 
@@ -106,8 +128,9 @@ const agregarDestinatario = async () => {
     });
     nuevoCorreo.value = '';
     nuevoNombre.value = '';
-    const { data } = await axios.get('/api/configuracion/destinatarios');
-    listaDestinatariosBD.value = data;
+    
+    const { data } = await axios.get('/api/configuracion/destinatarios', obtenerHeaders());
+    listaDestinatariosBD.value = Array.isArray(data) ? data : (data?.data || data?.destinatarios || []);
   } catch (error) {
     toast.add({ 
       severity: 'error', 
@@ -121,13 +144,15 @@ const agregarDestinatario = async () => {
 };
 
 // Alternar activo/inactivo
-const toggleEstadoDestinatario = async (registro) => {
+const toggleEstadoDestinatario = async (registro, nuevoEstado) => {
   try {
-    await axios.put(`/api/configuracion/destinatarios/${registro.id}`, {
-      activo: !registro.activo
-    });
-    const { data } = await axios.get('/api/configuracion/destinatarios');
-    listaDestinatariosBD.value = data;
+    await axios.put(
+      `/api/configuracion/destinatarios/${registro.id}`, 
+      { activo: nuevoEstado },
+      obtenerHeaders()
+    );
+    const { data } = await axios.get('/api/configuracion/destinatarios', obtenerHeaders());
+    listaDestinatariosBD.value = Array.isArray(data) ? data : (data?.data || data?.destinatarios || []);
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado.', life: 3000 });
   }
@@ -136,15 +161,15 @@ const toggleEstadoDestinatario = async (registro) => {
 // Eliminar Destinatario
 const eliminarDestinatario = async (id) => {
   try {
-    await axios.delete(`/api/configuracion/destinatarios/${id}`);
+    await axios.delete(`/api/configuracion/destinatarios/${id}`, obtenerHeaders());
     toast.add({ 
       severity: 'info', 
       summary: t('configuracion_modal.eliminado'), 
       detail: t('configuracion_modal.destinatarios.msj_eliminado'), 
       life: 3000 
     });
-    const { data } = await axios.get('/api/configuracion/destinatarios');
-    listaDestinatariosBD.value = data;
+    const { data } = await axios.get('/api/configuracion/destinatarios', obtenerHeaders());
+    listaDestinatariosBD.value = Array.isArray(data) ? data : (data?.data || data?.destinatarios || []);
   } catch (error) {
     toast.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar el registro.', life: 3000 });
   }
@@ -153,9 +178,11 @@ const eliminarDestinatario = async (id) => {
 // Toggle automatización
 const toggleAutomatizacion = async (nuevoValor) => {
   try {
-    const { data } = await axios.post('/api/configuracion/automatizacion', { 
-      activo: nuevoValor
-    });
+    const { data } = await axios.post(
+      '/api/configuracion/automatizacion', 
+      { activo: nuevoValor },
+      obtenerHeaders()
+    );
     correosActivos.value = data.activo;
     
     if (data.activo) {
@@ -176,7 +203,11 @@ const toggleAutomatizacion = async (nuevoValor) => {
 const generarReporteSemanal = async () => {
   enviandoReporte.value = true;
   try {
-    const { data } = await axios.post('/api/reportes/historial-semanal');
+    const { data } = await axios.post(
+      '/api/configuracion/reportes/historial-semanal', 
+      { lang: locale.value }, 
+      obtenerHeaders()
+    );
 
     if (data.success) {
       toast.add({ 
@@ -189,7 +220,7 @@ const generarReporteSemanal = async () => {
       toast.add({ 
         severity: 'error', 
         summary: 'Error', 
-        detail: 'Hubo un problema al generar el reporte.', 
+        detail: data.error || 'Hubo un problema al generar el reporte.', 
         life: 4000 
       });
     }
@@ -198,7 +229,7 @@ const generarReporteSemanal = async () => {
     toast.add({ 
       severity: 'error', 
       summary: 'Error', 
-      detail: 'Ocurrió un error en el servidor al enviar el correo.', 
+      detail: error.response?.data?.error || 'Ocurrió un error en el servidor al enviar el correo.', 
       life: 4000 
     });
   } finally {
@@ -210,7 +241,11 @@ const generarReporteSemanal = async () => {
 const enviarAlertaStock = async () => {
   enviandoAlertaStock.value = true;
   try {
-    const { data } = await axios.post('/api/reportes/alertas-stock');
+    const { data } = await axios.post(
+      '/api/configuracion/reportes/alertas-stock', 
+      { lang: locale.value }, 
+      obtenerHeaders()
+    );
 
     if (data.success) {
       if (data.registros) {
@@ -232,7 +267,7 @@ const enviarAlertaStock = async () => {
       toast.add({ 
         severity: 'error', 
         summary: 'Error', 
-        detail: 'Hubo un problema al generar la alerta de stock.', 
+        detail: data.error || 'Hubo un problema al generar la alerta de stock.', 
         life: 4000 
       });
     }
@@ -241,7 +276,7 @@ const enviarAlertaStock = async () => {
     toast.add({ 
       severity: 'error', 
       summary: 'Error', 
-      detail: 'Ocurrió un error al procesar la alerta de inventario.', 
+      detail: error.response?.data?.error || 'Ocurrió un error al procesar la alerta de inventario.', 
       life: 4000 
     });
   } finally {
@@ -362,7 +397,7 @@ const menuFiltrado = computed(() => {
   >
     <div class="flex flex-column gap-4 pt-2">
       
-      <!-- Selector de Idioma (Disponible para TODOS los usuarios) -->
+      <!-- Selector de Idioma -->
       <div class="field flex flex-column gap-2">
         <span class="text-color font-semibold">{{ t('configuracion_modal.idioma') }}</span>
         <div class="flex gap-2">
@@ -381,7 +416,7 @@ const menuFiltrado = computed(() => {
         </div>
       </div>
 
-      <!-- Selector de Tema (Disponible para TODOS los usuarios) -->
+      <!-- Selector de Tema -->
       <div class="field flex flex-column gap-2">
         <span class="text-color font-semibold">{{ t('configuracion_modal.tema') }}</span>
         <div class="flex gap-2">
@@ -402,7 +437,7 @@ const menuFiltrado = computed(() => {
         </div>
       </div>
 
-      <!-- BLOQUE EXCLUSIVO PARA ADMINISTRADORES (Validado vía Token JWT) -->
+      <!-- BLOQUE EXCLUSIVO PARA ADMINISTRADORES -->
       <template v-if="esAdmin">
 
         <!-- GESTIÓN DE DESTINATARIOS -->
@@ -438,9 +473,9 @@ const menuFiltrado = computed(() => {
             <Column field="correo" :header="t('configuracion_modal.destinatarios.col_correo')"></Column>
             <Column :header="t('configuracion_modal.destinatarios.col_activo')" style="width: 70px; text-align: center;">
               <template #body="slotProps">
-                <InputSwitch 
+                <ToggleSwitch 
                   :modelValue="slotProps.data.activo" 
-                  @change="toggleEstadoDestinatario(slotProps.data)" 
+                  @update:modelValue="(val) => toggleEstadoDestinatario(slotProps.data, val)" 
                 />
               </template>
             </Column>
@@ -464,9 +499,9 @@ const menuFiltrado = computed(() => {
               <span class="text-color text-sm font-bold block">{{ t('configuracion_modal.pendientes.titulo') }}</span>
               <span class="text-color-secondary text-xs">{{ t('configuracion_modal.pendientes.subtitulo_cron') }}</span>
             </div>
-            <InputSwitch 
+            <ToggleSwitch 
               v-model="correosActivos" 
-              @change="toggleAutomatizacion(correosActivos)" 
+              @update:modelValue="toggleAutomatizacion" 
             />
           </div>
         </div>

@@ -39,23 +39,23 @@ const historialNormalizado = computed(() => {
             numeroOrden: pedido.numeroOrden || pedido.numero_orden,
             numeroMaquina: pedido.numeroMaquina || pedido.numero_maquina,
             
-            // Prestó 
-            prestadorNumero: pedido.prestadorNumero,
-            prestadorNombre: pedido.prestadorNombre,
+            // Extraer prestadorNumero directamente de la relación si no existe en la raíz
+            prestadorNumero: pedido.prestadorNumero || pedido.prestador?.numeroTrabajador || pedido.prestador?.numeroEmpleado || pedido.prestador?.numero,
+            prestadorNombre: pedido.prestadorNombre || pedido.prestador?.nombre,
             
             // Recibió 
-            receptorNumero: pedido.receptorNumero,
-            receptorNombre: pedido.receptorNombre,
+            receptorNumero: pedido.receptorNumero || pedido.receptor?.numeroTrabajador || pedido.receptor?.numero,
+            receptorNombre: pedido.receptorNombre || pedido.receptor?.nombre,
             
             // Solicitó
-            trabajadorNumero: pedido.trabajadorNumero,
-            trabajadorNombre: pedido.trabajadorNombre,
+            trabajadorNumero: pedido.trabajadorNumero || pedido.empleado_numero,
+            trabajadorNombre: pedido.trabajadorNombre || pedido.empleado_nombre,
 
             fechaSalida: pedido.fechaSalida || pedido.created_at,
             fechaDevolucion: pedido.fechaDevolucion || pedido.fecha_devolucion,
             herramientas,
             esSoloConsumible
-        };
+                };
     });
 });
 
@@ -98,7 +98,9 @@ const obtenerSeveridadEstado = (estado) => {
     return estado === 'DEVUELTO' ? 'success' : 'danger';
 };
 const obtenerTextoEstado = (estado) => {
-    if (estado === 'CONSUMIDO') return 'CONSUMIDO';
+    if (estado === 'CONSUMIDO') {
+        return t('tabla_historial.estado_consumido'); 
+    }
     return estado === 'DEVUELTO' ? t('tabla_historial.estado_devuelto') : t('tabla_historial.estado_pendiente');
 };
 // =====================================================
@@ -184,7 +186,9 @@ const verDetalles = (data) => {
                 <div class="text-sm">
                     <div v-for="(h, idx) in data.herramientas" :key="idx" class="mb-1 text-400">
                         • {{ h.cantidadPrestada }}x {{ h.nombre }} 
-                        <span v-if="h.cantidadRegresada > 0" class="text-green-500 block">
+                        
+                        <!-- Solo mostrar "Regresó" si NO es consumible/desechable -->
+                        <span v-if="!h.esDesechable && h.cantidadRegresada > 0" class="text-green-500 block">
                             ({{ t('tabla_historial.regreso') }} {{ h.cantidadRegresada }})
                         </span>
                     </div>

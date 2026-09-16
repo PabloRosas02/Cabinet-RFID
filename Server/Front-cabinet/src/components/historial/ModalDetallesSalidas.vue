@@ -52,9 +52,11 @@ const pedidoNormalizado = computed(() => {
 // Ayudante para obtener la etiqueta de estado según el tipo de herramientas
 const obtenerEtiquetaEstado = (pedidoNorm) => {
     if (pedidoNorm.estado === 'CONSUMIDO' || pedidoNorm.esSoloConsumible) {
-        return 'CONSUMIDO';
+        return t('modal_detalles_pedido.estado_consumido'); 
     }
-    return pedidoNorm.estado === 'DEVUELTO' ? 'DEVUELTO' : 'PENDIENTE';
+    return pedidoNorm.estado === 'DEVUELTO' 
+        ? t('modal_detalles_pedido.estado_devuelto') 
+        : t('modal_detalles_pedido.estado_pendiente');
 };
 
 const obtenerSeveridadEstado = (pedidoNorm) => {
@@ -65,14 +67,14 @@ const obtenerSeveridadEstado = (pedidoNorm) => {
 };
 
 const obtenerNombreReceptor = (pedidoNorm) => {
-    if (pedidoNorm.esSoloConsumible) return 'N/A (Consumible)';
+    if (pedidoNorm.esSoloConsumible) return t('modal_detalles_pedido.na_consumible'); 
     if (!pedidoNorm.receptorNombre) return t('modal_detalles_pedido.sin_entregas');
     if (pedidoNorm.receptorNombre === 'Pendiente / En curso') return t('modal_detalles_pedido.pendiente_curso');
     return pedidoNorm.receptorNombre;
 };
 
 const obtenerFechaDevolucion = (pedidoNorm) => {
-    if (pedidoNorm.esSoloConsumible) return 'N/A (No requiere devolución)';
+    if (pedidoNorm.esSoloConsumible) return t('modal_detalles_pedido.na_no_requiere');
     if (!pedidoNorm.fechaDevolucion) return t('modal_detalles_pedido.pendiente_fecha');
     
     const fecha = formatearFecha(pedidoNorm.fechaDevolucion);
@@ -155,7 +157,7 @@ const obtenerFechaDevolucion = (pedidoNorm) => {
                             <!-- Cambios para consumibles a nivel individual de herramienta -->
                             <div class="text-left sm:text-right text-lg">
                                 <span class="block text-color">
-                                    {{ h.esDesechable ? 'Entregadas' : t('modal_detalles_pedido.prestadas') }}: <b>{{ h.cantidadPrestada }}</b>
+                                    {{ h.esDesechable ? t('modal_detalles_pedido.entregadas') : t('modal_detalles_pedido.prestadas') }}: <b>{{ h.cantidadPrestada }}</b>
                                 </span>
 
                                 <template v-if="!h.esDesechable">
@@ -165,7 +167,7 @@ const obtenerFechaDevolucion = (pedidoNorm) => {
                                 </template>
                                 <template v-else>
                                     <span class="text-blue-400 font-medium text-sm">
-                                        Consumible (Sin retorno)
+                                        {{ t('modal_detalles_pedido.consumible_sin_retorno') }} <!-- <-- Usar t() -->
                                     </span>
                                 </template>
                             </div>

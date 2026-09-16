@@ -6,8 +6,9 @@ x-backend-base: &backend-base
     dockerfile: Dockerfile
   restart: unless-stopped
   networks:
-    - default
+    - rfid_external
     - rfid_internal
+
 services:
   mosquitto:
     image: eclipse-mosquitto:latest
@@ -20,6 +21,8 @@ services:
       - ./mosquitto/config:/mosquitto/config
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    networks:
+      - rfid_internal
 
   backend:
     container_name: rfid_backend
@@ -46,7 +49,7 @@ services:
       - backend
     restart: unless-stopped
     networks:
-      - default
+      - rfid_external
 
   frontend-prod:
     container_name: rfid_frontend_prod
@@ -67,7 +70,7 @@ services:
       - backend
     restart: unless-stopped
     networks:
-      - default
+      - rfid_external
 
   ngrok-tunnel:
     image: ngrok/ngrok:alpine
@@ -81,6 +84,8 @@ services:
       - NGROK_AUTHTOKEN=${NGROK_TOKEN}
     depends_on:
       - frontend-prod
+    networks:
+      - rfid_external
 
 volumes:
   frontend_node_modules:
@@ -91,6 +96,5 @@ volumes:
 networks:
   rfid_internal:
     driver: bridge
-  default:
-    name: rfid_external
+  rfid_external:
     driver: bridge

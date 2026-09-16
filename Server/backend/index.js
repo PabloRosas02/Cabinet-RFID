@@ -1,7 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
-import cors from 'cors'; 
-import path from 'path';                                   
-import { fileURLToPath } from 'url';          
+import cors from 'cors';          
 import usuariosRoutes from './routes/usuarios.js';
 import herramientasRoutes from './routes/herramientas.js';
 import salidasRoutes from './routes/salidas.js';
@@ -17,7 +16,13 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/herramientas', herramientasRoutes);
 app.use('/api/salidas', salidasRoutes);
-app.use('/api', configRoutes);
+app.use('/api/configuracion', configRoutes);
+
+// Manejador de errores para evitar que un fallo inesperado tire el servidor
+app.use((err, req, res, next) => {
+    console.error('Error no controlado en la API:', err.stack);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+});
 
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {

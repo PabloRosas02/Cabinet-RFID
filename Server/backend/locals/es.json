@@ -1,0 +1,65 @@
+{
+  "systemName": "Sistema de Almacén",
+  "email": {
+    "pending": {
+      "subject": "⚠️ Alerta: Herramientas con Devolución Pendiente",
+      "title": "⚠️ Reporte de Devoluciones Pendientes",
+      "greeting": "Hola, Encargado de Almacén:",
+      "body1": "Se ha generado el reporte actualizado de herramientas que aún no han sido devueltas.",
+      "body2": "Por favor, revisa el archivo de Excel adjunto para consultar todos los detalles (Folios, Trabajadores, Máquinas y Horarios).",
+      "footer": "Este es un mensaje automático generado por el Sistema de Almacén.",
+      "filename": "Devoluciones_Pendientes"
+    },
+    "weekly": {
+      "subject": "📊 Resumen Semanal: Historial de Herramientas",
+      "title": "📊 Reporte Semanal de Salidas",
+      "greeting": "Hola, Encargado de Almacén:",
+      "body1": "Adjunto encontrarás el historial de todas las salidas y devoluciones de herramientas registradas durante los últimos 7 días.",
+      "body2": "Por favor, revisa el archivo de Excel adjunto para consultar el resumen completo de herramientas prestadas, folios y tiempos de uso.",
+      "footer": "Este es un mensaje automático generado por el Sistema de Almacén.",
+      "filename": "Historial_Semanal"
+    },
+    "stock": {
+      "subject": "⚠️ Alerta de Inventario: Herramientas en Stock Mínimo",
+      "title": "⚠️ Alerta: Herramientas en Stock Mínimo",
+      "greeting": "Hola, Encargado de Almacén:",
+      "body1": "Se ha detectado que una o más herramientas han alcanzado o descendido por debajo de su nivel de stock mínimo.",
+      "body2": "Por favor, revisa el archivo de Excel adjunto para consultar el listado completo y gestionar el reabastecimiento necesario.",
+      "footer": "Este es un mensaje automático generado por el Sistema de Almacén.",
+      "filename": "Alertas_Stock_Minimo"
+    }
+  },
+  "columns": {
+    "folio": "Folio",
+    "order": "Orden",
+    "machine": "Máquina",
+    "lender": "Prestó (Almacenista)",
+    "receiver": "Recibió / Devolución",
+    "requester": "Solicitó (Empleado)",
+    "reason": "Motivo de Salida",
+    "checkoutDate": "Fecha de Salida",
+    "returnDate": "Fecha Devolución",
+    "qtyBorrowed": "Cantidad Prestada",
+    "qtyReturned": "Cantidad Devuelta",
+    "tools": "Herramientas",
+    "status": "Estado",
+    "code": "Código",
+    "name": "Nombre",
+    "category": "Tipo / Categoría",
+    "brand": "Marca",
+    "location": "Ubicación",
+    "isConsumable": "¿Es Consumible?",
+    "minStock": "Stock Mínimo",
+    "maxStock": "Stock Máximo",
+    "physicalStock": "Stock Físico",
+    "description": "Descripción"
+  },
+  "values": {
+    "returned": "Regresó",
+    "pending": "PENDIENTE",
+    "devuelto": "DEVUELTO",
+    "pendingStatus": "Pendiente / En curso",
+    "yesConsumable": "SÍ (CONSUMIBLE)",
+    "noConsumable": "NO"
+  }
+}
