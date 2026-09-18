@@ -21,7 +21,7 @@
     "exito": "Éxito",
     "eliminado": "Eliminado",
     "destinatarios": {
-      "titulo": "Destinatarios Permanentes (Base de Datos)",
+      "titulo": "Destinatarios de Notificaciones",
       "subtitulo": "Los correos activos en esta lista recibirán automáticamente las notificaciones y reportes.",
       "placeholder_nombre": "Nombre (ej: Almacén)",
       "placeholder_correo": "correo{at}ejemplo.com",
@@ -148,8 +148,6 @@
   "titulo": "Control de Inventario",
   "btn_nueva": "Nueva Herramienta",
   "btn_exportar": "Exportar Inventario",
-  "exportar_csv": "Export CSV",
-  "exportar_excel": "Exportar Excel",
   "btn_solo_alertas": "Solo Alertas",
   "btn_mostrando_todo": "Ver Todos",
   "btn_actualizar": "Actualizar Inventario",
@@ -291,13 +289,17 @@
     "registro_motivo": "Registro del motivo"
   },
   "bitacora_detalles": {
+    "nombre": "Nombre",
+    "codigo": "Código",
+    "ubicacion": "Ubicación",
+    "marca": "Marca",
+    "desechable": "Desechable",
+    "desechable_si": "Sí",
+    "desechable_no": "No",
     "stock_maximo": "Stock Máximo",
     "stock_minimo": "Stock Mínimo",
     "stock_fisico": "Stock Físico",
     "motivo_baja": "Motivo de baja",
-    "desechable": "Consumible",
-    "desechable_si": "Sí",
-    "desechable_no": "No",
     "registro_inicial": "Registro inicial de la herramienta",
     "importacion_masiva": "Registro mediante Importación Masiva"
   },
@@ -328,8 +330,6 @@
     "filtro_default": "Filtro",
     "ph_filtro_fecha": "Filtrar por fecha",
     "btn_exportar": "Exportar Bitácora",
-    "exportar_csv": "Exportar a CSV",
-    "exportar_excel": "Exportar a Excel",
     "tiempo_todos": "Todos",
     "tiempo_hoy": "Hoy",
     "tiempo_semana": "Esta Semana",
@@ -412,6 +412,23 @@
       "set_up": "Set up",
       "mala_calidad": "Mala calidad de la herramienta",
       "otro": "Otro"
+    },
+    "busqueda": {
+      "buscar_en": "Buscar en:",
+      "codigo": "Código",
+      "nombre": "Nombre",
+      "placeholder": "Buscar por código o nombre..."
+    },
+    "modal_auth": {
+        "titulo": "Autorización Requerida",
+        "descripcion": "El motivo requiere código PIN enviado al correo del administrador.",
+        "label_admin": "Administrador",
+        "ph_admin": "Elegir...",
+        "msj_enviado": "Código enviado.",
+        "label_pin": "Código PIN",
+        "ph_pin": "PIN de 6 dígitos",
+        "btn_cancelar": "Cancelar",
+        "btn_autorizar": "Autorizar"
     }
   },
   "view_salidas": {
@@ -467,12 +484,25 @@
   "tabla_usuarios": {
     "col_empleado": "No. Empleado",
     "col_nombre": "Nombre Completo",
+    "col_correo": "Correo",
+    "col_telefono": "Teléfono",
     "col_departamento": "Departamento",
     "col_rol": "Rol (Acceso)",
     "col_acciones": "Acciones",
     "mensaje_vacio": "No se encontraron usuarios registrados que coincidan con la búsqueda.",
     "tooltip_editar": "Editar",
     "tooltip_eliminar": "Eliminar"
+  },
+  "departamentos": {
+    "INGENIERIA": "INGENIERÍA",
+    "MANTENIMIENTO": "MANTENIMIENTO",
+    "ADMINISTRACION": "ADMINISTRACIÓN"
+  },
+  "roles": {
+    "ADMINISTRADOR": "Administrador",
+    "SUPERVISOR_ALMACEN": "Supervisor de Almacén",
+    "ALMACENISTA": "Almacenista",
+    "OPERADOR": "Operador"
   },
   "view_usuarios": {
     "titulo": "Administración de Usuarios",
@@ -559,6 +589,9 @@
     "reporte_inventario": "Reporte_Inventario",
     "stock_min": "Stock Mínimo",
     "stock_fisico": "Stock Físico",
+    "stock_max": "Stock Máximo",
+    "si": "SI",
+    "no": "NO",
     "reporte_historial": "Reporte_Historial",
     "pendiente": "Pendiente",
     "folio": "Folio",
@@ -576,16 +609,35 @@
     "sin_recepciones": "Sin recepciones registradas",
     "estado_pendiente": "PENDIENTE",
     "estado_devuelto": "DEVUELTO",
+    "estado_consumido": "CONSUMIDO",
+    "razon": "Razón de Préstamo",
     "accion_creacion": "CREACIÓN",
     "accion_modificacion": "MODIFICACIÓN",
     "accion_eliminacion": "ELIMINACIÓN",
     "cantidad_maxima": "Cantidad Máxima",
-    "es_desechable": "¿Es Consumible?"
+    "es_desechable": "¿Es Consumible?",
+    "detalle": "Detalle",
+    "exportar_csv": "Exportar a CSV (.csv)",
+    "exportar_excel": "Exportar a Excel (.xlsx)",
+    "motivos": {
+      "fin_vida": "Fin de vida útil",
+      "dano_operador": "Daño por operador",
+      "extravio": "Extravío",
+      "set_up": "Set up",
+      "mala_calidad": "Mala calidad de la herramienta",
+      "otro": "Otro",
+      "end_of_life": "Fin de vida útil",
+      "operator_damage": "Daño por operador",
+      "loss": "Extravío",
+      "setup": "Set up",
+      "poor_quality": "Mala calidad",
+      "other": "Otro"
+    }
   },
   "filtros": {
     "hoy": "Hoy",
     "todos": "Todos",
     "este_mes": "Este Mes",
     "este_anio": "Este Año"
-}
+  }
 }

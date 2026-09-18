@@ -25,13 +25,23 @@ const {
     prepararNuevoUsuario, prepararEdicion, guardarUsuario, eliminarUsuario 
 } = useUsuarios();
 
-const opcionesDepartamentos = ref(['INGENIERIA', 'MANTENIMIENTO', 'ADMINISTRACION']);
-const opcionesRoles = ref(['ADMINISTRADOR', 'SUPERVISOR_ALMACEN', 'ALMACENISTA', 'OPERADOR']);
+// Opciones dinámicas traducidas para Departamentos y Roles
+const opcionesDepartamentos = computed(() => [
+    { label: t('departamentos.INGENIERIA', 'Engineering'), value: 'INGENIERIA' },
+    { label: t('departamentos.MANTENIMIENTO', 'Maintenance'), value: 'MANTENIMIENTO' },
+    { label: t('departamentos.ADMINISTRACION', 'Administration'), value: 'ADMINISTRACION' }
+]);
+
+const opcionesRoles = computed(() => [
+    { label: t('roles.ADMINISTRADOR', 'Administrator'), value: 'ADMINISTRADOR' },
+    { label: t('roles.SUPERVISOR_ALMACEN', 'Warehouse Supervisor'), value: 'SUPERVISOR_ALMACEN' },
+    { label: t('roles.ALMACENISTA', 'Storekeeper'), value: 'ALMACENISTA' },
+    { label: t('roles.OPERADOR', 'Operator'), value: 'OPERADOR' }
+]);
 
 // Búsqueda y Filtros por Categoría
 const busquedaTexto = ref('');
 
-// Definición de categorías traducidas dinámicamente
 const categoriasDisponibles = computed(() => [
     { key: 'numTrabajador', label: t('view_usuarios.categorias.num_empleado') },
     { key: 'nombre', label: t('view_usuarios.categorias.nombre') },
@@ -54,7 +64,6 @@ const toggleCategoria = (key) => {
     }
 };
 
-// Placeholder reactivo que cambia con las categorías y el idioma activo
 const placeholderDinamico = computed(() => {
     if (categoriasSeleccionadas.value.length === categoriasDisponibles.value.length) {
         return t('view_usuarios.ph_buscar_todos');
@@ -66,14 +75,12 @@ const placeholderDinamico = computed(() => {
     return `${t('view_usuarios.buscar_en')} ${nombres}...`;
 });
 
-// Sincronización del input con el filtro global
 watch(busquedaTexto, (nuevoTexto) => {
     if (filtros.value && filtros.value.global) {
         filtros.value.global.value = nuevoTexto;
     }
 });
 
-// Validación de correo
 const esCorreoValido = (email) => {
     if (!email) return true;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -133,7 +140,6 @@ const validarYGuardar = async () => {
             <h2 class="text-2xl font-bold m-0" style="color: #5ab1ce;">{{ t('view_usuarios.titulo') }}</h2>
         </div>
 
-        <!-- Toolbar Superior traducida dinámicamente -->
         <div class="flex flex-column gap-3 mb-4 p-3 toolbar-oscuro border-round">
 
             <div class="flex flex-wrap align-items-center justify-content-between gap-2">
@@ -182,7 +188,6 @@ const validarYGuardar = async () => {
             @eliminar="eliminarUsuario"
         />
 
-        <!-- Modal permanece igual -->
         <Dialog 
             v-model:visible="mostrarModal" 
             :header="esEdicion ? t('view_usuarios.modal_titulo_editar') : t('view_usuarios.modal_titulo_nuevo')" 
@@ -229,7 +234,7 @@ const validarYGuardar = async () => {
                     <InputText 
                         name="telefono"
                         v-model="usuarioActual.telefono" 
-                        placeholder="Ej. 6641234567"
+                        :placeholder="t('view_usuarios.ph_telefono', 'Ej. 6641234567')"
                         class="w-full input-oscuro" 
                     />
                 </div>
@@ -255,6 +260,8 @@ const validarYGuardar = async () => {
                         name="departamento"
                         v-model="usuarioActual.depart" 
                         :options="opcionesDepartamentos" 
+                        optionLabel="label"
+                        optionValue="value"
                         :placeholder="t('view_usuarios.ph_departamento')"
                         class="w-full input-oscuro" 
                         overlayClass="menu-oscuro-global" 
@@ -268,6 +275,8 @@ const validarYGuardar = async () => {
                         name="rol"
                         v-model="usuarioActual.rol" 
                         :options="opcionesRoles" 
+                        optionLabel="label"
+                        optionValue="value"
                         :placeholder="t('view_usuarios.ph_rol')"
                         class="w-full input-oscuro" 
                         overlayClass="menu-oscuro-global" 

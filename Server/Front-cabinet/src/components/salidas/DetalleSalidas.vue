@@ -25,7 +25,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['quitar', 'registrar', 'update:trabajador', 'update:pedido']);
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // =====================================================================
 // MOTIVOS UNIFICADOS (Valores en Español coincidiendo con las opciones)
@@ -165,16 +165,23 @@ const solicitarCodigoAutorizacion = async () => {
     enviandoCodigo.value = true;
     errorAuth.value = '';
     try {
+        // Asegura obtener el ID numérico aunque adminSeleccionado sea objeto o número
+        const idAdmin = typeof adminSeleccionado.value === 'object' 
+            ? adminSeleccionado.value.id 
+            : adminSeleccionado.value;
+
         const respuesta = await axios.post('/api/salidas/solicitar-codigo-dano', {
-            administradorId: adminSeleccionado.value,
+            administradorId: idAdmin,
             trabajadorNombre: props.trabajador.nombre,
-            herramientaNombre: props.pedido.map(item => item.nombre).join(', ')
+            herramientaNombre: props.pedido.map(item => item.nombre).join(', '),
+            lang: locale.value || 'es'
         });
+        
         hashValidacion.value = respuesta.data.hashValidacion;
         codigoEnviado.value = true;
         codigoAdmin.value = '';
     } catch (error) {
-        errorAuth.value = error.response?.data?.error || 'Error al solicitar el código.';
+        errorAuth.value = error.response?.data?.error || t('detalle_pedido.modal_auth.error_solicitar', 'Error al solicitar el código.');
     } finally {
         enviandoCodigo.value = false;
     }
@@ -457,27 +464,79 @@ const verDetalles = (item) => {
         />
 
         <!-- Modal Autorización por Daños -->
-        <Dialog v-model:visible="mostrarModalAuth" modal header="Autorización Requerida" :style="{ width: '90vw', maxWidth: '420px' }" @hide="limpiarModalAuth">
+        <Dialog 
+            v-model:visible="mostrarModalAuth" 
+            modal 
+            :header="t('detalle_pedido.modal_auth.titulo', 'Autorización Requerida')" 
+            :style="{ width: '90vw', maxWidth: '420px' }" 
+            @hide="limpiarModalAuth"
+        >
             <div class="flex flex-column gap-3 pt-2">
-                <p class="m-0 text-color-secondary text-sm">El motivo requiere código PIN enviado al correo del administrador.</p>
+                <p class="m-0 text-color-secondary text-sm">
+                    {{ t('detalle_pedido.modal_auth.descripcion', 'El motivo requiere código PIN enviado al correo del administrador.') }}
+                </p>
                 <div class="field mb-0">
-                    <label for="adminSelect" class="font-semibold block mb-2 text-sm">Administrador</label>
+                    <label for="adminSelect" class="font-semibold block mb-2 text-sm">
+                        {{ t('detalle_pedido.modal_auth.label_admin', 'Administrador') }}
+                    </label>
                     <div class="flex gap-2">
-                        <Select inputId="adminSelect" v-model="adminSeleccionado" :options="administradores" optionLabel="nombre" optionValue="id" placeholder="Elegir..." class="w-full" :disabled="enviandoCodigo || verificandoCodigo" />
-                        <Button :icon="codigoEnviado ? 'pi pi-refresh' : 'pi pi-send'" class="p-button-primary flex-shrink-0" :loading="enviandoCodigo" :disabled="!adminSeleccionado || enviandoCodigo || verificandoCodigo" @click="solicitarCodigoAutorizacion" />
+                        <Select 
+                            inputId="adminSelect" 
+                            v-model="adminSeleccionado" 
+                            :options="administradores" 
+                            optionLabel="nombre" 
+                            optionValue="id" 
+                            :placeholder="t('detalle_pedido.modal_auth.ph_admin', 'Elegir...')" 
+                            class="w-full" 
+                            :disabled="enviandoCodigo || verificandoCodigo" 
+                        />
+                        <Button 
+                            :icon="codigoEnviado ? 'pi pi-refresh' : 'pi pi-send'" 
+                            class="p-button-primary flex-shrink-0" 
+                            :loading="enviandoCodigo" 
+                            :disabled="!adminSeleccionado || enviandoCodigo || verificandoCodigo" 
+                            @click="solicitarCodigoAutorizacion" 
+                        />
                     </div>
                 </div>
-                <div v-if="codigoEnviado && !errorAuth" class="text-green-400 text-xs flex align-items-center font-medium"><i class="pi pi-check-circle mr-1"></i> Código enviado.</div>
-                <div v-if="errorAuth" class="text-red-400 text-xs flex align-items-center font-medium"><i class="pi pi-times-circle mr-1"></i> {{ errorAuth }}</div>
+                <div v-if="codigoEnviado && !errorAuth" class="text-green-400 text-xs flex align-items-center font-medium">
+                    <i class="pi pi-check-circle mr-1"></i> {{ t('detalle_pedido.modal_auth.msj_enviado', 'Código enviado.') }}
+                </div>
+                <div v-if="errorAuth" class="text-red-400 text-xs flex align-items-center font-medium">
+                    <i class="pi pi-times-circle mr-1"></i> {{ errorAuth }}
+                </div>
                 <div class="field mb-0">
-                    <label for="adminPin" class="font-semibold block mb-2 text-sm">Código PIN</label>
-                    <InputText id="adminPin" v-model="codigoAdmin" type="password" maxlength="6" placeholder="PIN de 6 dígitos" class="w-full" autocomplete="off" :disabled="!codigoEnviado || verificandoCodigo" />
+                    <label for="adminPin" class="font-semibold block mb-2 text-sm">
+                        {{ t('detalle_pedido.modal_auth.label_pin', 'Código PIN') }}
+                    </label>
+                    <InputText 
+                        id="adminPin" 
+                        v-model="codigoAdmin" 
+                        type="password" 
+                        maxlength="6" 
+                        :placeholder="t('detalle_pedido.modal_auth.ph_pin', 'PIN de 6 dígitos')" 
+                        class="w-full" 
+                        autocomplete="off" 
+                        :disabled="!codigoEnviado || verificandoCodigo" 
+                    />
                 </div>
             </div>
             <template #footer>
                 <div class="flex justify-content-end gap-2">
-                    <Button label="Cancelar" icon="pi pi-times" class="p-button-text" @click="limpiarModalAuth" />
-                    <Button label="Autorizar" icon="pi pi-check" class="p-button-success" :loading="verificandoCodigo" :disabled="!codigoAdmin || codigoAdmin.length < 6 || !hashValidacion || verificandoCodigo" @click="confirmarAutorizacion" />
+                    <Button 
+                        :label="t('detalle_pedido.modal_auth.btn_cancelar', 'Cancelar')" 
+                        icon="pi pi-times" 
+                        class="p-button-text" 
+                        @click="limpiarModalAuth" 
+                    />
+                    <Button 
+                        :label="t('detalle_pedido.modal_auth.btn_autorizar', 'Autorizar')" 
+                        icon="pi pi-check" 
+                        class="p-button-success" 
+                        :loading="verificandoCodigo" 
+                        :disabled="!codigoAdmin || codigoAdmin.length < 6 || !hashValidacion || verificandoCodigo" 
+                        @click="confirmarAutorizacion" 
+                    />
                 </div>
             </template>
         </Dialog>

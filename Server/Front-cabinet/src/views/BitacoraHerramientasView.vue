@@ -134,8 +134,8 @@ const claseFiltroAccion = computed(() => {
 });
 
 const opcionesExportar = computed(() => [
-    { label: t('view_bitacora_herramientas.exportar_csv'), icon: 'pi pi-file', command: () => exportarBitacora(bitacora.value, filtroTiempo.value, 'csv') },
-    { label: t('view_bitacora_herramientas.exportar_excel'), icon: 'pi pi-file-excel', command: () => exportarBitacora(bitacora.value, filtroTiempo.value, 'xlsx') }
+    { label: t('export.exportar_csv'), icon: 'pi pi-file', command: () => exportarBitacora(bitacora.value, filtroTiempo.value, 'csv') },
+    { label: t('export.exportar_excel'), icon: 'pi pi-file-excel', command: () => exportarBitacora(bitacora.value, filtroTiempo.value, 'xlsx') }
 ]);
 </script>
 

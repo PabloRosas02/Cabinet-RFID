@@ -39,10 +39,10 @@ const categoriaSeleccionada = ref(null);
 let searchTimer = null;
 
 // Categorías/Campos de Búsqueda disponibles para el catálogo
-const camposDisponibles = [
-    { key: 'codigo', label: 'Código' },
-    { key: 'nombre', label: 'Nombre' }
-];
+const camposDisponibles = computed(() => [
+    { key: 'codigo', label: t('detalle_pedido.busqueda.codigo', 'Código') },
+    { key: 'nombre', label: t('detalle_pedido.busqueda.nombre', 'Nombre') }
+]);
 
 // Por defecto se buscan ambos campos
 const camposSeleccionados = ref(['codigo', 'nombre']);
@@ -60,11 +60,12 @@ const toggleCampo = (key) => {
 };
 
 const placeholderDinamico = computed(() => {
-    if (camposSeleccionados.value.length === camposDisponibles.length) {
-        return 'Buscar por código o nombre...';
+    if (camposSeleccionados.value.length === camposDisponibles.value.length) {
+        return t('detalle_pedido.busqueda.placeholder', 'Buscar por código o nombre...');
     }
-    const campoActivo = camposDisponibles.find(c => camposSeleccionados.value.includes(c.key));
-    return `Buscar por ${campoActivo ? campoActivo.label.toLowerCase() : ''}...`;
+    const campoActivo = camposDisponibles.value.find(c => camposSeleccionados.value.includes(c.key));
+    const nombreCampo = campoActivo ? campoActivo.label.toLowerCase() : '';
+    return t('detalle_pedido.busqueda.placeholder_individual', `Buscar por ${nombreCampo}...`, { campo: nombreCampo });
 });
 
 const esMovil = ref(window.innerWidth <= 992);
@@ -149,7 +150,9 @@ const manejarFiltro = (evento) => {
             
             <!-- Chips de Filtro -->
             <div class="flex flex-wrap align-items-center gap-2">
-                <span class="text-sm font-bold text-400 mr-2">Buscar en:</span>
+                <!-- REEMPLAZAR TEXTO ESTÁTICO AQUÍ -->
+                <span class="text-sm font-bold text-400 mr-2">{{ $t('detalle_pedido.busqueda.buscar_en', 'Buscar en:') }}</span>
+                
                 <Chip 
                     v-for="campo in camposDisponibles" 
                     :key="campo.key"

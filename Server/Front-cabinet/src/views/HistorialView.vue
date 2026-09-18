@@ -151,12 +151,12 @@ const abrirDetalles = (salida) => {
 
 const opcionesExportar = computed(() => [
     {
-        label: 'CSV',
+        label: t('export.exportar_csv'),
         icon: 'pi pi-file',
         command: () => realizarExportacion('csv')
     },
     {
-        label: 'Excel',
+        label: t('export.exportar_excel'),
         icon: 'pi pi-file-excel',
         command: () => realizarExportacion('xlsx')
     }

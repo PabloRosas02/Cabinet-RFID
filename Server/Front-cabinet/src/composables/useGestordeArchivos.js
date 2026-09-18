@@ -1,4 +1,5 @@
 import { useI18n } from 'vue-i18n';
+import { traducirDetalleBitacora } from '../utils/bitacoraFormatter';
 
 export function useGestorArchivos() {
     const { t, locale } = useI18n();
@@ -270,10 +271,31 @@ export function useGestorArchivos() {
             return accion;
         };
 
+        // Helper para formatear y traducir el rol dinámicamente como en TablaUsuarios
+        const formatearRol = (rol) => {
+            if (!rol) return t('export.na');
+            const rolNormalizado = String(rol).toUpperCase().replace(/\s+/g, '_');
+            return t(`roles.${rolNormalizado}`, rol.replace('_', ' '));
+        };
+
+        // Helper para formatear y traducir el detalle de la acción
+        const obtenerDetalleFormateado = (detalle) => {
+            if (!detalle) return t('export.na');
+            return traducirDetalleBitacora(detalle, t).replace(/\n/g, ' | ');
+        };
+
         if (formato === 'csv') {
-            const cabeceras = [t('export.fecha'), t('export.accion'), t('export.col_codigo_herr'), t('export.col_nombre_herr'), t('export.usuario'), t('export.rol')];
+            const cabeceras = [
+                t('export.fecha'), 
+                t('export.accion'), 
+                t('export.col_codigo_herr'), 
+                t('export.col_nombre_herr'), 
+                t('export.detalle') || 'Detalle', 
+                t('export.usuario'), 
+                t('export.rol')
+            ];
             const filas = bitacoraDatos.map(b => 
-                `"${formatearFechaReporte(b.fecha)}","${traducirAccion(b.accion)}","${b.herramienta?.codigo || t('export.na')}","${b.herramienta?.nombre || t('export.na')}","${b.usuario?.nombre || t('export.na')}","${b.usuario?.rol || t('export.na')}"`
+                `"${formatearFechaReporte(b.fecha)}","${traducirAccion(b.accion)}","${b.herramienta?.codigo || t('export.na')}","${b.herramienta?.nombre || t('export.na')}","${obtenerDetalleFormateado(b.detalle)}","${b.usuario?.nombre || t('export.na')}","${formatearRol(b.usuario?.rol)}"`
             );
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
         } else {
@@ -282,8 +304,9 @@ export function useGestorArchivos() {
                 [t('export.accion')]: traducirAccion(b.accion),
                 [t('export.col_codigo_herr')]: b.herramienta?.codigo || t('export.na'),
                 [t('export.col_nombre_herr')]: b.herramienta?.nombre || t('export.desconocido'),
+                [t('export.detalle') || 'Detalle']: obtenerDetalleFormateado(b.detalle), 
                 [t('export.usuario_autor')]: b.usuario?.nombre || t('export.na'),
-                [t('export.rol')]: b.usuario?.rol || t('export.na')
+                [t('export.rol')]: formatearRol(b.usuario?.rol)
             }));
             generarDescargaExcel(`${nombreArchivo}.xlsx`, datosExcel);
         }
@@ -302,6 +325,11 @@ export function useGestorArchivos() {
         const nombreArchivo = `${t('export.reporte_inventario')}_${fecha}`;
         const labelEsDesechable = t('export.es_desechable');
 
+        // Helper dinámico para traducir SI / NO según el idioma activo
+        const obtenerTextoBooleano = (val) => {
+            return val ? t('export.si') : t('export.no');
+        };
+
         if (formato === 'csv') {
             const cabeceras = [
                 t('export.codigo'), 
@@ -314,7 +342,7 @@ export function useGestorArchivos() {
                 labelEsDesechable
             ];
             const filas = herramientasVisibles.map(h => {
-                const esConsumible = h.esDesechable ? 'SÍ' : 'NO';
+                const esConsumible = obtenerTextoBooleano(h.esDesechable);
                 return `"${h.codigo}","${h.nombre}","${h.tipo || ''}","${h.ubicacion || ''}","${h.cantidadMinima}","${h.cantidadMaxima || ''}","${h.cantidadDisponible}","${esConsumible}"`;
             });
             generarDescarga(`${nombreArchivo}.csv`, cabeceras, filas);
@@ -328,7 +356,7 @@ export function useGestorArchivos() {
                 [t('export.stock_min')]: h.cantidadMinima,
                 [t('export.stock_max')]: h.cantidadMaxima || '',
                 [t('export.stock_fisico')]: h.cantidadDisponible,
-                [labelEsDesechable]: h.esDesechable ? 'SÍ' : 'NO'
+                [labelEsDesechable]: obtenerTextoBooleano(h.esDesechable)
             }));
             generarDescargaExcel(`${nombreArchivo}.xlsx`, datosParaExcel);
         }
@@ -346,46 +374,134 @@ export function useGestorArchivos() {
         const nombreArchivo = `${t('export.reporte_historial')}_${sufijoFecha}`; 
 
         const formatFecha = (fechaString) => {
-            if (!fechaString) return t('export.pendiente');
-            return new Date(fechaString).toLocaleDateString(locale.value, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            if (!fechaString || fechaString === 'Pending' || fechaString === 'Pendiente') {
+                return t('export.pendiente');
+            }
+            const strLocale = locale.value === 'es' ? 'es-ES' : 'en-US';
+            return new Date(fechaString).toLocaleDateString(strLocale, { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
         };
 
         const traducirEstado = (estado) => {
-            if (estado === 'PENDIENTE') return t('export.estado_pendiente');
-            if (estado === 'DEVUELTO') return t('export.estado_devuelto');
+            if (!estado) return '';
+            const estadoUpper = estado.toUpperCase();
+            if (estadoUpper === 'PENDING' || estadoUpper === 'PENDIENTE') return t('export.estado_pendiente');
+            if (estadoUpper === 'RETURNED' || estadoUpper === 'DEVUELTO') return t('export.estado_devuelto');
+            if (estadoUpper === 'CONSUMED' || estadoUpper === 'CONSUMIDO') return t('export.estado_consumido');
             return estado;
+        };
+
+        const traducirRazon = (salida) => {
+            // 1. Obtener la clave o código principal del motivo (ej. 'other', 'operator_damage')
+            const codigoMotivo = salida.motivo || salida.razon || salida.reasonForIssue;
+            if (!codigoMotivo) return t('export.na');
+
+            // 2. Normalizar clave e idioma para i18n
+            const keyNormalizada = String(codigoMotivo).toLowerCase().trim();
+            const textoBase = t(`export.motivos.${keyNormalizada}`, codigoMotivo);
+
+            // 3. Capturar el texto de 'motivoOtro' guardado en la BD
+            const detalle = salida.motivoOtro || salida.razonDetalle || salida.otroMotivo || salida.especificarMotivo;
+
+            // Si existe una razón escrita en motivoOtro, concatenarla al texto traducido
+            if (detalle && String(detalle).trim() !== '') {
+                return `${textoBase}: ${detalle.trim()}`;
+            }
+
+            return textoBase;
+        };
+
+        const construirResumenHerramientas = (herramientas) => {
+            if (!herramientas || !Array.isArray(herramientas)) return '';
+            return herramientas.map(h => {
+                const cant = h.cantidadPrestada || h.cantidadSolicitada || 0;
+                const reg = h.cantidadRegresada || h.cantidadDevuelta || 0;
+                
+                if (h.esDesechable) {
+                    return `${cant}x ${h.nombre}`;
+                }
+                return reg > 0 
+                    ? `${cant}x ${h.nombre} (${t('export.regreso')} ${reg})` 
+                    : `${cant}x ${h.nombre}`;
+            }).join(' | ');
+        };
+
+        const construirNotasTracking = (herramientas) => {
+            if (!herramientas || !Array.isArray(herramientas)) return t('export.sin_recepciones');
+            
+            const seguimiento = herramientas.map(h => {
+                const recepciones = h.historialDevoluciones || h.historialRecepciones;
+                if (recepciones && recepciones.length > 0) {
+                    const validas = recepciones.filter(d => d.cantidad > 0);
+                    if (validas.length > 0) {
+                        return `[${h.nombre}]: ` + validas.map(dev => {
+                            const usuarioRecibio = dev.receptorNombre || dev.recibidoPor || t('export.na');
+                            return `${dev.cantidad}x ${t('export.recibidas_por')} ${usuarioRecibio} (${formatFecha(dev.fecha)})`;
+                        }).join('; ');
+                    }
+                }
+                return null;
+            }).filter(Boolean);
+
+            return seguimiento.length > 0 ? seguimiento.join(' || ') : t('export.sin_recepciones');
         };
 
         if (formato === 'csv') {
             const cabeceras = [
-                t('export.folio'), t('export.autorizo'), t('export.solicito'), 
-                t('export.numero_orden'), t('export.numero_maquina'),
-                t('export.fecha_salida'), t('export.fecha_devolucion'), 
-                t('export.resumen_herr'), t('export.observaciones'), t('export.estado')
+                t('export.folio'), 
+                t('export.autorizo'), 
+                t('export.solicito'), 
+                t('export.razon'),
+                t('export.numero_orden'), 
+                t('export.numero_maquina'),
+                t('export.fecha_salida'), 
+                t('export.fecha_devolucion'), 
+                t('export.resumen_herr'), 
+                t('export.observaciones'), 
+                t('export.estado')
             ];
 
             const filas = historialFiltrado.map(salida => {
-                const folio = `#${salida.id}`;
-                const autorizo = salida.prestadorNombre || t('export.na');
-                const solicito = `${salida.trabajadorNumero} - ${salida.trabajadorNombre}`;
-                const numeroOrden = salida.numeroOrden || t('export.na');    
-                const numeroMaquina = salida.numeroMaquina || t('export.na');
-                const herramientas = salida.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
-
-                const observaciones = salida.herramientas.map(h => {
-                    if (h.historialDevoluciones?.length > 0) {
-                        const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
-                        if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x ${t('export.recibidas_por')} ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
-                    }
-                    return null;
-                }).filter(Boolean).join(' || ') || t('export.sin_recepciones');
+                const folio = salida.folio || `#${salida.id}`;
+                
+                const autorizo = salida.prestadorNumero 
+                    ? `${salida.prestadorNumero} - ${salida.prestadorNombre}` 
+                    : (salida.prestadorNombre || salida.autorizadoPor || t('export.na'));
+                    
+                const solicito = salida.trabajadorNumero 
+                    ? `${salida.trabajadorNumero} - ${salida.trabajadorNombre}` 
+                    : (salida.solicitadoPor || t('export.na'));
+                    
+                // Uso de la nueva función traducirRazon
+                const razon = traducirRazon(salida);
+                const numeroOrden = salida.numeroOrden || salida.orden || t('export.na');    
+                const numeroMaquina = salida.numeroMaquina || salida.maquina || t('export.na');
+                const fechaSalida = formatFecha(salida.fechaSalida || salida.fechaPrestamo);
+                const fechaDevolucion = salida.esDesechable 
+                    ? t('export.na') 
+                    : formatFecha(salida.fechaDevolucion);
+                
+                const herramientas = construirResumenHerramientas(salida.herramientas);
+                const observaciones = construirNotasTracking(salida.herramientas);
+                const estadoStr = traducirEstado(salida.estado || salida.estatus);
 
                 return [
-                    `"${folio}"`, `"${autorizo}"`, `"${solicito}"`, 
-                    `"${numeroOrden}"`, `"${numeroMaquina}"`, 
-                    `"${formatFecha(salida.fechaSalida)}"`, 
-                    `"${formatFecha(salida.fechaDevolucion)}"`, `"${herramientas}"`, 
-                    `"${observaciones}"`, `"${traducirEstado(salida.estado)}"`
+                    `"${folio}"`, 
+                    `"${autorizo}"`, 
+                    `"${solicito}"`, 
+                    `"${razon}"`,
+                    `"${numeroOrden}"`, 
+                    `"${numeroMaquina}"`, 
+                    `"${fechaSalida}"`, 
+                    `"${fechaDevolucion}"`, 
+                    `"${herramientas}"`, 
+                    `"${observaciones}"`, 
+                    `"${estadoStr}"`
                 ].join(',');
             });
 
@@ -393,27 +509,37 @@ export function useGestorArchivos() {
         } 
         else if (formato === 'xlsx') {
             const datosParaExcel = historialFiltrado.map(salida => {
-                const herramientas = salida.herramientas.map(h => `${h.cantidadPrestada}x ${h.nombre}` + (h.cantidadRegresada > 0 ? ` (${t('export.regreso')} ${h.cantidadRegresada})` : '')).join(' | ');
+                const folio = salida.folio || `#${salida.id}`;
                 
-                const observaciones = salida.herramientas.map(h => {
-                    if (h.historialDevoluciones?.length > 0) {
-                        const validas = h.historialDevoluciones.filter(d => d.cantidad > 0);
-                        if (validas.length > 0) return `[${h.nombre}]: ` + validas.map(dev => `${dev.cantidad}x ${t('export.recibidas_por')} ${dev.receptorNombre} (${formatFecha(dev.fecha)})`).join('; ');
-                    }
-                    return null;
-                }).filter(Boolean).join(' || ') || t('export.sin_recepciones');
+                const autorizo = salida.prestadorNumero 
+                    ? `${salida.prestadorNumero} - ${salida.prestadorNombre}` 
+                    : (salida.prestadorNombre || salida.autorizadoPor || t('export.na'));
+                    
+                const solicito = salida.trabajadorNumero 
+                    ? `${salida.trabajadorNumero} - ${salida.trabajadorNombre}` 
+                    : (salida.solicitadoPor || t('export.na'));
+                    
+                // Uso de la nueva función traducirRazon
+                const razon = traducirRazon(salida);
+                const numeroOrden = salida.numeroOrden || salida.orden || t('export.na');    
+                const numeroMaquina = salida.numeroMaquina || salida.maquina || t('export.na');
+                const fechaSalida = formatFecha(salida.fechaSalida || salida.fechaPrestamo);
+                const fechaDevolucion = salida.esDesechable 
+                    ? t('export.na') 
+                    : formatFecha(salida.fechaDevolucion);
 
                 return {
-                    [t('export.folio')]: `#${salida.id}`,
-                    [t('export.autorizo')]: salida.prestadorNombre || t('export.na'),
-                    [t('export.solicito')]: `${salida.trabajadorNumero} - ${salida.trabajadorNombre}`,
-                    [t('export.numero_orden')]: salida.numeroOrden || t('export.na'),    
-                    [t('export.numero_maquina')]: salida.numeroMaquina || t('export.na'),
-                    [t('export.fecha_salida')]: formatFecha(salida.fechaSalida),        
-                    [t('export.fecha_devolucion')]: formatFecha(salida.fechaDevolucion),
-                    [t('export.resumen_herr')]: herramientas,
-                    [t('export.observaciones')]: observaciones,
-                    [t('export.estado')]: traducirEstado(salida.estado) 
+                    [t('export.folio')]: folio,
+                    [t('export.autorizo')]: autorizo,
+                    [t('export.solicito')]: solicito,
+                    [t('export.razon')]: razon,
+                    [t('export.numero_orden')]: numeroOrden,    
+                    [t('export.numero_maquina')]: numeroMaquina,
+                    [t('export.fecha_salida')]: fechaSalida,        
+                    [t('export.fecha_devolucion')]: fechaDevolucion,
+                    [t('export.resumen_herr')]: construirResumenHerramientas(salida.herramientas),
+                    [t('export.observaciones')]: construirNotasTracking(salida.herramientas),
+                    [t('export.estado')]: traducirEstado(salida.estado || salida.estatus) 
                 };
             });
 

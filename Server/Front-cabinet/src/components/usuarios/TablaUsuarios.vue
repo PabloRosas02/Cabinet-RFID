@@ -16,7 +16,8 @@ const props = defineProps({
     },
     camposBusqueda: { 
         type: Array, 
-        default: () => ['numTrabajador', 'nombre', 'correo', 'telefono', 'depart', 'rol'] },
+        default: () => ['numTrabajador', 'nombre', 'correo', 'telefono', 'depart', 'rol'] 
+    },
     rolLogueado: {
         type: String,
         required: true
@@ -36,14 +37,23 @@ const getSeverityRol = (rol) => {
     }
 };
 
-// DEFINICIÓN DINÁMICA DE COLUMNAS ACTUALIZADA
+const formatearDepartamento = (dept) => {
+    if (!dept) return '-';
+    return t(`departamentos.${dept}`, dept);
+};
+
+const formatearRol = (rol) => {
+    if (!rol) return '';
+    return t(`roles.${rol}`, rol.replace('_', ' '));
+};
+
 const columnasUsuarios = computed(() => {
     const cols = [
         { field: 'numTrabajador', header: t('tabla_usuarios.col_empleado'), sortable: true, width: '10%', minWidth: '120px', slotName: 'numTrabajador' },
         { field: 'nombre', header: t('tabla_usuarios.col_nombre'), sortable: true, width: '20%', minWidth: '180px', slotName: 'nombre' },
-        { field: 'correo', header: 'Correo Electrónico', sortable: true, width: '20%', minWidth: '180px', slotName: 'correo' },
-        { field: 'telefono', header: 'Teléfono', width: '12%', minWidth: '130px', slotName: 'telefono' },
-        { field: 'depart', header: t('tabla_usuarios.col_departamento'), sortable: true, width: '13%', minWidth: '140px' },
+        { field: 'correo', header: t('tabla_usuarios.col_correo'), sortable: true, width: '20%', minWidth: '180px', slotName: 'correo' },
+        { field: 'telefono', header: t('tabla_usuarios.col_telefono'), width: '12%', minWidth: '130px', slotName: 'telefono' },
+        { field: 'depart', header: t('tabla_usuarios.col_departamento'), sortable: true, width: '13%', minWidth: '140px', slotName: 'depart' },
         { field: 'rol', header: t('tabla_usuarios.col_rol'), width: '15%', minWidth: '160px', slotName: 'rol' }
     ];
 
@@ -86,9 +96,18 @@ const columnasUsuarios = computed(() => {
             <span class="text-sm">{{ data.telefono || '-' }}</span>
         </template>
 
+        <!-- Slot: Departamento -->
+        <template #depart="{ data }">
+            <span>{{ formatearDepartamento(data.depart) }}</span>
+        </template>
+
         <!-- Slot: Rol -->
         <template #rol="{ data }">
-            <Tag :value="data.rol ? data.rol.replace('_', ' ') : ''" :severity="getSeverityRol(data.rol)" class="px-2 py-1 font-bold text-xs" />
+            <Tag 
+                :value="formatearRol(data.rol)" 
+                :severity="getSeverityRol(data.rol)" 
+                class="px-2 py-1 font-bold text-xs" 
+            />
         </template>
 
         <!-- Slot: Acciones -->

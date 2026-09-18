@@ -19,6 +19,12 @@ const props = defineProps({
     iconoVacio: { type: String, default: 'pi-list' }
 });
 
+const formatearRol = (rol) => {
+    if (!rol) return t('export.na');
+    const rolNormalizado = String(rol).toUpperCase().replace(/\s+/g, '_');
+    return t(`roles.${rolNormalizado}`, rol.replace('_', ' '));
+};
+
 const emit = defineEmits(['doble-click', 'cambio-pagina']);
 
 const columnasBitacora = computed(() => [
@@ -102,9 +108,15 @@ const manejarCambioPagina = (evento) => {
             </div>
         </template>
 
+        <!-- Reemplazar el slot #usuario en TablaBitacora.vue -->
         <template #usuario="{ data }">
-            <div class="font-bold"><i class="pi pi-user mr-2 text-color-secondary"></i>{{ data.usuario?.nombre || t('tabla_bitacora.sistema') }}</div>
-            <div class="text-sm text-color-secondary">{{ data.usuario?.rol || t('tabla_bitacora.no_aplica') }}</div>
+            <div class="font-bold">
+                <i class="pi pi-user mr-2 text-color-secondary"></i>
+                {{ data.usuario?.nombre || t('tabla_bitacora.sistema') }}
+            </div>
+            <div class="text-sm text-color-secondary uppercase">
+                {{ formatearRol(data.usuario?.rol) }}
+            </div>
         </template>
     </TablaGenerica>
 </template>

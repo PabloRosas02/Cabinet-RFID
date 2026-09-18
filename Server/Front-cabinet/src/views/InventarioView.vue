@@ -127,12 +127,12 @@ const manejarOrden = (event) => {
 
 const opcionesExportar = computed(() => [
     {
-        label: t('view_inventario.exportar_csv'),
+        label: t('export.exportar_csv'),
         icon: 'pi pi-file',
         command: () => exportarInventario(herramientas.value, 'csv')
     },
     {
-        label: t('view_inventario.exportar_excel'),
+        label: t('export.exportar_excel'),
         icon: 'pi pi-file-excel',
         command: () => exportarInventario(herramientas.value, 'xlsx')
     }

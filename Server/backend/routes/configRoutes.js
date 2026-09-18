@@ -57,8 +57,8 @@ const obtenerTextoUsuario = (usuarioObj, numeroFallback, nombreFallback, textoPo
 const obtenerIdioma = (req) => {
     if (req.body?.lang) return req.body.lang;
     if (req.query?.lang) return req.query.lang;
-    if (req.headers['accept-language']?.includes('en')) return 'en';
-    return 'es';
+    if (req.headers['x-app-lang']) return req.headers['x-app-lang']; // Cabecera personalizada de tu app
+    return 'es'; // Fallback por defecto siempre en español
 };
 
 // ==========================================

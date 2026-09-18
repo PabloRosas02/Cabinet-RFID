@@ -31,9 +31,14 @@ const mostrarModal = computed({
 
 const obtenerSeveridadStock = (h) => {
     if (!h) return 'success';
-    if (h.cantidadDisponible <= 0) return 'danger'; 
-    if (h.cantidadDisponible < h.cantidadMinima) return 'danger';
-    if (h.cantidadDisponible === h.cantidadMinima) return 'warning';
+    
+    // Normalizar la lectura de propiedades de stock por si vienen con distintos nombres
+    const disponible = h.cantidadDisponible ?? h.stock ?? 0;
+    const minima = h.cantidadMinima ?? h.minStock ?? 0;
+
+    if (disponible <= 0) return 'danger'; 
+    if (disponible < minima) return 'danger';
+    if (disponible === minima) return 'warn'; // Usar 'warn' para PrimeVue Tag
     return 'success';
 };
 
@@ -231,5 +236,20 @@ html.light-theme .modal-herramienta .icono-vacio {
 html.light-theme .modal-herramienta .btn-agregar:disabled {
     background-color: #e2e8f0 !important; 
     color: #94a3b8 !important; 
+}
+/* Estilo amarillo exacto de la tabla para la insignia ALERTA */
+.modal-herramienta .p-tag-warn,
+.modal-herramienta .p-tag-warning {
+    background-color: rgba(234, 179, 8, 0.18) !important; /* Fondo amarillo verdoso translúcido */
+    color: #eab308 !important;                            /* Texto amarillo brillante */
+    border: 1px solid rgba(234, 179, 8, 0.35) !important; /* Borde sutil */
+}
+
+/* En caso de que se use el tema claro */
+html.light-theme .modal-herramienta .p-tag-warn,
+html.light-theme .modal-herramienta .p-tag-warning {
+    background-color: #fef9c3 !important;
+    color: #854d0e !important;
+    border: 1px solid #fef08a !important;
 }
 </style>

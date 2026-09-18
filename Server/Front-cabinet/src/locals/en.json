@@ -21,7 +21,7 @@
     "exito": "Success",
     "eliminado": "Removed",
     "destinatarios": {
-      "titulo": "Permanent Recipients (Database)",
+      "titulo": "Notification Recipients",
       "subtitulo": "Active emails in this list will automatically receive notifications and reports.",
       "placeholder_nombre": "Name (e.g. Warehouse)",
       "placeholder_correo": "email{at}example.com",
@@ -148,8 +148,6 @@
   "titulo": "Inventory Control",
   "btn_nueva": "New Tool",
   "btn_exportar": "Export Inventory",
-  "exportar_csv": "Export CSV",
-  "exportar_excel": "Export Excel",
   "btn_solo_alertas": "Alerts Only",
   "btn_mostrando_todo": "Show All",
   "btn_actualizar": "Update Inventory",
@@ -291,15 +289,19 @@
     "registro_motivo": "Reason recorded"
   },
   "bitacora_detalles": {
-    "stock_maximo": "Max Stock",
-    "stock_minimo": "Min Stock",
-    "stock_fisico": "Physical Stock",
-    "motivo_baja": "Reason for removal",
+    "nombre": "Name",
+    "codigo": "Code",
+    "ubicacion": "Location",
+    "marca": "Brand",
     "desechable": "Consumable",
     "desechable_si": "Yes",
     "desechable_no": "No",
+    "stock_maximo": "Maximum Stock",
+    "stock_minimo": "Minimum Stock",
+    "stock_fisico": "Physical Stock",
+    "motivo_baja": "Disposal Reason",
     "registro_inicial": "Initial tool registration",
-    "importacion_masiva": "Bulk Import Registration"
+    "importacion_masiva": "Bulk import registration"
   },
   "tabla_bitacora": {
     "fecha_hora": "Date / Time",
@@ -328,8 +330,6 @@
     "filtro_default": "Filter",
     "ph_filtro_fecha": "Filter by date",
     "btn_exportar": "Export Log",
-    "exportar_csv": "Export to CSV",
-    "exportar_excel": "Export to Excel",
     "tiempo_todos": "All",
     "tiempo_hoy": "Today",
     "tiempo_semana": "This Week",
@@ -364,7 +364,7 @@
     "estado_agotado": "Sold Out",
     "modal_stock": "Stock (Physical / Min / Max)",
     "modal_titulo_detalles": "Tool Details",
-    "modal_desechable": "Is Disposable?",
+    "modal_desechable": "Is Consumable?",
     "tag_desechable_si": "YES (CONSUMABLE)",
     "tag_desechable_no": "NO (REUSABLE)"
   },
@@ -412,6 +412,24 @@
       "set_up": "Set up",
       "mala_calidad": "Poor tool quality",
       "otro": "Other"
+    },
+    "busqueda": {
+      "buscar_en": "Search by:",
+      "codigo": "Code",
+      "nombre": "Name",
+      "placeholder": "Search by code or name...",
+      "placeholder_individual": "Search by {campo}..."
+    },
+    "modal_auth": {
+        "titulo": "Authorization Required",
+        "descripcion": "This reason requires a PIN code sent to the administrator's email.",
+        "label_admin": "Administrator",
+        "ph_admin": "Select...",
+        "msj_enviado": "Code sent.",
+        "label_pin": "PIN Code",
+        "ph_pin": "6-digit PIN",
+        "btn_cancelar": "Cancel",
+        "btn_autorizar": "Authorize"
     }
   },
   "view_salidas": {
@@ -467,12 +485,25 @@
   "tabla_usuarios": {
     "col_empleado": "Employee No.",
     "col_nombre": "Full Name",
+    "col_correo": "Email",
+    "col_telefono": "Phone",
     "col_departamento": "Department",
     "col_rol": "Role (Access)",
     "col_acciones": "Actions",
     "mensaje_vacio": "No registered users matching the search were found.",
     "tooltip_editar": "Edit",
     "tooltip_eliminar": "Delete"
+  },
+  "departamentos": {
+    "INGENIERIA": "Engineering",
+    "MANTENIMIENTO": "Maintenance",
+    "ADMINISTRACION": "Administration"
+  },
+  "roles": {
+    "ADMINISTRADOR": "Administrator",
+    "SUPERVISOR_ALMACEN": "Warehouse Supervisor",
+    "ALMACENISTA": "Warehouse Worker",
+    "OPERADOR": "Operator"
   },
   "view_usuarios": {
     "titulo": "User Management",
@@ -559,6 +590,10 @@
     "reporte_inventario": "Inventory_Report",
     "stock_min": "Min Stock",
     "stock_fisico": "Physical Stock",
+    "stock_max": "Max Stock",
+    "si": "YES",
+    "no": "NO",
+    "razon": "Reason for Issue",
     "reporte_historial": "History_Report",
     "pendiente": "Pending",
     "folio": "Folio",
@@ -576,16 +611,34 @@
     "sin_recepciones": "No registered receipts",
     "estado_pendiente": "PENDING",
     "estado_devuelto": "RETURNED",
+    "estado_consumido": "CONSUMED",
     "accion_creacion": "CREATION",
     "accion_modificacion": "MODIFICATION",
     "accion_eliminacion": "DELETION",
     "cantidad_maxima": "Maximum Quantity",
-    "es_desechable": "Is Consumable?"
+    "es_desechable": "Is Consumable?",
+    "detalle": "Detail",
+    "exportar_csv": "Export to CSV (.csv)",
+    "exportar_excel": "Export to Excel (.xlsx)",
+    "motivos": {
+      "fin_vida": "End of life",
+      "dano_operador": "Operator damage",
+      "extravio": "Lost",
+      "set_up": "Set up",
+      "mala_calidad": "Poor tool quality",
+      "otro": "Other",
+      "end_of_life": "End of life",
+      "operator_damage": "Operator damage",
+      "loss": "Loss",
+      "setup": "Set up",
+      "poor_quality": "Poor quality",
+      "other": "Other"
+    }
   },
   "filtros": {
     "hoy": "Today",
     "todos": "All",
     "este_mes": "This Month",
     "este_anio": "This Year"
-}
+  }
 }

@@ -7,9 +7,7 @@ import { enviarCodigoAutorizacionDano, enviarAlertaHerramientaBaja } from '../se
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// =====================================================================
-// Función auxiliar para obtener la Llave Primaria segura desde el Token
-// =====================================================================
+// Helper para validar usuario id
 const obtenerUsuarioIdValido = async (req) => {
     const tokenData = req.user || req.usuario;
     if (!tokenData) return null;
@@ -43,9 +41,7 @@ const obtenerUsuarioIdValido = async (req) => {
     }
 };
 
-// =====================================================================
-// 1. POST /api/salidas -> Crear una nueva Salida (Soporta Desechables y CONSUMIDO)
-// =====================================================================
+// POST /api/salidas -> Crear una nueva Salida con alerta por Stock Mínimo
 router.post('/', verificarToken, async (req, res) => {
     const { 
         trabajadorNumero, 
@@ -77,9 +73,8 @@ router.post('/', verificarToken, async (req, res) => {
         }
 
         const motivoGuardar = motivo ? motivo.trim() : 'NO ESPECIFICADO';
-        const motivoOtroGuardar = (motivoGuardar.toLowerCase() === 'otro' && motivoOtro) 
-            ? motivoOtro.trim() 
-            : null;
+        const esOpcionOtro = ['otro', 'other'].includes(motivoGuardar.toLowerCase());
+        const motivoOtroGuardar = (esOpcionOtro && motivoOtro) ? motivoOtro.trim() : null;
 
         const alertasAEnviar = [];
 
@@ -94,6 +89,9 @@ router.post('/', verificarToken, async (req, res) => {
                 if (!herramientaDB || herramientaDB.cantidadDisponible < h.cantidadPrestada) {
                     throw new Error(`Stock insuficiente para la herramienta "${herramientaDB?.nombre || 'ID: ' + h.id}". Disponible: ${herramientaDB?.cantidadDisponible || 0}`);
                 }
+
+                // Evaluar si la salida dejará el stock en o por debajo del mínimo reglamentado
+                const stockDisponibleFuturo = herramientaDB.cantidadDisponible - h.cantidadPrestada;
 
                 let herramientaActualizada;
 
@@ -126,13 +124,9 @@ router.post('/', verificarToken, async (req, res) => {
                     });
                 }
 
-                if (herramientaActualizada.cantidadDisponible <= herramientaActualizada.cantidadMinima) {
-                    alertasAEnviar.push({
-                        codigo: herramientaActualizada.codigo,
-                        nombre: herramientaActualizada.nombre,
-                        cantidad: herramientaActualizada.cantidadDisponible,
-                        stockMinimo: herramientaActualizada.cantidadMinima
-                    });
+                // Condición estricta: Si el nuevo stock disponible es <= stock mínimo, agregamos a la cola de correos
+                if (stockDisponibleFuturo <= herramientaActualizada.cantidadMinima) {
+                    alertasAEnviar.push(herramientaActualizada);
                 }
             }
 
@@ -155,11 +149,33 @@ router.post('/', verificarToken, async (req, res) => {
             });
         });
 
-        for (const alerta of alertasAEnviar) {
+        // Obtener el idioma solicitado o fallback a 'es'
+        const idioma = req.body.lang || (req.headers['accept-language']?.includes('en') ? 'en' : 'es');
+
+        // Enviar correos de alerta de stock bajo/mínimo a destinatarios activos
+        if (alertasAEnviar.length > 0) {
+            let listaCorreos = [];
             try {
-                await enviarAlertaHerramientaBaja(alerta);
-            } catch (emailErr) {
-                console.error(`Error al enviar correo de stock bajo para ${alerta.codigo}:`, emailErr);
+                const destinatariosBD = await prisma.destinatarioCorreo.findMany({
+                    where: { activo: true },
+                    select: { correo: true }
+                });
+                listaCorreos = destinatariosBD.map(d => d.correo.trim().toLowerCase());
+            } catch (errDb) {
+                console.error('Error al consultar destinatarios activos:', errDb);
+            }
+
+            if (listaCorreos.length === 0 && process.env.ADMIN_EMAIL) {
+                listaCorreos.push(process.env.ADMIN_EMAIL.trim().toLowerCase());
+            }
+
+            // El orden coincide exactamente: (destinatario, datosHerramienta, lang)
+            for (const herramienta of alertasAEnviar) {
+                try {
+                    await enviarAlertaHerramientaBaja(listaCorreos, herramienta, idioma);
+                } catch (emailErr) {
+                    console.error(`Error al enviar correo de stock bajo para ${herramienta.codigo}:`, emailErr);
+                }
             }
         }
 
@@ -170,9 +186,7 @@ router.post('/', verificarToken, async (req, res) => {
     }
 });
 
-// =====================================================================
-// 2. GET /api/salidas/pendientes -> Ver salidas activas
-// =====================================================================
+// GET /api/salidas/pendientes
 router.get('/pendientes', verificarToken, async (req, res) => {
     try {
         const usuario = req.user || req.usuario;
@@ -210,11 +224,9 @@ router.get('/pendientes', verificarToken, async (req, res) => {
             motivo: salida.motivo,             
             motivoOtro: salida.motivoOtro,    
             
-            // Prestó
             prestadorNumero: salida.prestador ? (salida.prestador.numTrabajador || salida.prestador.numero) : null,
             prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
             
-            // Recibió
             receptorNumero: salida.receptor ? (salida.receptor.numTrabajador || salida.receptor.numero) : null,
             receptorNombre: salida.receptor ? salida.receptor.nombre : null,
 
@@ -239,9 +251,7 @@ router.get('/pendientes', verificarToken, async (req, res) => {
     }
 });
 
-// =====================================================================
-// 3. PUT /api/salidas/:id/devolver -> Devolución
-// =====================================================================
+// PUT /api/salidas/:id/devolver
 router.put('/:id/devolver', verificarToken, async (req, res) => {
     const salidaId = parseInt(req.params.id, 10);
     if (isNaN(salidaId)) {
@@ -348,9 +358,7 @@ router.put('/:id/devolver', verificarToken, async (req, res) => {
     }
 });
 
-// =====================================================================
-// 4. GET /api/salidas/historial -> Traer historial filtrado
-// =====================================================================
+// GET /api/salidas/historial
 router.get('/historial', verificarToken, async (req, res) => {
     try {
         const usuario = req.user || req.usuario;
@@ -427,11 +435,9 @@ router.get('/historial', verificarToken, async (req, res) => {
             motivo: salida.motivo,             
             motivoOtro: salida.motivoOtro,     
             
-            // Prestó
             prestadorNumero: salida.prestador ? (salida.prestador.numTrabajador || salida.prestador.numero) : null,
             prestadorNombre: salida.prestador ? salida.prestador.nombre : 'Desconocido',
             
-            // Recibió
             receptorNumero: salida.receptor ? (salida.receptor.numTrabajador || salida.receptor.numero) : null,
             receptorNombre: salida.receptor ? salida.receptor.nombre : 'Pendiente / En curso',
 
@@ -460,20 +466,23 @@ router.get('/historial', verificarToken, async (req, res) => {
     }
 });
 
-// =====================================================================
-// 5. POST /api/salidas/solicitar-codigo-dano
-// =====================================================================
+// POST /api/salidas/solicitar-codigo-dano
 router.post('/solicitar-codigo-dano', verificarToken, async (req, res) => {
     try {
-        const { administradorId, folio, herramientaNombre, trabajadorNombre, comentario } = req.body;
+        const { administradorId, lang } = req.body;
+        const idioma = lang || (req.headers['accept-language']?.includes('en') ? 'en' : 'es');
 
         if (!administradorId) {
-            return res.status(400).json({ error: 'Debes seleccionar un administrador.' });
+            return res.status(400).json({ 
+                error: idioma === 'en' ? 'You must select an administrator.' : 'Debes seleccionar un administrador.' 
+            });
         }
 
         const adminIdParsed = parseInt(administradorId, 10);
         if (isNaN(adminIdParsed)) {
-            return res.status(400).json({ error: 'Identificador de administrador inválido.' });
+            return res.status(400).json({ 
+                error: idioma === 'en' ? 'Invalid administrator ID.' : 'Identificador de administrador inválido.' 
+            });
         }
 
         const admin = await prisma.usuario.findUnique({
@@ -483,7 +492,9 @@ router.post('/solicitar-codigo-dano', verificarToken, async (req, res) => {
 
         if (!admin || !admin.correo) {
             return res.status(400).json({ 
-                error: 'El administrador seleccionado no tiene un correo registrado en el sistema.' 
+                error: idioma === 'en' 
+                    ? 'The selected administrator does not have a registered email.' 
+                    : 'El administrador seleccionado no tiene un correo registrado en el sistema.' 
             });
         }
 
@@ -491,28 +502,26 @@ router.post('/solicitar-codigo-dano', verificarToken, async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashCodigo = await bcrypt.hash(codigoGenerado, salt);
 
-        await enviarCodigoAutorizacionDano(admin.correo, codigoGenerado, {
-            folio: folio || 'N/A',
-            trabajador: trabajadorNombre || 'No especificado',
-            herramienta: herramientaNombre || 'No especificada',
-            comentario: comentario || 'Sin comentario especificado'
-        });
+        await enviarCodigoAutorizacionDano(admin.correo, codigoGenerado, idioma);
 
         return res.json({
             success: true,
-            mensaje: `Código de autorización enviado exitosamente a ${admin.nombre}`,
+            mensaje: idioma === 'en' 
+                ? `Authorization code sent successfully to ${admin.nombre}` 
+                : `Código de autorización enviado exitosamente a ${admin.nombre}`,
             hashValidacion: hashCodigo 
         });
 
     } catch (error) {
         console.error('Error al solicitar código de daño:', error);
-        return res.status(500).json({ error: 'Error interno al enviar el código de autorización.' });
+        const idioma = req.body.lang || 'es';
+        return res.status(500).json({ 
+            error: idioma === 'en' ? 'Internal error sending authorization code.' : 'Error interno al enviar el código de autorización.' 
+        });
     }
 });
 
-// =====================================================================
-// 6. POST /api/salidas/verificar-codigo-dano
-// =====================================================================
+// POST /api/salidas/verificar-codigo-dano
 router.post('/verificar-codigo-dano', verificarToken, async (req, res) => {
     try {
         const { administradorId, codigoAdmin, hashValidacion } = req.body;
