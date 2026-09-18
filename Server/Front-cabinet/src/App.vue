@@ -6,8 +6,6 @@ import MenuLateral from './layouts/MenuLateral.vue';
 
 const route = useRoute();
 
-// Si la pantalla es de celular/tablet (< 992px), empieza cerrado. 
-// Si es monitor de PC, empieza abierto.
 const menuAbierto = ref(window.innerWidth > 992);
 
 // Si el usuario voltea el celular o redimensiona la ventana en PC, lo ajustamos automáticamente
